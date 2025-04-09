@@ -4,6 +4,7 @@ import {
   matColors, type MatColor, type InsertMatColor,
   glassOptions, type GlassOption, type InsertGlassOption,
   specialServices, type SpecialService, type InsertSpecialService,
+  orderGroups, type OrderGroup, type InsertOrderGroup,
   orders, type Order, type InsertOrder,
   orderSpecialServices, type OrderSpecialService, type InsertOrderSpecialService,
   wholesaleOrders, type WholesaleOrder, type InsertWholesaleOrder
@@ -34,6 +35,14 @@ export interface IStorage {
   // Special service methods
   getSpecialService(id: string): Promise<SpecialService | undefined>;
   getAllSpecialServices(): Promise<SpecialService[]>;
+  
+  // Order group methods
+  getOrderGroup(id: number): Promise<OrderGroup | undefined>;
+  getActiveOrderGroupByCustomer(customerId: number): Promise<OrderGroup | undefined>;
+  getAllOrderGroups(): Promise<OrderGroup[]>;
+  createOrderGroup(orderGroup: InsertOrderGroup): Promise<OrderGroup>;
+  updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup>;
+  getOrdersByGroupId(orderGroupId: number): Promise<Order[]>;
   
   // Order methods
   getOrder(id: number): Promise<Order | undefined>;
@@ -210,6 +219,59 @@ export class DatabaseStorage implements IStorage {
     return dbSpecialServices;
   }
   
+  // Order group methods
+  async getOrderGroup(id: number): Promise<OrderGroup | undefined> {
+    const [orderGroup] = await db.select().from(orderGroups).where(eq(orderGroups.id, id));
+    return orderGroup || undefined;
+  }
+  
+  async getActiveOrderGroupByCustomer(customerId: number): Promise<OrderGroup | undefined> {
+    const [orderGroup] = await db
+      .select()
+      .from(orderGroups)
+      .where(eq(orderGroups.customerId, customerId));
+    
+    // Filter in memory for the open status
+    return orderGroup && orderGroup.status === 'open' ? orderGroup : undefined;
+  }
+  
+  async getAllOrderGroups(): Promise<OrderGroup[]> {
+    return await db.select().from(orderGroups);
+  }
+  
+  async createOrderGroup(orderGroup: InsertOrderGroup): Promise<OrderGroup> {
+    const [newOrderGroup] = await db
+      .insert(orderGroups)
+      .values({
+        ...orderGroup,
+        status: 'open',
+        createdAt: new Date()
+      })
+      .returning();
+    return newOrderGroup;
+  }
+  
+  async updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup> {
+    const [updatedOrderGroup] = await db
+      .update(orderGroups)
+      .set(data)
+      .where(eq(orderGroups.id, id))
+      .returning();
+    
+    if (!updatedOrderGroup) {
+      throw new Error('Order group not found');
+    }
+    
+    return updatedOrderGroup;
+  }
+  
+  async getOrdersByGroupId(orderGroupId: number): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.orderGroupId, orderGroupId));
+  }
+
   // Order methods
   async getOrder(id: number): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
@@ -265,9 +327,11 @@ export class DatabaseStorage implements IStorage {
     
     const result: SpecialService[] = [];
     for (const id of serviceIds) {
-      const service = await this.getSpecialService(id);
-      if (service) {
-        result.push(service);
+      if (id) { // Make sure id is not null
+        const service = await this.getSpecialService(id);
+        if (service) {
+          result.push(service);
+        }
       }
     }
     

@@ -4,8 +4,9 @@ import { storage } from "./storage";
 import { 
   insertCustomerSchema, 
   insertOrderSchema,
-  insertOrderSpecialServiceSchema, 
-  insertWholesaleOrderSchema 
+  insertOrderSpecialServiceSchema,
+  insertWholesaleOrderSchema,
+  insertOrderGroupSchema
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -228,9 +229,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const total = subtotal + tax;
           
           // Update order data with calculated prices
-          validatedData.subtotal = subtotal;
-          validatedData.tax = tax;
-          validatedData.total = total;
+          validatedData.subtotal = subtotal.toString();
+          validatedData.tax = tax.toString();
+          validatedData.total = total.toString();
         }
       }
       
@@ -321,13 +322,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertWholesaleOrderSchema.parse(req.body);
       
       // Get the order to extract frame and manufacturer info
-      const order = await storage.getOrder(validatedData.orderId);
+      const orderId = validatedData.orderId ?? 0;
+      const order = await storage.getOrder(orderId);
       
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
       
       // Get the frame to get manufacturer
+      if (!order.frameId) {
+        return res.status(400).json({ message: "Frame ID not found for the order" });
+      }
+      
       const frame = await storage.getFrame(order.frameId);
       
       if (!frame) {
@@ -393,6 +399,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedWholesaleOrder);
     } catch (error) {
       res.status(500).json({ message: "Failed to update wholesale order" });
+    }
+  });
+
+  // Order Groups
+  app.get('/api/order-groups', async (req, res) => {
+    try {
+      const orderGroups = await storage.getAllOrderGroups();
+      res.json(orderGroups);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch order groups" });
+    }
+  });
+
+  app.get('/api/order-groups/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orderGroup = await storage.getOrderGroup(id);
+      
+      if (!orderGroup) {
+        return res.status(404).json({ message: "Order group not found" });
+      }
+      
+      res.json(orderGroup);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch order group" });
+    }
+  });
+
+  app.get('/api/order-groups/:id/orders', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orders = await storage.getOrdersByGroupId(id);
+      res.json(orders);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch orders for group" });
+    }
+  });
+
+  app.get('/api/customers/:id/active-order-group', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orderGroup = await storage.getActiveOrderGroupByCustomer(id);
+      
+      if (!orderGroup) {
+        return res.status(404).json({ message: "No active order group found for customer" });
+      }
+      
+      res.json(orderGroup);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch active order group" });
+    }
+  });
+
+  app.post('/api/order-groups', async (req, res) => {
+    try {
+      const validatedData = insertOrderGroupSchema.parse(req.body);
+      
+      const orderGroup = await storage.createOrderGroup(validatedData);
+      res.status(201).json(orderGroup);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid order group data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to create order group" });
+    }
+  });
+
+  app.patch('/api/order-groups/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const orderGroup = await storage.getOrderGroup(id);
+      
+      if (!orderGroup) {
+        return res.status(404).json({ message: "Order group not found" });
+      }
+      
+      // Validate status
+      if (req.body.status) {
+        if (!['open', 'completed', 'cancelled'].includes(req.body.status)) {
+          return res.status(400).json({ message: "Invalid status value" });
+        }
+      }
+      
+      const updatedOrderGroup = await storage.updateOrderGroup(id, req.body);
+      res.json(updatedOrderGroup);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update order group" });
     }
   });
 

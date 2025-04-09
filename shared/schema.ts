@@ -70,10 +70,28 @@ export const insertSpecialServiceSchema = createInsertSchema(specialServices);
 export type InsertSpecialService = z.infer<typeof insertSpecialServiceSchema>;
 export type SpecialService = typeof specialServices.$inferSelect;
 
+// Order Group model - for handling multiple orders in a single checkout
+export const orderGroups = pgTable("order_groups", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").references(() => customers.id),
+  subtotal: numeric("subtotal"),
+  tax: numeric("tax"),
+  total: numeric("total"),
+  status: text("status").notNull().default('open'),
+  paymentMethod: text("payment_method"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertOrderGroupSchema = createInsertSchema(orderGroups).omit({ id: true, createdAt: true });
+export type InsertOrderGroup = z.infer<typeof insertOrderGroupSchema>;
+export type OrderGroup = typeof orderGroups.$inferSelect;
+
 // Order model
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   customerId: integer("customer_id").references(() => customers.id),
+  orderGroupId: integer("order_group_id").references(() => orderGroups.id),
   frameId: text("frame_id").references(() => frames.id),
   matColorId: text("mat_color_id").references(() => matColors.id),
   glassOptionId: text("glass_option_id").references(() => glassOptions.id),
