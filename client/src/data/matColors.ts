@@ -259,15 +259,19 @@ export const loadCrescentMatboardsFromSupabase = async (): Promise<void> => {
   }
 
   try {
+    console.log('Fetching Crescent matboards from Larson Juhl catalog...');
     const supabaseMatboards = await fetchCrescentMatboards();
     if (supabaseMatboards && supabaseMatboards.length > 0) {
       // Replace static Crescent matboards with ones from Supabase
       const basicColors = basicMatColors;
       matColorCatalog = [...basicColors, ...supabaseMatboards];
-      console.log(`Loaded ${supabaseMatboards.length} Crescent matboards from Supabase`);
+      console.log(`Loaded ${supabaseMatboards.length} Crescent matboards from Larson Juhl catalog`);
+    } else {
+      console.log('No Crescent matboards found in Larson Juhl catalog or empty response. Using static fallback data.');
     }
   } catch (error) {
-    console.error('Failed to load Crescent matboards from Supabase:', error);
+    console.error('Failed to load Crescent matboards:', error);
+    console.log('Using static Crescent matboard catalog as fallback.');
     // Keep using the static list as fallback
   }
 };
