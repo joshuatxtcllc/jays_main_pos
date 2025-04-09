@@ -33,7 +33,8 @@ export async function setupVite(app: Express, server: Server) {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        process.exit(1);
+        // Don't exit the process, just log the error
+        console.error(`Vite server error: ${msg}`);
       },
     },
     server: serverOptions,

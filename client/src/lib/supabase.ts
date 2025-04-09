@@ -1,49 +1,69 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Browser-safe Supabase client
-const getSupabaseClient = () => {
+let supabase;
+
+try {
   // Create a dummy client for SSR/Node.js environments
   if (typeof window === 'undefined') {
-    return {
+    supabase = {
       from: () => ({
-        select: () => Promise.resolve({ data: [], error: null })
-      })
+        select: () => Promise.resolve({ data: [], error: null }),
+        insert: () => Promise.resolve({ data: [], error: null }),
+        update: () => Promise.resolve({ data: [], error: null }),
+        delete: () => Promise.resolve({ data: null, error: null })
+      }),
+      auth: {
+        signIn: () => Promise.resolve({ user: null, error: null }),
+        signOut: () => Promise.resolve({ error: null })
+      }
     };
-  }
-
-  try {
+  } else {
     // Browser-only code
     const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    const rawSupabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
+    const rawSupabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
     // Validate URL format - ensure it has https:// prefix
-    const supabaseUrl = rawSupabaseUrl.startsWith('http') 
-      ? rawSupabaseUrl 
+    const supabaseUrl = rawSupabaseUrl.startsWith('http')
+      ? rawSupabaseUrl
       : `https://${rawSupabaseUrl.replace(/^https?:\/\//, '')}`;
 
+    // Create a mock client if credentials are missing
     if (!rawSupabaseUrl || !rawSupabaseKey) {
-      console.error('Client: Supabase URL and key must be provided');
-      // Create a mock client that won't throw errors
-      return {
+      supabase = {
         from: () => ({
-          select: () => Promise.resolve({ data: [], error: null })
-        })
+          select: () => Promise.resolve({ data: [], error: null }),
+          insert: () => Promise.resolve({ data: [], error: null }),
+          update: () => Promise.resolve({ data: [], error: null }),
+          delete: () => Promise.resolve({ data: null, error: null })
+        }),
+        auth: {
+          signIn: () => Promise.resolve({ user: null, error: null }),
+          signOut: () => Promise.resolve({ error: null })
+        }
       };
+      console.log('Client: Using mock Supabase client - real server data will be used');
+    } else {
+      // Create the real client
+      supabase = createClient(supabaseUrl, rawSupabaseKey);
+      console.log('Client: Supabase client initialized successfully');
     }
-
-    // Create the real client
-    const client = createClient(supabaseUrl, rawSupabaseKey);
-    console.log('Client: Supabase client initialized successfully');
-    return client;
-  } catch (error) {
-    console.error('Client: Error initializing Supabase client:', error);
-    // Provide a fallback that won't crash the application
-    return {
-      from: () => ({
-        select: () => Promise.resolve({ data: [], error: null })
-      })
-    };
   }
-};
+} catch (error) {
+  console.error('Client: Error initializing Supabase client:', error);
+  // Provide a fallback that won't crash the application
+  supabase = {
+    from: () => ({
+      select: () => Promise.resolve({ data: [], error: null }),
+      insert: () => Promise.resolve({ data: [], error: null }),
+      update: () => Promise.resolve({ data: [], error: null }),
+      delete: () => Promise.resolve({ data: null, error: null })
+    }),
+    auth: {
+      signIn: () => Promise.resolve({ user: null, error: null }),
+      signOut: () => Promise.resolve({ error: null })
+    }
+  };
+}
 
-export const supabase = getSupabaseClient();
+export { supabase };

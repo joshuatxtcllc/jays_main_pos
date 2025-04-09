@@ -8,6 +8,8 @@ import PosSystem from "./pages/PosSystem";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "@/pages/not-found";
+import { QueryErrorResetBoundary, ReactErrorBoundary, ErrorInfo } from 'react-error-boundary'; //added imports
+
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -16,7 +18,7 @@ function App() {
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     // Apply theme
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setDarkMode(true);
@@ -27,7 +29,7 @@ function App() {
   // Toggle theme function
   const toggleTheme = () => {
     setDarkMode(!darkMode);
-    
+
     if (!darkMode) {
       document.body.classList.add('dark');
       localStorage.setItem('theme', 'dark');
@@ -37,21 +39,42 @@ function App() {
     }
   };
 
+  const ErrorFallback = ({ error, resetErrorBoundary }) => (
+    <div role="alert">
+      <h2>Something went wrong:</h2>
+      <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
+      <button onClick={resetErrorBoundary}>Try again</button>
+    </div>
+  );
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-        <Header darkMode={darkMode} toggleTheme={toggleTheme} />
-        <main className="container pt-24 pb-10">
-          <Switch>
-            <Route path="/" component={PosSystem} />
-            <Route path="/orders" component={Orders} />
-            <Route path="/dashboard" component={Dashboard} />
-            <Route component={NotFound} />
-          </Switch>
-        </main>
-      </div>
-      <Toaster />
-    </QueryClientProvider>
+    <QueryErrorResetBoundary>
+      {({ reset }) => (
+        <ReactErrorBoundary
+          onReset={reset}
+          FallbackComponent={ErrorFallback}
+          onError={(error: Error, info: ErrorInfo) => {
+            console.error("App error:", error);
+            console.error("Component stack:", info.componentStack);
+          }}
+        >
+          <QueryClientProvider client={queryClient}>
+            <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+              <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+              <main className="container pt-24 pb-10">
+                <Switch>
+                  <Route path="/" component={PosSystem} />
+                  <Route path="/orders" component={Orders} />
+                  <Route path="/dashboard" component={Dashboard} />
+                  <Route component={NotFound} />
+                </Switch>
+              </main>
+            </div>
+            <Toaster />
+          </QueryClientProvider>
+        </ReactErrorBoundary>
+      )}
+    </QueryErrorResetBoundary>
   );
 }
 
