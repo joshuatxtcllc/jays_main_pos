@@ -40,6 +40,11 @@ const PosSystem = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
   
+  // Webcam states
+  const [showWebcam, setShowWebcam] = useState<boolean>(false);
+  const webcamRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   // Frame Selection
   const [selectedFrame, setSelectedFrame] = useState<Frame | null>(null);
   const [materialFilter, setMaterialFilter] = useState<string>('all');
@@ -145,6 +150,105 @@ const PosSystem = () => {
   // Handle button click for file input
   const handleButtonClick = () => {
     fileInputRef.current?.click();
+  };
+  
+  // Handle webcam toggle
+  const handleWebcamToggle = () => {
+    if (showWebcam) {
+      // Turn off webcam
+      if (webcamRef.current && webcamRef.current.srcObject) {
+        const stream = webcamRef.current.srcObject as MediaStream;
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        webcamRef.current.srcObject = null;
+      }
+      setShowWebcam(false);
+    } else {
+      // Turn on webcam
+      setShowWebcam(true);
+      startWebcam();
+    }
+  };
+  
+  // Start webcam
+  const startWebcam = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: 1280, height: 720 } 
+      });
+      
+      if (webcamRef.current) {
+        webcamRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing webcam:', error);
+      toast({
+        title: "Webcam Error",
+        description: "Could not access the webcam. Please check your permissions and try again.",
+        variant: "destructive"
+      });
+      setShowWebcam(false);
+    }
+  };
+  
+  // Capture image from webcam
+  const captureImage = () => {
+    if (webcamRef.current && canvasRef.current) {
+      const video = webcamRef.current;
+      const canvas = canvasRef.current;
+      
+      // Set canvas size to match video dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw video frame to canvas
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert canvas to data URL
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        
+        // Process captured image
+        processWebcamImage(dataUrl);
+        
+        // Turn off webcam
+        handleWebcamToggle();
+      }
+    }
+  };
+  
+  // Process webcam image
+  const processWebcamImage = async (dataUrl: string) => {
+    try {
+      // Resize image if it's too large
+      const resizedImage = await resizeImage(dataUrl, 1200, 1200);
+      
+      // Create an image element to get dimensions
+      const img = new Image();
+      img.onload = () => {
+        const imgAspectRatio = img.width / img.height;
+        setAspectRatio(imgAspectRatio);
+        
+        // Update width based on the height and aspect ratio
+        setArtworkWidth(parseFloat((artworkHeight * imgAspectRatio).toFixed(2)));
+      };
+      img.src = resizedImage;
+      
+      setArtworkImage(resizedImage);
+      
+      toast({
+        title: "Image Captured",
+        description: "Artwork image has been captured from webcam.",
+      });
+    } catch (error) {
+      console.error('Error processing webcam image:', error);
+      toast({
+        title: "Error Processing Image",
+        description: "There was a problem processing your webcam image. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle mat color selection
@@ -367,6 +471,11 @@ const PosSystem = () => {
     setSelectedGlassOption(glassOptionCatalog[0]);
     setSelectedServices([]);
     setViewMode('2d');
+    
+    // Turn off webcam if it's on
+    if (showWebcam) {
+      handleWebcamToggle();
+    }
   };
   
   return (
@@ -489,41 +598,95 @@ const PosSystem = () => {
             </div>
           </div>
           
-          <div 
-            className={`border border-dashed ${dragActive ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-4 text-center mb-4`}
-            onDragEnter={handleDrag}
-            onDragOver={handleDrag}
-            onDragLeave={handleDrag}
-            onDrop={handleDrop}
-          >
-            <input 
-              type="file" 
-              id="artwork-upload" 
-              className="hidden"
-              ref={fileInputRef}
-              onChange={handleFileInputChange}
-              accept="image/*"
-            />
-            <label htmlFor="artwork-upload" className="block cursor-pointer" onClick={handleButtonClick}>
-              <div className="flex flex-col items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-primary mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <p className="text-light-textSecondary dark:text-dark-textSecondary mb-1">
-                  {artworkImage ? 'Change artwork image' : 'Upload artwork image for preview'}
-                </p>
-                <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
-                  Drag & drop or click to browse
-                </p>
+          {/* Webcam UI */}
+          {showWebcam ? (
+            <div className="mb-4">
+              <div className="relative border border-light-border dark:border-dark-border rounded-lg overflow-hidden">
+                <video 
+                  ref={webcamRef}
+                  className="w-full h-auto"
+                  autoPlay
+                  playsInline
+                  muted
+                />
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+                  <button 
+                    className="px-4 py-2 bg-primary text-white rounded-full shadow-lg"
+                    onClick={captureImage}
+                  >
+                    Capture Image
+                  </button>
+                </div>
               </div>
-            </label>
-          </div>
+              <div className="mt-2 flex justify-end">
+                <button 
+                  className="px-3 py-1 bg-gray-200 dark:bg-dark-border text-light-text dark:text-dark-text rounded-md text-sm"
+                  onClick={handleWebcamToggle}
+                >
+                  Cancel
+                </button>
+              </div>
+              <canvas ref={canvasRef} className="hidden" />
+            </div>
+          ) : (
+            <div>
+              <div className="flex justify-between mb-2">
+                <h3 className="text-md font-medium">Artwork Image</h3>
+                <div className="flex space-x-2">
+                  <button 
+                    className="px-3 py-1 bg-primary text-white rounded-md text-sm flex items-center"
+                    onClick={handleWebcamToggle}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>Use Webcam</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div 
+                className={`border border-dashed ${dragActive ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-4 text-center mb-4`}
+                onDragEnter={handleDrag}
+                onDragOver={handleDrag}
+                onDragLeave={handleDrag}
+                onDrop={handleDrop}
+              >
+                <input 
+                  type="file" 
+                  id="artwork-upload" 
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileInputChange}
+                  accept="image/*"
+                />
+                <label htmlFor="artwork-upload" className="block cursor-pointer" onClick={handleButtonClick}>
+                  <div className="flex flex-col items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-primary mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                      {artworkImage ? 'Change artwork image' : 'Upload artwork image for preview'}
+                    </p>
+                    <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
+                      Drag & drop or click to browse
+                    </p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
           
-          {artworkImage && (
+          {artworkImage && !showWebcam && (
             <div className="mt-2 text-center">
               <p className="text-sm text-green-600 dark:text-green-400">
-                ✓ Artwork uploaded successfully
+                ✓ Artwork image ready for framing
               </p>
+              <img 
+                src={artworkImage} 
+                alt="Artwork Preview" 
+                className="max-h-48 mt-2 mx-auto rounded border border-light-border dark:border-dark-border"
+              />
             </div>
           )}
         </div>
@@ -708,7 +871,7 @@ const PosSystem = () => {
                   </div>
                 </div>
                 <div className="mt-2 text-sm text-right">
-                  ${Number(glassOption.price * 100).toFixed(2)}/sq ft
+                  ${parseFloat(String(glassOption.price)) * 100}/sq ft
                 </div>
               </div>
             ))}
