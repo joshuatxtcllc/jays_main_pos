@@ -52,172 +52,220 @@ export interface IStorage {
   updateWholesaleOrder(id: number, data: Partial<WholesaleOrder>): Promise<WholesaleOrder>;
 }
 
-export class MemStorage implements IStorage {
-  private customersStore: Map<number, Customer>;
-  private framesStore: Map<string, Frame>;
-  private matColorsStore: Map<string, MatColor>;
-  private glassOptionsStore: Map<string, GlassOption>;
-  private specialServicesStore: Map<string, SpecialService>;
-  private ordersStore: Map<number, Order>;
-  private orderSpecialServicesStore: Map<string, OrderSpecialService>;
-  private wholesaleOrdersStore: Map<number, WholesaleOrder>;
-  
-  private customerIdCounter: number;
-  private orderIdCounter: number;
-  private wholesaleOrderIdCounter: number;
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
-  constructor() {
-    this.customersStore = new Map();
-    this.framesStore = new Map();
-    this.matColorsStore = new Map();
-    this.glassOptionsStore = new Map();
-    this.specialServicesStore = new Map();
-    this.ordersStore = new Map();
-    this.orderSpecialServicesStore = new Map();
-    this.wholesaleOrdersStore = new Map();
-    
-    this.customerIdCounter = 1;
-    this.orderIdCounter = 1;
-    this.wholesaleOrderIdCounter = 1;
-    
-    // Initialize with sample data
-    this.initializeSampleData();
-  }
-
-  private initializeSampleData() {
-    // Add frames from catalog
-    frameCatalog.forEach(frame => {
-      this.framesStore.set(frame.id, frame);
-    });
-    
-    // Add mat colors from catalog
-    matColorCatalog.forEach(matColor => {
-      this.matColorsStore.set(matColor.id, matColor);
-    });
-    
-    // Add glass options from catalog
-    glassOptionCatalog.forEach(glassOption => {
-      this.glassOptionsStore.set(glassOption.id, glassOption);
-    });
-    
-    // Add special services from catalog
-    specialServicesCatalog.forEach(specialService => {
-      this.specialServicesStore.set(specialService.id, specialService);
-    });
-  }
-
+export class DatabaseStorage implements IStorage {
   // Customer methods
   async getCustomer(id: number): Promise<Customer | undefined> {
-    return this.customersStore.get(id);
+    const [customer] = await db.select().from(customers).where(eq(customers.id, id));
+    return customer || undefined;
   }
 
   async getCustomerByEmail(email: string): Promise<Customer | undefined> {
-    for (const customer of this.customersStore.values()) {
-      if (customer.email === email) {
-        return customer;
-      }
-    }
-    return undefined;
+    const [customer] = await db.select().from(customers).where(eq(customers.email, email));
+    return customer || undefined;
   }
   
   async getAllCustomers(): Promise<Customer[]> {
-    return Array.from(this.customersStore.values());
+    return await db.select().from(customers);
   }
 
   async createCustomer(customer: InsertCustomer): Promise<Customer> {
-    const id = this.customerIdCounter++;
-    const newCustomer: Customer = {
-      ...customer,
-      id,
-      createdAt: new Date()
-    };
-    this.customersStore.set(id, newCustomer);
+    const [newCustomer] = await db
+      .insert(customers)
+      .values({
+        ...customer,
+        createdAt: new Date()
+      })
+      .returning();
     return newCustomer;
   }
 
   // Frame methods
   async getFrame(id: string): Promise<Frame | undefined> {
-    return this.framesStore.get(id);
+    // First try to get from the database
+    const [frame] = await db.select().from(frames).where(eq(frames.id, id));
+    
+    // If not found in database, check catalog
+    if (!frame) {
+      const catalogFrame = frameCatalog.find(f => f.id === id);
+      if (catalogFrame) {
+        // Insert into database
+        await db.insert(frames).values(catalogFrame);
+        return catalogFrame;
+      }
+    }
+    
+    return frame || undefined;
   }
   
   async getAllFrames(): Promise<Frame[]> {
-    return Array.from(this.framesStore.values());
+    // First get frames from database
+    const dbFrames = await db.select().from(frames);
+    
+    // If no frames in database, initialize with catalog
+    if (dbFrames.length === 0) {
+      // Insert all catalog frames
+      await db.insert(frames).values(frameCatalog);
+      return frameCatalog;
+    }
+    
+    return dbFrames;
   }
   
   // Mat color methods
   async getMatColor(id: string): Promise<MatColor | undefined> {
-    return this.matColorsStore.get(id);
+    // First try to get from the database
+    const [matColor] = await db.select().from(matColors).where(eq(matColors.id, id));
+    
+    // If not found in database, check catalog
+    if (!matColor) {
+      const catalogMatColor = matColorCatalog.find(m => m.id === id);
+      if (catalogMatColor) {
+        // Insert into database
+        await db.insert(matColors).values(catalogMatColor);
+        return catalogMatColor;
+      }
+    }
+    
+    return matColor || undefined;
   }
   
   async getAllMatColors(): Promise<MatColor[]> {
-    return Array.from(this.matColorsStore.values());
+    // First get mat colors from database
+    const dbMatColors = await db.select().from(matColors);
+    
+    // If no mat colors in database, initialize with catalog
+    if (dbMatColors.length === 0) {
+      // Insert all catalog mat colors
+      await db.insert(matColors).values(matColorCatalog);
+      return matColorCatalog;
+    }
+    
+    return dbMatColors;
   }
   
   // Glass option methods
   async getGlassOption(id: string): Promise<GlassOption | undefined> {
-    return this.glassOptionsStore.get(id);
+    // First try to get from the database
+    const [glassOption] = await db.select().from(glassOptions).where(eq(glassOptions.id, id));
+    
+    // If not found in database, check catalog
+    if (!glassOption) {
+      const catalogGlassOption = glassOptionCatalog.find(g => g.id === id);
+      if (catalogGlassOption) {
+        // Insert into database
+        await db.insert(glassOptions).values(catalogGlassOption);
+        return catalogGlassOption;
+      }
+    }
+    
+    return glassOption || undefined;
   }
   
   async getAllGlassOptions(): Promise<GlassOption[]> {
-    return Array.from(this.glassOptionsStore.values());
+    // First get glass options from database
+    const dbGlassOptions = await db.select().from(glassOptions);
+    
+    // If no glass options in database, initialize with catalog
+    if (dbGlassOptions.length === 0) {
+      // Insert all catalog glass options
+      await db.insert(glassOptions).values(glassOptionCatalog);
+      return glassOptionCatalog;
+    }
+    
+    return dbGlassOptions;
   }
   
   // Special service methods
   async getSpecialService(id: string): Promise<SpecialService | undefined> {
-    return this.specialServicesStore.get(id);
+    // First try to get from the database
+    const [specialService] = await db.select().from(specialServices).where(eq(specialServices.id, id));
+    
+    // If not found in database, check catalog
+    if (!specialService) {
+      const catalogSpecialService = specialServicesCatalog.find(s => s.id === id);
+      if (catalogSpecialService) {
+        // Insert into database
+        await db.insert(specialServices).values(catalogSpecialService);
+        return catalogSpecialService;
+      }
+    }
+    
+    return specialService || undefined;
   }
   
   async getAllSpecialServices(): Promise<SpecialService[]> {
-    return Array.from(this.specialServicesStore.values());
+    // First get special services from database
+    const dbSpecialServices = await db.select().from(specialServices);
+    
+    // If no special services in database, initialize with catalog
+    if (dbSpecialServices.length === 0) {
+      // Insert all catalog special services
+      await db.insert(specialServices).values(specialServicesCatalog);
+      return specialServicesCatalog;
+    }
+    
+    return dbSpecialServices;
   }
   
   // Order methods
   async getOrder(id: number): Promise<Order | undefined> {
-    return this.ordersStore.get(id);
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order || undefined;
   }
   
   async getAllOrders(): Promise<Order[]> {
-    return Array.from(this.ordersStore.values());
+    return await db.select().from(orders);
   }
   
   async createOrder(order: InsertOrder): Promise<Order> {
-    const id = this.orderIdCounter++;
-    const newOrder: Order = {
-      ...order,
-      id,
-      status: 'pending',
-      createdAt: new Date()
-    };
-    this.ordersStore.set(id, newOrder);
+    const [newOrder] = await db
+      .insert(orders)
+      .values({
+        ...order,
+        status: 'pending',
+        createdAt: new Date()
+      })
+      .returning();
     return newOrder;
   }
   
   async updateOrder(id: number, data: Partial<Order>): Promise<Order> {
-    const order = this.ordersStore.get(id);
-    if (!order) {
+    const [updatedOrder] = await db
+      .update(orders)
+      .set(data)
+      .where(eq(orders.id, id))
+      .returning();
+    
+    if (!updatedOrder) {
       throw new Error('Order not found');
     }
     
-    const updatedOrder = { ...order, ...data };
-    this.ordersStore.set(id, updatedOrder);
     return updatedOrder;
   }
   
   // Order special service methods
   async createOrderSpecialService(orderSpecialService: InsertOrderSpecialService): Promise<OrderSpecialService> {
-    const key = `${orderSpecialService.orderId}-${orderSpecialService.specialServiceId}`;
-    this.orderSpecialServicesStore.set(key, orderSpecialService);
-    return orderSpecialService;
+    const [newOrderSpecialService] = await db
+      .insert(orderSpecialServices)
+      .values(orderSpecialService)
+      .returning();
+    return newOrderSpecialService;
   }
   
   async getOrderSpecialServices(orderId: number): Promise<SpecialService[]> {
-    const specialServiceIds = Array.from(this.orderSpecialServicesStore.values())
-      .filter(os => os.orderId === orderId)
-      .map(os => os.specialServiceId);
+    const orderSpecialServicesData = await db
+      .select()
+      .from(orderSpecialServices)
+      .where(eq(orderSpecialServices.orderId, orderId));
+    
+    const serviceIds = orderSpecialServicesData.map(os => os.specialServiceId);
     
     const result: SpecialService[] = [];
-    for (const id of specialServiceIds) {
-      const service = this.specialServicesStore.get(id);
+    for (const id of serviceIds) {
+      const service = await this.getSpecialService(id);
       if (service) {
         result.push(service);
       }
@@ -228,35 +276,39 @@ export class MemStorage implements IStorage {
   
   // Wholesale order methods
   async getWholesaleOrder(id: number): Promise<WholesaleOrder | undefined> {
-    return this.wholesaleOrdersStore.get(id);
+    const [wholesaleOrder] = await db.select().from(wholesaleOrders).where(eq(wholesaleOrders.id, id));
+    return wholesaleOrder || undefined;
   }
   
   async getAllWholesaleOrders(): Promise<WholesaleOrder[]> {
-    return Array.from(this.wholesaleOrdersStore.values());
+    return await db.select().from(wholesaleOrders);
   }
   
   async createWholesaleOrder(wholesaleOrder: InsertWholesaleOrder): Promise<WholesaleOrder> {
-    const id = this.wholesaleOrderIdCounter++;
-    const newWholesaleOrder: WholesaleOrder = {
-      ...wholesaleOrder,
-      id,
-      status: 'pending',
-      createdAt: new Date()
-    };
-    this.wholesaleOrdersStore.set(id, newWholesaleOrder);
+    const [newWholesaleOrder] = await db
+      .insert(wholesaleOrders)
+      .values({
+        ...wholesaleOrder,
+        status: 'pending',
+        createdAt: new Date()
+      })
+      .returning();
     return newWholesaleOrder;
   }
   
   async updateWholesaleOrder(id: number, data: Partial<WholesaleOrder>): Promise<WholesaleOrder> {
-    const wholesaleOrder = this.wholesaleOrdersStore.get(id);
-    if (!wholesaleOrder) {
+    const [updatedWholesaleOrder] = await db
+      .update(wholesaleOrders)
+      .set(data)
+      .where(eq(wholesaleOrders.id, id))
+      .returning();
+    
+    if (!updatedWholesaleOrder) {
       throw new Error('Wholesale order not found');
     }
     
-    const updatedWholesaleOrder = { ...wholesaleOrder, ...data };
-    this.wholesaleOrdersStore.set(id, updatedWholesaleOrder);
     return updatedWholesaleOrder;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
