@@ -1,0 +1,183 @@
+import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
+import './CustomFramingTool.css';
+
+// Import catalog data and utility functions
+import { frameCatalog, getFrameById } from '../data/frameCatalog';
+import { calculatePrice, fileToDataUrl, resizeImage } from '../utils/imageUtils';
+
+// Lazy load the 3D visualizer to improve initial load time
+const FrameVisualizer3D = lazy(() => import('./FrameVisualizer3D'));
+
+const CustomFramingTool = () => {
+  // State for uploaded image
+  const [image, setImage] = useState(null);
+  const [imageAspectRatio, setImageAspectRatio] = useState(1.33); // Default 4:3
+  const [dragActive, setDragActive] = useState(false);
+  
+  // State for frame options
+  const [frameStyle, setFrameStyle] = useState('larson-4512'); // Default frame
+  const [matColor, setMatColor] = useState('white');
+  const [frameWidth, setFrameWidth] = useState(2);
+  const [matWidth, setMatWidth] = useState(3);
+  
+  // State for artwork dimensions
+  const [dimensions, setDimensions] = useState({ width: 16, height: 20 }); // in inches
+  
+  // State for view mode (2D or 3D)
+  const [viewMode, setViewMode] = useState('2d');
+  
+  // State for filter options
+  const [materialFilter, setMaterialFilter] = useState('all');
+  const [manufacturerFilter, setManufacturerFilter] = useState('all');
+  
+  // State for price
+  const [totalPrice, setTotalPrice] = useState(0);
+  
+  // Reference to file input
+  const fileInputRef = useRef(null);
+  
+  // Get the selected frame from catalog
+  const selectedFrame = getFrameById(frameStyle);
+  
+  // Mat color options
+  const matColors = [
+    { id: 'white', name: 'White', color: '#FFFFFF' },
+    { id: 'black', name: 'Black', color: '#2C2C2C' },
+    { id: 'grey', name: 'Grey', color: '#ADADAD' },
+    { id: 'beige', name: 'Beige', color: '#F5F5DC' },
+  ];
+  
+  // Get all available materials and manufacturers for filters
+  const materials = ['all', ...new Set(frameCatalog.map(frame => frame.material))];
+  const manufacturers = ['all', ...new Set(frameCatalog.map(frame => frame.manufacturer))];
+  
+  // Filter frames based on selected filters
+  const filteredFrames = frameCatalog.filter(frame => {
+    const matchesMaterial = materialFilter === 'all' || frame.material === materialFilter;
+    const matchesManufacturer = manufacturerFilter === 'all' || frame.manufacturer === manufacturerFilter;
+    return matchesMaterial && matchesManufacturer;
+  });
+  
+  // Calculate price when options change
+  useEffect(() => {
+    if (selectedFrame) {
+      const price = calculatePrice(dimensions, selectedFrame, matWidth);
+      setTotalPrice(price);
+    }
+  }, [dimensions, selectedFrame, matWidth]);
+  
+  // Handle drag events
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+  
+  // Handle drop event
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFile(e.dataTransfer.files[0]);
+    }
+  };
+  
+  // Handle file input change
+  const handleChange = (e) => {
+    e.preventDefault();
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+  
+  // Process uploaded file
+  const handleFile = async (file) => {
+    // Check if file is an image
+    if (file.type.startsWith('image/')) {
+      try {
+        // Convert file to data URL
+        const dataUrl = await fileToDataUrl(file);
+        
+        // Resize image if it's too large
+        const resizedImage = await resizeImage(dataUrl, 1200, 1200);
+        
+        // Calculate aspect ratio
+        const img = new Image();
+        img.onload = () => {
+          const aspectRatio = img.width / img.height;
+          setImageAspectRatio(aspectRatio);
+          
+          // Update dimensions based on aspect ratio
+          setDimensions(prev => ({
+            width: Math.round(prev.height * aspectRatio * 10) / 10,
+            height: prev.height
+          }));
+        };
+        img.src = resizedImage;
+        
+        // Set the image
+        setImage(resizedImage);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        alert('There was an error processing your image. Please try another file.');
+      }
+    } else {
+      alert('Please upload an image file (JPEG, PNG, GIF, etc.)');
+    }
+  };
+  
+  // Handle button click for file input
+  const onButtonClick = () => {
+    fileInputRef.current.click();
+  };
+  
+  // Get the selected mat color
+  const getSelectedMatColor = () => {
+    const selected = matColors.find(color => color.id === matColor);
+    return selected ? selected.color : '#FFFFFF';
+  };
+  
+  // Handle dimension change
+  const handleDimensionChange = (dimension, value) => {
+    if (value <= 0) return;
+    
+    if (dimension === 'width') {
+      setDimensions({
+        width: value,
+        height: Math.round((value / imageAspectRatio) * 10) / 10
+      });
+    } else {
+      setDimensions({
+        width: Math.round((value * imageAspectRatio) * 10) / 10,
+        height: value
+      });
+    }
+  };
+  
+  return (
+    <div className="framing-tool-container">
+      <div className="framing-tool-header">
+        <h3>Design Your Custom Frame</h3>
+        <p>Upload your image, select frame options, and see a preview of your framed artwork</p>
+      </div>
+      
+      <div className="framing-tool-grid">
+        {/* Left Column - Image Upload & Dimensions */}
+        <div className="framing-tool-column upload-column">
+          <h3>1. Upload Your Image</h3>
+          <div 
+            className={`upload-area ${dragActive ? 'drag-active' : ''}`}
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+          >
+            {!image ? (
+              <div className="upload-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke

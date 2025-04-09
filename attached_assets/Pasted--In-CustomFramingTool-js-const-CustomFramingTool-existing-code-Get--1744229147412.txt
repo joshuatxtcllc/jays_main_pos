@@ -1,0 +1,59 @@
+// In CustomFramingTool.js
+const CustomFramingTool = () => {
+  // ... existing code ...
+  
+  // Get the selected frame from the catalog
+  const selectedFrame = frameCatalog.find(f => f.id === frameStyle);
+  
+  // ... existing code ...
+  
+  return (
+    // ... existing code ...
+    <div className="frame-preview">
+      {image ? (
+        <div className="frame-preview-container">
+          {/* Frame with corners */}
+          <div className="frame-with-corners">
+            {/* Top-left corner */}
+            <div className="frame-corner frame-corner-tl" 
+              style={{backgroundImage: `url(${selectedFrame.corner})`}} />
+            {/* Top edge */}
+            <div className="frame-edge frame-edge-top" 
+              style={{backgroundImage: `url(${selectedFrame.edgeTexture})`}} />
+            {/* Top-right corner */}
+            <div className="frame-corner frame-corner-tr" 
+              style={{backgroundImage: `url(${selectedFrame.corner})`}} />
+            
+            {/* Left edge */}
+            <div className="frame-edge frame-edge-left" 
+              style={{backgroundImage: `url(${selectedFrame.edgeTexture})`}} />
+            
+            {/* Center - actual artwork with mat */}
+            <div className="artwork-with-mat" 
+              style={{backgroundColor: getSelectedMatColor(), padding: `${matWidth}rem`}}>
+              <img src={image} alt="Your framed artwork" className="artwork-image" />
+            </div>
+            
+            {/* Right edge */}
+            <div className="frame-edge frame-edge-right" 
+              style={{backgroundImage: `url(${selectedFrame.edgeTexture})`}} />
+            
+            {/* Bottom-left corner */}
+            <div className="frame-corner frame-corner-bl" 
+              style={{backgroundImage: `url(${selectedFrame.corner})`}} />
+            {/* Bottom edge */}
+            <div className="frame-edge frame-edge-bottom" 
+              style={{backgroundImage: `url(${selectedFrame.edgeTexture})`}} />
+            {/* Bottom-right corner */}
+            <div className="frame-corner frame-corner-br" 
+              style={{backgroundImage: `url(${selectedFrame.corner})`}} />
+          </div>
+        </div>
+      ) : (
+        <div className="preview-placeholder">
+          <p>Upload an image to see preview</p>
+        </div>
+      )}
+    </div>
+  );
+};

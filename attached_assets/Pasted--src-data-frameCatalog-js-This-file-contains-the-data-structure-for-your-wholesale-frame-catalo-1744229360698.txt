@@ -1,0 +1,105 @@
+// src/data/frameCatalog.js
+// This file contains the data structure for your wholesale frame catalog
+
+export const frameCatalog = [
+  {
+    id: "larson-4512",
+    name: "Larson Gold Leaf",
+    manufacturer: "Larson-Juhl",
+    material: "wood",
+    finish: "gold-leaf",
+    width: 2.5,  // in inches
+    depth: 1.75, // in inches
+    price: 12.99, // per foot
+    catalogImage: "/assets/frames/catalog/larson-4512.jpg",
+    edgeTexture: "/assets/frames/edges/larson-4512-edge.jpg",
+    corner: "/assets/frames/corners/larson-4512-corner.jpg" 
+  },
+  {
+    id: "nielsen-117",
+    name: "Nielsen Florentine",
+    manufacturer: "Nielsen",
+    material: "metal",
+    finish: "silver",
+    width: 1.25,  // in inches
+    depth: 0.875, // in inches
+    price: 8.99, // per foot
+    catalogImage: "/assets/frames/catalog/nielsen-117.jpg",
+    edgeTexture: "/assets/frames/edges/nielsen-117-edge.jpg",
+    corner: "/assets/frames/corners/nielsen-117-corner.jpg" 
+  },
+  {
+    id: "roma-250",
+    name: "Roma Dark Walnut",
+    manufacturer: "Roma Moulding",
+    material: "wood",
+    finish: "walnut",
+    width: 3.0,  // in inches
+    depth: 2.0, // in inches
+    price: 14.50, // per foot
+    catalogImage: "/assets/frames/catalog/roma-250.jpg",
+    edgeTexture: "/assets/frames/edges/roma-250-edge.jpg",
+    corner: "/assets/frames/corners/roma-250-corner.jpg" 
+  },
+  {
+    id: "omega-223",
+    name: "Omega Black Satin",
+    manufacturer: "Omega Moulding",
+    material: "wood",
+    finish: "black-satin",
+    width: 1.75,  // in inches
+    depth: 1.5, // in inches
+    price: 9.75, // per foot
+    catalogImage: "/assets/frames/catalog/omega-223.jpg",
+    edgeTexture: "/assets/frames/edges/omega-223-edge.jpg",
+    corner: "/assets/frames/corners/omega-223-corner.jpg" 
+  },
+  {
+    id: "bella-305",
+    name: "Bella White Simple",
+    manufacturer: "Bella Moulding",
+    material: "composite",
+    finish: "white",
+    width: 1.0,  // in inches
+    depth: 1.0, // in inches
+    price: 6.50, // per foot
+    catalogImage: "/assets/frames/catalog/bella-305.jpg",
+    edgeTexture: "/assets/frames/edges/bella-305-edge.jpg",
+    corner: "/assets/frames/corners/bella-305-corner.jpg" 
+  },
+  {
+    id: "larson-885",
+    name: "Larson Ornate Gold",
+    manufacturer: "Larson-Juhl",
+    material: "wood",
+    finish: "ornate-gold",
+    width: 3.5,  // in inches
+    depth: 2.25, // in inches
+    price: 18.99, // per foot
+    catalogImage: "/assets/frames/catalog/larson-885.jpg",
+    edgeTexture: "/assets/frames/edges/larson-885-edge.jpg",
+    corner: "/assets/frames/corners/larson-885-corner.jpg" 
+  }
+];
+
+// Helper function to get frame details by ID
+export const getFrameById = (frameId) => {
+  return frameCatalog.find(frame => frame.id === frameId) || null;
+};
+
+// Helper function to get frames by material
+export const getFramesByMaterial = (material) => {
+  return frameCatalog.filter(frame => frame.material === material);
+};
+
+// Helper function to get all available materials
+export const getAvailableMaterials = () => {
+  const materials = new Set(frameCatalog.map(frame => frame.material));
+  return Array.from(materials);
+};
+
+// Helper function to get all available manufacturers
+export const getAvailableManufacturers = () => {
+  const manufacturers = new Set(frameCatalog.map(frame => frame.manufacturer));
+  return Array.from(manufacturers);
+};

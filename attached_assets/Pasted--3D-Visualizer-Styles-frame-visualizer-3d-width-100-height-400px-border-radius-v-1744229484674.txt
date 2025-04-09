@@ -1,0 +1,127 @@
+/* 3D Visualizer Styles */
+.frame-visualizer-3d {
+  width: 100%;
+  height: 400px;
+  border-radius: var(--border-radius-md, 8px);
+  overflow: hidden;
+  position: relative;
+  background-color: #f5f5f5;
+  box-shadow: 0 4px 12px var(--shadow-color, rgba(0, 0, 0, 0.1));
+}
+
+/* Dark theme styles */
+.dark-theme .frame-visualizer-3d {
+  background-color: #1a1a2e;
+}
+
+/* Loading state */
+.frame-visualizer-3d.loading::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.frame-visualizer-3d.loading::after {
+  content: 'Loading 3D View...';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-weight: 500;
+  z-index: 11;
+}
+
+/* Controls help overlay */
+.controls-help {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.frame-visualizer-3d:hover .controls-help {
+  opacity: 0.3;
+}
+
+/* Placeholder for when no image or frame is selected */
+.frame-visualizer-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  color: #666;
+}
+
+.dark-theme .frame-visualizer-placeholder {
+  background-color: #2a2a3a;
+  color: #aaa;
+}
+
+.frame-visualizer-placeholder svg {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+/* Error state */
+.frame-visualizer-error {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #fff5f5;
+  color: #e53e3e;
+  padding: 20px;
+  text-align: center;
+}
+
+.dark-theme .frame-visualizer-error {
+  background-color: #2d1a1a;
+}
+
+/* Helper classes for responsive adjustments */
+@media (max-width: 768px) {
+  .frame-visualizer-3d {
+    height: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .frame-visualizer-3d {
+    height: 250px;
+  }
+  
+  .controls-help {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+}

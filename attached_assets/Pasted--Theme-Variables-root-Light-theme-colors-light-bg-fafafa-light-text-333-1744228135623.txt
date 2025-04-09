@@ -1,0 +1,312 @@
+/* Theme Variables */
+:root {
+  /* Light theme colors */
+  --light-bg: #fafafa;
+  --light-text: #333;
+  --light-text-secondary: #666;
+  --light-border: #e0e0e0;
+  --light-card-bg: #ffffff;
+  
+  /* Dark theme colors */
+  --dark-bg: #1f1f2e;
+  --dark-text: #f5f5f5;
+  --dark-text-secondary: #b0b0b0;
+  --dark-border: #3a3a4a;
+  --dark-card-bg: #2a2a3a;
+  
+  /* Accent colors */
+  --accent-teal: #00ADB5;
+  --accent-pink: #E31E6A;
+  --accent-green: #21C685;
+  
+  /* Common */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 2rem;
+  --spacing-lg: 4rem;
+  --spacing-xl: 6rem;
+  
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 16px;
+  
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+/* Theme Application */
+.light-theme {
+  --bg-primary: var(--light-bg);
+  --text-primary: var(--light-text);
+  --text-secondary: var(--light-text-secondary);
+  --border-color: var(--light-border);
+  --card-bg: var(--light-card-bg);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-theme {
+  --bg-primary: var(--dark-bg);
+  --text-primary: var(--dark-text);
+  --text-secondary: var(--dark-text-secondary);
+  --border-color: var(--dark-border);
+  --card-bg: var(--dark-card-bg);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+}
+
+body.light-theme {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body.dark-theme {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* App Container */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Main Content */
+main {
+  flex: 1;
+}
+
+/* Section Styles */
+.section {
+  padding: var(--spacing-lg) 0;
+}
+
+.section-title {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+  text-align: center;
+  position: relative;
+  display: inline-block;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.light-theme .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background: var(--accent-teal);
+  border-radius: 3px;
+}
+
+.dark-theme .section-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background: var(--accent-teal);
+  border-radius: 3px;
+  box-shadow: 0 0 10px var(--accent-teal), 0 0 20px var(--accent-teal);
+}
+
+/* Button Styles */
+.btn {
+  padding: 12px 28px;
+  border-radius: var(--border-radius-md);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: none;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--accent-teal);
+  color: white;
+}
+
+.btn-secondary {
+  background-color: var(--accent-pink);
+  color: white;
+}
+
+.btn-tertiary {
+  background-color: var(--accent-green);
+  color: white;
+}
+
+.light-theme .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dark-theme .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 12px var(--accent-teal), 0 0 20px rgba(0, 173, 181, 0.4);
+}
+
+.dark-theme .btn-primary:hover {
+  box-shadow: 0 0 12px var(--accent-teal), 0 0 20px rgba(0, 173, 181, 0.4);
+}
+
+.dark-theme .btn-secondary:hover {
+  box-shadow: 0 0 12px var(--accent-pink), 0 0 20px rgba(227, 30, 106, 0.4);
+}
+
+.dark-theme .btn-tertiary:hover {
+  box-shadow: 0 0 12px var(--accent-green), 0 0 20px rgba(33, 198, 133, 0.4);
+}
+
+/* Card Styles */
+.card {
+  background-color: var(--card-bg);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.light-theme .card {
+  box-shadow: 0 4px 12px var(--shadow-color);
+}
+
+.dark-theme .card {
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.light-theme .card:hover {
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+.dark-theme .card:hover {
+  box-shadow: 0 8px 28px var(--shadow-color), 0 0 12px rgba(0, 173, 181, 0.2);
+}
+
+/* Form Controls */
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  font-weight: 500;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px 16px;
+  font-family: 'Poppins', sans-serif;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  color: var(--text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--accent-teal);
+}
+
+.light-theme .form-control:focus {
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.2);
+}
+
+.dark-theme .form-control:focus {
+  box-shadow: 0 0 0 3px rgba(0, 173, 181, 0.2), 0 0 8px rgba(0, 173, 181, 0.2);
+}
+
+/* Grid Layout */
+.grid {
+  display: grid;
+  gap: var(--spacing-md);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .grid-4 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-3, .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .section {
+    padding: var(--spacing-md) 0;
+  }
+  
+  .section-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .grid-2, .grid-3, .grid-4 {
+    grid-template-columns: 1fr;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Neon glow effects for dark mode */
+.dark-theme .neon-glow-teal {
+  text-shadow: 0 0 10px var(--accent-teal), 0 0 20px var(--accent-teal);
+}
+
+.dark-theme .neon-glow-pink {
+  text-shadow: 0 0 10px var(--accent-pink), 0 0 20px var(--accent-pink);
+}
+
+.dark-theme .neon-glow-green {
+  text-shadow: 0 0 10px var(--accent-green), 0 0 20px var(--accent-green);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-normal);
+}
+
+.slide-up {
+  animation: slideUp var(--transition-normal);
+}

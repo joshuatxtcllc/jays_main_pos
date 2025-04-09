@@ -1,0 +1,142 @@
+// src/utils/imageUtils.js
+// Utility functions for working with images in the framing tool
+
+/**
+ * Extracts frame edge from catalog image for CSS border-image
+ * Note: In a production environment, you would use a server-side
+ * image processing service to actually extract edges from the catalog images
+ * 
+ * @param {string} catalogImageUrl - URL to the catalog image
+ * @param {number} frameWidth - Width of the frame in inches
+ * @return {string} CSS border-image property value
+ */
+export const extractFrameEdge = (catalogImageUrl, frameWidth) => {
+  // This is a simplified implementation that just returns the CSS value
+  // In a real app, you would process the image to extract an edge strip
+  return `url(${catalogImageUrl}) ${Math.round(frameWidth * 30)}px stretch`;
+};
+
+/**
+ * Creates a filename for an edge texture based on the catalog image
+ * 
+ * @param {string} catalogImageUrl - URL to the catalog image
+ * @return {string} URL for the edge texture
+ */
+export const getEdgeTextureUrl = (catalogImageUrl) => {
+  // Extract the base filename without extension
+  const parts = catalogImageUrl.split('/');
+  const filename = parts[parts.length - 1];
+  const baseName = filename.split('.')[0];
+  
+  // Return the edge texture URL
+  return `/assets/frames/edges/${baseName}-edge.jpg`;
+};
+
+/**
+ * Calculates the dimensions of a framed artwork
+ * 
+ * @param {Object} dimensions - Width and height of the artwork in inches
+ * @param {number} frameWidth - Width of the frame in inches
+ * @param {number} matWidth - Width of the mat in inches
+ * @return {Object} Outer dimensions of the framed piece
+ */
+export const calculateFramedDimensions = (dimensions, frameWidth, matWidth) => {
+  const totalFrameWidth = frameWidth * 2; // Frame on both sides
+  const totalMatWidth = matWidth * 2; // Mat on both sides
+  
+  return {
+    width: dimensions.width + totalFrameWidth + totalMatWidth,
+    height: dimensions.height + totalFrameWidth + totalMatWidth
+  };
+};
+
+/**
+ * Calculates the price of a framed artwork
+ * 
+ * @param {Object} dimensions - Width and height of the artwork in inches
+ * @param {Object} frame - Frame object from the catalog
+ * @param {number} matWidth - Width of the mat in inches
+ * @return {number} Total price of the framed artwork
+ */
+export const calculatePrice = (dimensions, frame, matWidth) => {
+  if (!frame) return 0;
+  
+  // Calculate perimeter in feet (converting from inches)
+  const perimeter = (dimensions.width + dimensions.height) * 2 / 12;
+  
+  // Frame price based on perimeter
+  const framePrice = perimeter * frame.price;
+  
+  // Mat price based on area (typically priced per square foot)
+  // Calculating the mat area including the artwork dimensions plus mat border
+  const matArea = ((dimensions.width + (matWidth * 2)) * (dimensions.height + (matWidth * 2))) / 144; // Convert sq inches to sq feet
+  const matPrice = matArea * 5; // Assuming $5 per square foot for mat
+  
+  // Add additional costs like backing, glazing, etc.
+  const backingPrice = (dimensions.width * dimensions.height) / 144 * 3; // $3 per sq foot for backing
+  const glazingPrice = (dimensions.width * dimensions.height) / 144 * 8; // $8 per sq foot for regular glass
+  
+  // Labor cost (often based on perimeter)
+  const laborCost = perimeter * 4; // $4 per foot for labor
+  
+  const totalPrice = framePrice + matPrice + backingPrice + glazingPrice + laborCost;
+  
+  return parseFloat(totalPrice.toFixed(2));
+};
+
+/**
+ * Convert an uploaded file to a data URL
+ * 
+ * @param {File} file - The uploaded image file
+ * @return {Promise<string>} A promise that resolves to the data URL
+ */
+export const fileToDataUrl = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target.result);
+    reader.onerror = (e) => reject(e);
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Resize an image to fit within maximum dimensions while maintaining aspect ratio
+ * 
+ * @param {string} dataUrl - Data URL of the image
+ * @param {number} maxWidth - Maximum width in pixels
+ * @param {number} maxHeight - Maximum height in pixels
+ * @return {Promise<string>} A promise that resolves to the resized data URL
+ */
+export const resizeImage = (dataUrl, maxWidth, maxHeight) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Calculate new dimensions
+      let width = img.width;
+      let height = img.height;
+      
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+      
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height;
+        height = maxHeight;
+      }
+      
+      // Create canvas and resize image
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      
+      // Convert canvas to data URL
+      resolve(canvas.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+};

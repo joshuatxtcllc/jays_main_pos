@@ -1,0 +1,196 @@
+import React, { useRef, useState, useEffect } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, useTexture, useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
+import './FrameVisualizer3D.css';
+
+/**
+ * Frame model component that renders a 3D frame with the artwork texture
+ */
+const FrameModel = ({ frame, imageTexture, dimensions, matColor, matWidth }) => {
+  const frameModelRef = useRef();
+  
+  // Load the 3D model - using a standard frame model
+  const { scene } = useGLTF('/assets/models/standard-frame.glb');
+  
+  // Load textures from catalog images
+  const frameTexture = useTexture(frame.catalogImage);
+  const frameEdge = useTexture(frame.edgeTexture || frame.catalogImage);
+  
+  // Setup the frame material and dimensions
+  useEffect(() => {
+    if (scene) {
+      // Clone the scene to avoid modifying the cached original
+      const frameModel = scene.clone();
+      
+      // Apply the frame texture to relevant parts of the model
+      frameModel.traverse(child => {
+        if (child.isMesh) {
+          // Create a new material with the frame texture
+          const newMaterial = new THREE.MeshStandardMaterial({
+            map: child.name.includes('edge') ? frameEdge : frameTexture,
+            roughness: 0.6,
+            metalness: frame.material === 'metal' ? 0.8 : 0.2,
+          });
+          
+          // Apply the new material
+          child.material = newMaterial;
+        }
+      });
+      
+      // Scale the model based on dimensions
+      const { width, height } = dimensions;
+      const aspectRatio = width / height;
+      
+      // Set the scale to match the desired dimensions
+      // Using arbitrary scale factor for visualization purposes
+      const scale = Math.max(width, height) / 20;
+      frameModel.scale.set(scale * aspectRatio, scale, frame.depth / 10);
+      
+      // Set the clone to our ref for later use
+      frameModelRef.current = frameModel;
+    }
+  }, [scene, frameTexture, frameEdge, dimensions, frame]);
+  
+  // Function to create a plane mesh with the artwork texture
+  const createArtworkPlane = () => {
+    if (!imageTexture) return null;
+    
+    // Create a texture from the data URL
+    const texture = new THREE.TextureLoader().load(imageTexture);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    
+    // Create a material with the texture
+    const material = new THREE.MeshBasicMaterial({ map: texture });
+    
+    // Calculate dimensions
+    const { width, height } = dimensions;
+    const aspectRatio = width / height;
+    
+    // Create the plane geometry (scaled down for 3D scene)
+    const geometry = new THREE.PlaneGeometry(10 * aspectRatio, 10);
+    
+    // Create the mesh
+    const mesh = new THREE.Mesh(geometry, material);
+    
+    // Position it slightly behind the frame
+    mesh.position.z = -0.2;
+    
+    return mesh;
+  };
+  
+  // Create a colored plane for the mat
+  const createMatPlane = () => {
+    // Convert mat color string to hex
+    const matColorHex = matColor === 'white' ? 0xFFFFFF : 
+                         matColor === 'black' ? 0x000000 :
+                         matColor === 'grey' ? 0xADADAD : 0xF5F5DC; // beige
+                         
+    // Create mat material
+    const matMaterial = new THREE.MeshBasicMaterial({ color: matColorHex });
+    
+    // Calculate dimensions - slightly larger than artwork
+    const { width, height } = dimensions;
+    const aspectRatio = width / height;
+    const matScale = 1 + (matWidth / Math.min(width, height));
+    
+    // Create the geometry
+    const geometry = new THREE.PlaneGeometry(10 * aspectRatio * matScale, 10 * matScale);
+    
+    // Create the mesh
+    const mesh = new THREE.Mesh(geometry, matMaterial);
+    
+    // Position it slightly behind the artwork
+    mesh.position.z = -0.1;
+    
+    return mesh;
+  };
+  
+  return (
+    <>
+      {/* If we have a frame model, show it */}
+      {frameModelRef.current && <primitive object={frameModelRef.current} position={[0, 0, 0]} />}
+      
+      {/* Create a mat plane if we have a mat width */}
+      {matWidth > 0 && createMatPlane()}
+      
+      {/* Create an artwork plane if we have an image */}
+      {imageTexture && createArtworkPlane()}
+    </>
+  );
+};
+
+/**
+ * Scene setup and lighting component
+ */
+const SceneSetup = ({ children }) => {
+  return (
+    <>
+      {/* Basic ambient light for overall illumination */}
+      <ambientLight intensity={0.5} />
+      
+      {/* Main spotlight from the front-top-right */}
+      <spotLight 
+        position={[10, 10, 10]} 
+        angle={0.15} 
+        penumbra={1} 
+        intensity={0.8} 
+        castShadow 
+      />
+      
+      {/* Fill light from the left */}
+      <pointLight position={[-10, 5, 5]} intensity={0.5} />
+      
+      {/* Render the passed children (our frame model) */}
+      {children}
+    </>
+  );
+};
+
+/**
+ * Main Frame Visualizer 3D component
+ */
+const FrameVisualizer3D = ({ 
+  selectedFrame, 
+  imageUrl, 
+  dimensions = { width: 16, height: 20 }, 
+  matColor = 'white', 
+  matWidth = 2 
+}) => {
+  return (
+    <div className="frame-visualizer-3d">
+      <Canvas 
+        shadows 
+        camera={{ position: [0, 0, 20], fov: 45 }}
+        style={{ background: '#f5f5f5' }}
+      >
+        <SceneSetup>
+          {selectedFrame && (
+            <FrameModel 
+              frame={selectedFrame}
+              imageTexture={imageUrl}
+              dimensions={dimensions}
+              matColor={matColor}
+              matWidth={matWidth}
+            />
+          )}
+        </SceneSetup>
+        
+        {/* Add orbit controls for interactivity */}
+        <OrbitControls 
+          enableZoom={true} 
+          enablePan={true} 
+          maxPolarAngle={Math.PI / 2} 
+          minPolarAngle={Math.PI / 4}
+        />
+      </Canvas>
+      
+      {/* Overlay help text */}
+      <div className="controls-help">
+        <p>Drag to rotate • Scroll to zoom</p>
+      </div>
+    </div>
+  );
+};
+
+export default FrameVisualizer3D;
