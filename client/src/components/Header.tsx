@@ -41,28 +41,28 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
         
         <nav className="hidden md:flex space-x-6">
           <Link href="/">
-            <a className={cn(
-              "font-medium hover:text-primary transition-colors",
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
               location === "/" && "text-primary"
             )}>
               POS System
-            </a>
+            </span>
           </Link>
           <Link href="/orders">
-            <a className={cn(
-              "font-medium hover:text-primary transition-colors",
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
               location === "/orders" && "text-primary"
             )}>
               Orders
-            </a>
+            </span>
           </Link>
           <Link href="/dashboard">
-            <a className={cn(
-              "font-medium hover:text-primary transition-colors",
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
               location === "/dashboard" && "text-primary"
             )}>
               Dashboard
-            </a>
+            </span>
           </Link>
         </nav>
         
@@ -145,28 +145,28 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
       )}>
         <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg">
           <Link href="/">
-            <a className={cn(
-              "py-2 font-medium hover:text-primary transition-colors",
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
               location === "/" && "text-primary"
             )}>
               POS System
-            </a>
+            </span>
           </Link>
           <Link href="/orders">
-            <a className={cn(
-              "py-2 font-medium hover:text-primary transition-colors",
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
               location === "/orders" && "text-primary"
             )}>
               Orders
-            </a>
+            </span>
           </Link>
           <Link href="/dashboard">
-            <a className={cn(
-              "py-2 font-medium hover:text-primary transition-colors",
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
               location === "/dashboard" && "text-primary"
             )}>
               Dashboard
-            </a>
+            </span>
           </Link>
         </nav>
       </div>
