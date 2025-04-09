@@ -34,6 +34,8 @@ const PosSystem = () => {
   const [artworkWidth, setArtworkWidth] = useState<number>(16);
   const [artworkHeight, setArtworkHeight] = useState<number>(20);
   const [artworkImage, setArtworkImage] = useState<string | null>(null);
+  const [artworkDescription, setArtworkDescription] = useState<string>('');
+  const [artworkType, setArtworkType] = useState<string>('print');
   const [aspectRatio, setAspectRatio] = useState<number>(0.8); // Default 4:5
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
@@ -264,12 +266,14 @@ const PosSystem = () => {
         frameId: selectedFrame.id,
         matColorId: selectedMatColor.id,
         glassOptionId: selectedGlassOption.id,
-        artworkWidth,
-        artworkHeight,
-        matWidth,
-        subtotal: 0, // Will be calculated on the server
-        tax: 0, // Will be calculated on the server
-        total: 0, // Will be calculated on the server
+        artworkWidth: artworkWidth.toString(),
+        artworkHeight: artworkHeight.toString(),
+        matWidth: matWidth.toString(),
+        artworkDescription,
+        artworkType,
+        subtotal: "0", // Will be calculated on the server
+        tax: "0", // Will be calculated on the server
+        total: "0", // Will be calculated on the server
         artworkImage
       };
       
@@ -350,6 +354,8 @@ const PosSystem = () => {
     setArtworkWidth(16);
     setArtworkHeight(20);
     setArtworkImage(null);
+    setArtworkDescription('');
+    setArtworkType('print');
     setAspectRatio(0.8);
     setSelectedFrame(null);
     setMaterialFilter('all');
@@ -449,6 +455,36 @@ const PosSystem = () => {
                 min="0.125"
                 value={artworkHeight}
                 onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Art Type
+              </label>
+              <select
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={artworkType}
+                onChange={(e) => setArtworkType(e.target.value)}
+              >
+                <option value="print">Print</option>
+                <option value="original">Original Artwork</option>
+                <option value="photo">Photograph</option>
+                <option value="document">Certificate/Document</option>
+                <option value="poster">Poster</option>
+                <option value="memorabilia">Memorabilia</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Description
+              </label>
+              <input 
+                type="text" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                placeholder="Enter artwork description"
+                value={artworkDescription}
+                onChange={(e) => setArtworkDescription(e.target.value)}
               />
             </div>
           </div>
@@ -672,7 +708,7 @@ const PosSystem = () => {
                   </div>
                 </div>
                 <div className="mt-2 text-sm text-right">
-                  +${(glassOption.price * 100).toFixed(2)}/sq ft
+                  ${Number(glassOption.price * 100).toFixed(2)}/sq ft
                 </div>
               </div>
             ))}
