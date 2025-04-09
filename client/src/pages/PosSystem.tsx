@@ -1,0 +1,770 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Frame, 
+  MatColor, 
+  GlassOption, 
+  SpecialService, 
+  InsertOrder, 
+  InsertCustomer 
+} from '@shared/schema';
+import { frameCatalog, filterFrames, getUniqueManufacturers, getUniqueMaterials } from '@/data/frameCatalog';
+import { matColorCatalog, getMatColorById } from '@/data/matColors';
+import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '@/data/glassOptions';
+import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
+import { apiRequest } from '@/lib/queryClient';
+import FrameVisualizer from '@/components/FrameVisualizer';
+import FrameVisualizer3D from '@/components/FrameVisualizer3D';
+import SpecialServices from '@/components/SpecialServices';
+import OrderSummary from '@/components/OrderSummary';
+
+const PosSystem = () => {
+  const { toast } = useToast();
+  
+  // Customer Information
+  const [customer, setCustomer] = useState<InsertCustomer>({
+    name: '',
+    email: '',
+    phone: '',
+    address: ''
+  });
+  
+  // Artwork Details
+  const [artworkWidth, setArtworkWidth] = useState<number>(16);
+  const [artworkHeight, setArtworkHeight] = useState<number>(20);
+  const [artworkImage, setArtworkImage] = useState<string | null>(null);
+  const [aspectRatio, setAspectRatio] = useState<number>(0.8); // Default 4:5
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragActive, setDragActive] = useState<boolean>(false);
+  
+  // Frame Selection
+  const [selectedFrame, setSelectedFrame] = useState<Frame | null>(null);
+  const [materialFilter, setMaterialFilter] = useState<string>('all');
+  const [manufacturerFilter, setManufacturerFilter] = useState<string>('all');
+  const [widthFilter, setWidthFilter] = useState<string>('all');
+  const [priceFilter, setPriceFilter] = useState<string>('all');
+  
+  // Mat Options
+  const [selectedMatColor, setSelectedMatColor] = useState<MatColor>(matColorCatalog[0]);
+  const [matWidth, setMatWidth] = useState<number>(2);
+  
+  // Glass Options
+  const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[0]);
+  
+  // Special Services
+  const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
+  
+  // View Mode
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  
+  // Filtered Frames
+  const filteredFrames = filterFrames(
+    materialFilter,
+    manufacturerFilter,
+    widthFilter,
+    priceFilter
+  );
+  
+  // Manufacturers and Materials for filters
+  const manufacturers = getUniqueManufacturers();
+  const materials = getUniqueMaterials();
+  
+  // Handle file upload
+  const handleFileUpload = async (file: File) => {
+    try {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: "Please upload an image file (JPG, PNG, etc.)",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Convert file to data URL
+      const dataUrl = await fileToDataUrl(file);
+      
+      // Resize image if it's too large
+      const resizedImage = await resizeImage(dataUrl, 1200, 1200);
+      
+      // Create an image element to get dimensions
+      const img = new Image();
+      img.onload = () => {
+        const imgAspectRatio = img.width / img.height;
+        setAspectRatio(imgAspectRatio);
+        
+        // Update width based on the height and aspect ratio
+        setArtworkWidth(parseFloat((artworkHeight * imgAspectRatio).toFixed(2)));
+      };
+      img.src = resizedImage;
+      
+      setArtworkImage(resizedImage);
+    } catch (error) {
+      console.error('Error processing image:', error);
+      toast({
+        title: "Error processing image",
+        description: "There was a problem processing your image. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Handle drag events
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+  
+  // Handle drop event
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
+  };
+  
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(e.target.files[0]);
+    }
+  };
+  
+  // Handle button click for file input
+  const handleButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  // Handle mat color selection
+  const handleMatColorChange = (id: string) => {
+    const matColor = getMatColorById(id);
+    if (matColor) {
+      setSelectedMatColor(matColor);
+    }
+  };
+  
+  // Handle mat width change
+  const handleMatWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMatWidth(parseFloat(e.target.value));
+  };
+  
+  // Handle glass option selection
+  const handleGlassOptionChange = (id: string) => {
+    const glassOption = getGlassOptionById(id);
+    if (glassOption) {
+      setSelectedGlassOption(glassOption);
+    }
+  };
+  
+  // Handle dimension changes
+  const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
+    if (value <= 0) return;
+    
+    if (dimension === 'width') {
+      setArtworkWidth(value);
+      setArtworkHeight(parseFloat((value / aspectRatio).toFixed(2)));
+    } else {
+      setArtworkHeight(value);
+      setArtworkWidth(parseFloat((value * aspectRatio).toFixed(2)));
+    }
+  };
+  
+  // Create order mutation
+  const createOrderMutation = useMutation({
+    mutationFn: async (orderData: InsertOrder) => {
+      const response = await apiRequest('POST', '/api/orders', orderData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Order Created",
+        description: "The order has been successfully created.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Create Order",
+        description: error.message || "There was an error creating the order.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Create wholesale order mutation
+  const createWholesaleOrderMutation = useMutation({
+    mutationFn: async (orderId: number) => {
+      const response = await apiRequest('POST', '/api/wholesale-orders', { orderId });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Wholesale Order Created",
+        description: "The wholesale order has been successfully created.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Failed to Create Wholesale Order",
+        description: error.message || "There was an error creating the wholesale order.",
+        variant: "destructive"
+      });
+    }
+  });
+  
+  // Create customer mutation
+  const createCustomerMutation = useMutation({
+    mutationFn: async (customerData: InsertCustomer) => {
+      const response = await apiRequest('POST', '/api/customers', customerData);
+      return response.json();
+    }
+  });
+  
+  // Handle create order
+  const handleCreateOrder = async () => {
+    if (!selectedFrame || !selectedMatColor || !selectedGlassOption) {
+      toast({
+        title: "Incomplete Order",
+        description: "Please select a frame, mat color, and glass option.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!customer.name) {
+      toast({
+        title: "Customer Information Required",
+        description: "Please enter customer name.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // First create or get customer
+      const customerResponse = await createCustomerMutation.mutateAsync(customer);
+      
+      // Calculate prices for the order
+      const framePrice = selectedFrame.price;
+      const matPrice = selectedMatColor.price;
+      const glassPrice = selectedGlassOption.price;
+      
+      // Prepare order data
+      const orderData: InsertOrder = {
+        customerId: customerResponse.id,
+        frameId: selectedFrame.id,
+        matColorId: selectedMatColor.id,
+        glassOptionId: selectedGlassOption.id,
+        artworkWidth,
+        artworkHeight,
+        matWidth,
+        subtotal: 0, // Will be calculated on the server
+        tax: 0, // Will be calculated on the server
+        total: 0, // Will be calculated on the server
+        artworkImage
+      };
+      
+      // Create the order
+      const orderResponse = await createOrderMutation.mutateAsync(orderData);
+      
+      // Create special service relationships
+      if (selectedServices.length > 0) {
+        await Promise.all(selectedServices.map(service => 
+          apiRequest('POST', '/api/order-special-services', {
+            orderId: orderResponse.id,
+            specialServiceId: service.id
+          })
+        ));
+      }
+      
+      toast({
+        title: "Order Created Successfully",
+        description: `Order #${orderResponse.id} has been created.`,
+      });
+      
+      // Reset form
+      resetForm();
+      
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: "Error Creating Order",
+        description: "There was an error creating the order. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Handle save quote
+  const handleSaveQuote = () => {
+    toast({
+      title: "Quote Saved",
+      description: "The quote has been saved for future reference.",
+    });
+  };
+  
+  // Handle create wholesale order
+  const handleCreateWholesaleOrder = async () => {
+    if (!selectedFrame) {
+      toast({
+        title: "Frame Required",
+        description: "Please select a frame to create a wholesale order.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // For demo purposes, we'll just simulate creating a wholesale order
+      toast({
+        title: "Wholesale Order Created",
+        description: `A wholesale order for ${selectedFrame.manufacturer} has been created.`,
+      });
+    } catch (error) {
+      console.error('Error creating wholesale order:', error);
+      toast({
+        title: "Error Creating Wholesale Order",
+        description: "There was an error creating the wholesale order. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // Reset form
+  const resetForm = () => {
+    setCustomer({
+      name: '',
+      email: '',
+      phone: '',
+      address: ''
+    });
+    setArtworkWidth(16);
+    setArtworkHeight(20);
+    setArtworkImage(null);
+    setAspectRatio(0.8);
+    setSelectedFrame(null);
+    setMaterialFilter('all');
+    setManufacturerFilter('all');
+    setWidthFilter('all');
+    setPriceFilter('all');
+    setSelectedMatColor(matColorCatalog[0]);
+    setMatWidth(2);
+    setSelectedGlassOption(glassOptionCatalog[0]);
+    setSelectedServices([]);
+    setViewMode('2d');
+  };
+  
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Left Column - Frame Selection & Customization */}
+      <div className="lg:col-span-2 space-y-6">
+        {/* Order Information Section */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4 header-underline">Order Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Customer Name
+              </label>
+              <input 
+                type="text" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                placeholder="Enter customer name"
+                value={customer.name}
+                onChange={(e) => setCustomer({...customer, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Order Date
+              </label>
+              <input 
+                type="date" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={new Date().toISOString().split('T')[0]}
+                readOnly
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Phone
+              </label>
+              <input 
+                type="tel" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                placeholder="(555) 123-4567"
+                value={customer.phone || ''}
+                onChange={(e) => setCustomer({...customer, phone: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Email
+              </label>
+              <input 
+                type="email" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                placeholder="customer@example.com"
+                value={customer.email || ''}
+                onChange={(e) => setCustomer({...customer, email: e.target.value})}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Artwork Details Section */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Width (inches)
+              </label>
+              <input 
+                type="number" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                step="0.125"
+                min="0.125"
+                value={artworkWidth}
+                onChange={(e) => handleDimensionChange('width', parseFloat(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Height (inches)
+              </label>
+              <input 
+                type="number" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                step="0.125"
+                min="0.125"
+                value={artworkHeight}
+                onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
+              />
+            </div>
+          </div>
+          
+          <div 
+            className={`border border-dashed ${dragActive ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-4 text-center mb-4`}
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+          >
+            <input 
+              type="file" 
+              id="artwork-upload" 
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleFileInputChange}
+              accept="image/*"
+            />
+            <label htmlFor="artwork-upload" className="block cursor-pointer" onClick={handleButtonClick}>
+              <div className="flex flex-col items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-primary mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                  {artworkImage ? 'Change artwork image' : 'Upload artwork image for preview'}
+                </p>
+                <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
+                  Drag & drop or click to browse
+                </p>
+              </div>
+            </label>
+          </div>
+          
+          {artworkImage && (
+            <div className="mt-2 text-center">
+              <p className="text-sm text-green-600 dark:text-green-400">
+                ✓ Artwork uploaded successfully
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Frame Customization Section */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold header-underline">Frame Selection</h2>
+            <div className="flex space-x-2">
+              <button 
+                className={`px-3 py-1 rounded-md text-sm flex items-center ${viewMode === '2d' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-border text-light-text dark:text-dark-text'}`}
+                onClick={() => setViewMode('2d')}
+              >
+                <span>2D View</span>
+              </button>
+              <button 
+                className={`px-3 py-1 rounded-md text-sm flex items-center ${viewMode === '3d' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-border text-light-text dark:text-dark-text'}`}
+                onClick={() => setViewMode('3d')}
+              >
+                <span>3D View</span>
+              </button>
+            </div>
+          </div>
+          
+          {/* Frame filters */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Material
+              </label>
+              <select 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={materialFilter}
+                onChange={(e) => setMaterialFilter(e.target.value)}
+              >
+                {materials.map(material => (
+                  <option key={material} value={material}>
+                    {material === 'all' ? 'All Materials' : material.charAt(0).toUpperCase() + material.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Manufacturer
+              </label>
+              <select 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={manufacturerFilter}
+                onChange={(e) => setManufacturerFilter(e.target.value)}
+              >
+                {manufacturers.map(manufacturer => (
+                  <option key={manufacturer} value={manufacturer}>
+                    {manufacturer === 'all' ? 'All Manufacturers' : manufacturer}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Width Range
+              </label>
+              <select 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={widthFilter}
+                onChange={(e) => setWidthFilter(e.target.value)}
+              >
+                <option value="all">All Widths</option>
+                <option value="narrow">Narrow (0-1.5 in)</option>
+                <option value="medium">Medium (1.5-2.5 in)</option>
+                <option value="wide">Wide (2.5+ in)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Price Range
+              </label>
+              <select 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={priceFilter}
+                onChange={(e) => setPriceFilter(e.target.value)}
+              >
+                <option value="all">All Prices</option>
+                <option value="economy">Economy ($5-9/ft)</option>
+                <option value="standard">Standard ($10-14/ft)</option>
+                <option value="premium">Premium ($15+/ft)</option>
+              </select>
+            </div>
+          </div>
+          
+          {/* Frame Catalog */}
+          <div className="h-64 overflow-y-auto p-2 border border-light-border dark:border-dark-border rounded-lg mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {filteredFrames.map(frame => (
+                <div 
+                  key={frame.id}
+                  className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrame?.id === frame.id ? 'border-2 border-primary' : ''}`}
+                  onClick={() => setSelectedFrame(frame)}
+                >
+                  <img 
+                    src={frame.catalogImage} 
+                    alt={frame.name} 
+                    className="w-full h-24 object-cover"
+                  />
+                  <div className="bg-black/70 text-white text-xs p-1 absolute bottom-0 left-0 right-0">
+                    <div className="font-medium truncate">{frame.name}</div>
+                    <div className="flex justify-between">
+                      <span>{frame.material}</span>
+                      <span>${frame.price}/ft</span>
+                    </div>
+                  </div>
+                  {selectedFrame?.id === frame.id && (
+                    <div className="absolute top-2 right-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Mat Options */}
+          <h3 className="text-lg font-medium mb-3">Mat Options</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Mat Color
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {matColorCatalog.map(matColor => (
+                  <div
+                    key={matColor.id}
+                    className={`mat-color-option ${selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
+                    style={{ backgroundColor: matColor.color }}
+                    onClick={() => handleMatColorChange(matColor.id)}
+                    title={matColor.name}
+                  ></div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Mat Width (inches)
+              </label>
+              <div className="flex items-center">
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="6" 
+                  step="0.25" 
+                  value={matWidth} 
+                  onChange={handleMatWidthChange}
+                  className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-lg appearance-none cursor-pointer"
+                />
+                <span className="ml-2 min-w-[40px] text-center">{matWidth}"</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Glass Options */}
+          <h3 className="text-lg font-medium mb-3">Glass Options</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {glassOptionCatalog.map(glassOption => (
+              <div 
+                key={glassOption.id}
+                className={`border ${selectedGlassOption.id === glassOption.id ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-white dark:bg-dark-bg`}
+                onClick={() => handleGlassOptionChange(glassOption.id)}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-medium">{glassOption.name}</h4>
+                    <p className="text-sm text-light-textSecondary dark:text-dark-textSecondary">
+                      {glassOption.description}
+                    </p>
+                  </div>
+                  <div className={`flex h-5 w-5 ${selectedGlassOption.id === glassOption.id ? 'border border-primary' : 'border border-gray-300 dark:border-dark-border'} rounded-full items-center justify-center`}>
+                    {selectedGlassOption.id === glassOption.id && (
+                      <div className="h-3 w-3 bg-primary rounded-full"></div>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 text-sm text-right">
+                  +${(glassOption.price * 100).toFixed(2)}/sq ft
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Special Services Section */}
+        <SpecialServices 
+          selectedServices={selectedServices}
+          onChange={setSelectedServices}
+        />
+      </div>
+      
+      {/* Right Column - Preview & Order Summary */}
+      <div className="space-y-6">
+        {/* Frame Preview */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <h2 className="text-xl font-semibold mb-4 header-underline">Frame Preview</h2>
+          
+          {/* Preview Container */}
+          <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center">
+            {viewMode === '2d' ? (
+              <FrameVisualizer
+                frame={selectedFrame}
+                matColor={selectedMatColor}
+                matWidth={matWidth}
+                artworkWidth={artworkWidth}
+                artworkHeight={artworkHeight}
+                artworkImage={artworkImage}
+              />
+            ) : (
+              <div className="h-[400px] w-full">
+                <FrameVisualizer3D
+                  frame={selectedFrame}
+                  matColor={selectedMatColor}
+                  matWidth={matWidth}
+                  artworkWidth={artworkWidth}
+                  artworkHeight={artworkHeight}
+                  artworkImage={artworkImage}
+                />
+              </div>
+            )}
+          </div>
+          
+          {/* Frame Details */}
+          {selectedFrame && (
+            <div className="mt-4">
+              <h3 className="text-lg font-medium mb-2">Selected Frame Details</h3>
+              <table className="w-full text-sm">
+                <tbody>
+                  <tr>
+                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Name:</td>
+                    <td className="py-1 font-medium">{selectedFrame.name}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Material:</td>
+                    <td className="py-1">{selectedFrame.material}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Width:</td>
+                    <td className="py-1">{selectedFrame.width} inches</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Depth:</td>
+                    <td className="py-1">{selectedFrame.depth} inches</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Wholesale Price:</td>
+                    <td className="py-1">${selectedFrame.price} per foot</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+        
+        {/* Price Summary */}
+        <OrderSummary
+          frame={selectedFrame}
+          matColor={selectedMatColor}
+          glassOption={selectedGlassOption}
+          artworkWidth={artworkWidth}
+          artworkHeight={artworkHeight}
+          matWidth={matWidth}
+          specialServices={selectedServices}
+          onCreateOrder={handleCreateOrder}
+          onSaveQuote={handleSaveQuote}
+          onCreateWholesaleOrder={handleCreateWholesaleOrder}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default PosSystem;

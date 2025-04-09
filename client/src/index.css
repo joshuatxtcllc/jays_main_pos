@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  
+  code {
+    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+      monospace;
+  }
+}
+
+@layer components {
+  .container {
+    @apply w-full max-w-[1200px] mx-auto px-4;
+  }
+  
+  .btn {
+    @apply cursor-pointer font-medium transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-primary hover:bg-primary/90 text-white py-2 px-4 rounded-md;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary/90 text-white py-2 px-4 rounded-md;
+  }
+  
+  .btn-outline {
+    @apply border border-border bg-transparent hover:bg-muted py-2 px-4 rounded-md;
+  }
+  
+  .frame-corner-tl { transform: rotate(0deg); }
+  .frame-corner-tr { transform: rotate(90deg); }
+  .frame-corner-br { transform: rotate(180deg); }
+  .frame-corner-bl { transform: rotate(270deg); }
+  
+  .frame-with-corners {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  .frame-edge {
+    background-repeat: repeat-x;
+    height: 50px;
+  }
+  
+  .frame-edge-left, .frame-edge-right {
+    background-repeat: repeat-y;
+    width: 50px;
+  }
+  
+  .frame-edge-top, .frame-edge-bottom {
+    background-repeat: repeat-x;
+    height: 50px;
+  }
+  
+  .artwork-with-mat {
+    padding: 20px;
+    background-color: white;
+  }
+  
+  .artwork-image {
+    display: block;
+    max-width: 100%;
+    max-height: 400px;
+  }
+  
+  .header-underline {
+    position: relative;
+  }
+  
+  .header-underline::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    @apply bg-primary rounded-md;
+  }
+  
+  .dark .header-underline::after {
+    box-shadow: 0 0 10px rgba(0, 173, 181, 0.7);
+  }
+  
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    @apply bg-primary rounded-full cursor-pointer;
+  }
+  
+  .dark input[type=range]::-webkit-slider-thumb {
+    box-shadow: 0 0 5px rgba(0, 173, 181, 0.7);
+  }
+  
+  .dark .dark-glow {
+    filter: drop-shadow(0 0 5px rgba(0, 173, 181, 0.5));
+  }
+}

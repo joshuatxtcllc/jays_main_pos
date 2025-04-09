@@ -1,0 +1,177 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'wouter';
+import { cn } from '@/lib/utils';
+
+interface HeaderProps {
+  darkMode: boolean;
+  toggleTheme: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  return (
+    <header className={cn(
+      "fixed top-0 left-0 w-full z-50 transition-all duration-300",
+      "bg-white/95 dark:bg-dark-bg/95",
+      isScrolled && "shadow-md dark:shadow-lg py-3",
+      !isScrolled && "py-5"
+    )}>
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <div className="flex items-center">
+          <h1 className="text-2xl font-bold text-primary dark:text-primary dark-glow">
+            Jay's Frames Guru
+          </h1>
+        </div>
+        
+        <nav className="hidden md:flex space-x-6">
+          <Link href="/">
+            <a className={cn(
+              "font-medium hover:text-primary transition-colors",
+              location === "/" && "text-primary"
+            )}>
+              POS System
+            </a>
+          </Link>
+          <Link href="/orders">
+            <a className={cn(
+              "font-medium hover:text-primary transition-colors",
+              location === "/orders" && "text-primary"
+            )}>
+              Orders
+            </a>
+          </Link>
+          <Link href="/dashboard">
+            <a className={cn(
+              "font-medium hover:text-primary transition-colors",
+              location === "/dashboard" && "text-primary"
+            )}>
+              Dashboard
+            </a>
+          </Link>
+        </nav>
+        
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={toggleTheme}
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {/* Sun icon for dark mode */}
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className={cn("h-5 w-5", darkMode ? "block" : "hidden")}
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            
+            {/* Moon icon for light mode */}
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className={cn("h-5 w-5", darkMode ? "hidden" : "block")}
+              fill="none" 
+              viewBox="0 0 24 24" 
+              stroke="currentColor"
+            >
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          
+          <div className="relative">
+            <button className="flex items-center space-x-1">
+              <span className="font-medium">Jay</span>
+              <img 
+                src="https://randomuser.me/api/portraits/men/41.jpg" 
+                alt="Profile" 
+                className="w-8 h-8 rounded-full border-2 border-primary"
+              />
+            </button>
+          </div>
+        </div>
+        
+        {/* Mobile menu button */}
+        <button 
+          className="md:hidden p-2"
+          onClick={toggleMobileMenu}
+          aria-label="Toggle mobile menu"
+        >
+          <div className={cn("w-6 h-5 flex flex-col justify-between", isMobileMenuOpen && "relative")}>
+            <span className={cn(
+              "w-full h-0.5 bg-gray-800 dark:bg-gray-200 transition-all duration-300",
+              isMobileMenuOpen && "absolute top-2 rotate-45"
+            )}></span>
+            <span className={cn(
+              "w-full h-0.5 bg-gray-800 dark:bg-gray-200 transition-all duration-300",
+              isMobileMenuOpen && "opacity-0"
+            )}></span>
+            <span className={cn(
+              "w-full h-0.5 bg-gray-800 dark:bg-gray-200 transition-all duration-300",
+              isMobileMenuOpen && "absolute top-2 -rotate-45"
+            )}></span>
+          </div>
+        </button>
+      </div>
+      
+      {/* Mobile menu */}
+      <div className={cn(
+        "md:hidden overflow-hidden transition-all duration-300",
+        isMobileMenuOpen ? "max-h-60" : "max-h-0"
+      )}>
+        <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg">
+          <Link href="/">
+            <a className={cn(
+              "py-2 font-medium hover:text-primary transition-colors",
+              location === "/" && "text-primary"
+            )}>
+              POS System
+            </a>
+          </Link>
+          <Link href="/orders">
+            <a className={cn(
+              "py-2 font-medium hover:text-primary transition-colors",
+              location === "/orders" && "text-primary"
+            )}>
+              Orders
+            </a>
+          </Link>
+          <Link href="/dashboard">
+            <a className={cn(
+              "py-2 font-medium hover:text-primary transition-colors",
+              location === "/dashboard" && "text-primary"
+            )}>
+              Dashboard
+            </a>
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
