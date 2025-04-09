@@ -3,6 +3,9 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
+// Export supabase client for server-side use
+export { supabase } from './supabase';
+
 neonConfig.webSocketConstructor = ws;
 
 if (!process.env.DATABASE_URL) {

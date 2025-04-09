@@ -10,7 +10,13 @@ import {
   InsertCustomer 
 } from '@shared/schema';
 import { frameCatalog, filterFrames, getUniqueManufacturers, getUniqueMaterials } from '@/data/frameCatalog';
-import { matColorCatalog, getMatColorById } from '@/data/matColors';
+import { 
+  matColorCatalog, 
+  getMatColorById, 
+  getMatColorsByManufacturer, 
+  getMatColorsByCategory, 
+  getUniqueMatCategories 
+} from '@/data/matColors';
 import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '@/data/glassOptions';
 import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
 import { apiRequest } from '@/lib/queryClient';
@@ -55,6 +61,7 @@ const PosSystem = () => {
   // Mat Options
   const [selectedMatColor, setSelectedMatColor] = useState<MatColor>(matColorCatalog[0]);
   const [matWidth, setMatWidth] = useState<number>(2);
+  const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
   
   // Glass Options
   const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[0]);
@@ -468,6 +475,7 @@ const PosSystem = () => {
     setPriceFilter('all');
     setSelectedMatColor(matColorCatalog[0]);
     setMatWidth(2);
+    setMatManufacturerFilter('all');
     setSelectedGlassOption(glassOptionCatalog[0]);
     setSelectedServices([]);
     setViewMode('2d');
@@ -817,17 +825,78 @@ const PosSystem = () => {
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
                 Mat Color
               </label>
-              <div className="grid grid-cols-4 gap-2">
-                {matColorCatalog.map(matColor => (
-                  <div
-                    key={matColor.id}
-                    className={`mat-color-option ${selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
-                    style={{ backgroundColor: matColor.color }}
-                    onClick={() => handleMatColorChange(matColor.id)}
-                    title={matColor.name}
-                  ></div>
-                ))}
+              
+              {/* Mat color filter tabs */}
+              <div className="flex mb-2 border-b border-light-border dark:border-dark-border">
+                <button 
+                  className={`px-3 py-1 text-sm ${matManufacturerFilter === 'all' ? 'font-medium border-b-2 border-primary' : ''}`}
+                  onClick={() => setMatManufacturerFilter('all')}
+                >
+                  All
+                </button>
+                <button 
+                  className={`px-3 py-1 text-sm ${matManufacturerFilter === 'Crescent' ? 'font-medium border-b-2 border-primary' : ''}`}
+                  onClick={() => setMatManufacturerFilter('Crescent')}
+                >
+                  Crescent
+                </button>
+                <button 
+                  className={`px-3 py-1 text-sm ${matManufacturerFilter === 'Basic' ? 'font-medium border-b-2 border-primary' : ''}`}
+                  onClick={() => setMatManufacturerFilter('Basic')}
+                >
+                  Basic
+                </button>
               </div>
+              
+              {/* Category sections for Crescent matboards */}
+              {matManufacturerFilter === 'Crescent' && (
+                <div className="mb-2 max-h-40 overflow-y-auto pr-2">
+                  {getUniqueMatCategories().map(category => (
+                    <div key={category} className="mb-2">
+                      <h4 className="text-xs text-light-textSecondary dark:text-dark-textSecondary font-medium mb-1">{category}</h4>
+                      <div className="grid grid-cols-5 gap-1">
+                        {getMatColorsByCategory(category).map(matColor => (
+                          <div
+                            key={matColor.id}
+                            className={`mat-color-option ${selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform`}
+                            style={{ backgroundColor: matColor.color }}
+                            onClick={() => handleMatColorChange(matColor.id)}
+                            title={`${matColor.name} (${matColor.code})`}
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Simple grid for Basic matboards or All view */}
+              {(matManufacturerFilter === 'Basic' || matManufacturerFilter === 'all') && (
+                <div className="grid grid-cols-4 gap-2">
+                  {(matManufacturerFilter === 'all' ? matColorCatalog : getMatColorsByManufacturer('Basic')).map(matColor => (
+                    <div
+                      key={matColor.id}
+                      className={`mat-color-option ${selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
+                      style={{ backgroundColor: matColor.color }}
+                      onClick={() => handleMatColorChange(matColor.id)}
+                      title={matColor.name}
+                    ></div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Selected mat color details */}
+              {selectedMatColor && (
+                <div className="mt-2 text-xs">
+                  <p>
+                    <span className="font-medium">{selectedMatColor.name}</span>
+                    {selectedMatColor.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary">({selectedMatColor.code})</span>}
+                  </p>
+                  {selectedMatColor.manufacturer && selectedMatColor.manufacturer !== 'Basic' && (
+                    <p className="text-light-textSecondary dark:text-dark-textSecondary">{selectedMatColor.manufacturer}</p>
+                  )}
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">

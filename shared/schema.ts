@@ -39,7 +39,11 @@ export const matColors = pgTable("mat_colors", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   color: text("color").notNull(),
-  price: numeric("price").notNull() // per square inch (wholesale)
+  price: numeric("price").notNull(), // per square inch (wholesale)
+  manufacturer: text("manufacturer"),
+  code: text("code"),
+  description: text("description"),
+  category: text("category")
 });
 
 export const insertMatColorSchema = createInsertSchema(matColors);
