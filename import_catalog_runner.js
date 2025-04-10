@@ -7,10 +7,19 @@
  * 3. Importing the data to the Supabase database
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+import { exec, execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { parsePdfCatalog } from './parse_larson_catalog.js';
+import { extractMatboardData, importToSupabase } from './extract_matboard_data.js';
+
+dotenv.config();
+
+// Get current file path in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ANSI color codes for console output
 const colors = {
@@ -42,31 +51,30 @@ const colors = {
 };
 
 /**
- * Runs a script and returns its output
- * @param {string} scriptPath Path to the script to run
- * @param {boolean} logOutput Whether to log the output of the script
- * @returns {string} The script's output
+ * Runs a SQL query using psql
+ * @param {string} sql The SQL query to run
+ * @returns {Promise<boolean>} Whether the query was successful
  */
-function runScript(scriptPath, logOutput = true) {
-  console.log(`${colors.bright}${colors.cyan}Running: ${scriptPath}${colors.reset}`);
-  console.log(`${colors.dim}------------------------------------------------------${colors.reset}`);
-  
+async function runSqlQuery(sql) {
   try {
-    // Execute the script and capture its output
-    const output = execSync(`node ${scriptPath}`, { 
+    console.log(`${colors.cyan}Running SQL query...${colors.reset}`);
+    const sqlFile = path.join(__dirname, 'temp_query.sql');
+    fs.writeFileSync(sqlFile, sql);
+    
+    execSync(`psql "${process.env.DATABASE_URL}" -f ${sqlFile}`, { 
       encoding: 'utf8',
-      stdio: logOutput ? 'inherit' : 'pipe'  // Use 'inherit' to show real-time output
+      stdio: 'inherit'
     });
     
-    console.log(`${colors.green}✓ Successfully executed ${scriptPath}${colors.reset}`);
-    console.log(`${colors.dim}------------------------------------------------------${colors.reset}\n`);
+    // Clean up temp file
+    fs.unlinkSync(sqlFile);
     
-    return output;
+    console.log(`${colors.green}✓ SQL query executed successfully${colors.reset}\n`);
+    return true;
   } catch (error) {
-    console.error(`${colors.red}✗ Error executing ${scriptPath}:${colors.reset}`);
+    console.error(`${colors.red}Error executing SQL query:${colors.reset}`);
     console.error(error.message);
-    console.log(`${colors.dim}------------------------------------------------------${colors.reset}\n`);
-    return null;
+    return false;
   }
 }
 
@@ -75,7 +83,7 @@ function runScript(scriptPath, logOutput = true) {
  * @returns {boolean} Whether all required variables are set
  */
 function checkEnvironmentVariables() {
-  const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_KEY'];
+  const requiredVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_KEY', 'DATABASE_URL'];
   const missingVars = requiredVars.filter(v => !process.env[v]);
   
   if (missingVars.length > 0) {
@@ -90,28 +98,34 @@ function checkEnvironmentVariables() {
 
 /**
  * Checks if the required SQL table exists
- * @returns {boolean} Whether the table exists
+ * @returns {Promise<boolean>} Whether the table exists
  */
-function checkOrCreateTable() {
+async function checkOrCreateTable() {
   try {
     console.log(`${colors.cyan}Checking if larson_juhl_catalog table exists...${colors.reset}`);
     
-    // Execute the SQL script to create the table if it doesn't exist
-    const sqlScript = path.join(__dirname, 'setup_larson_catalog.sql');
+    const createTableSQL = `
+    DROP TABLE IF EXISTS larson_juhl_catalog;
+    CREATE TABLE larson_juhl_catalog (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      hex_color TEXT NOT NULL,
+      price DECIMAL(10,6) NOT NULL,
+      code TEXT NOT NULL,
+      crescent_code TEXT,
+      description TEXT,
+      category TEXT,
+      manufacturer TEXT NOT NULL
+    );`;
     
-    if (!fs.existsSync(sqlScript)) {
-      console.error(`${colors.red}SQL script not found: ${sqlScript}${colors.reset}`);
+    const success = await runSqlQuery(createTableSQL);
+    
+    if (success) {
+      console.log(`${colors.green}✓ Table created/verified${colors.reset}\n`);
+      return true;
+    } else {
       return false;
     }
-    
-    // This will create the table if it doesn't exist (using IF NOT EXISTS)
-    execSync(`psql "${process.env.DATABASE_URL}" -f ${sqlScript}`, { 
-      encoding: 'utf8',
-      stdio: 'inherit'
-    });
-    
-    console.log(`${colors.green}✓ Table created/verified${colors.reset}\n`);
-    return true;
   } catch (error) {
     console.error(`${colors.red}Error creating/checking table:${colors.reset}`);
     console.error(error.message);
@@ -133,52 +147,87 @@ async function runImportProcess() {
   }
   
   // Check/create the database table
-  if (!checkOrCreateTable()) {
+  if (!await checkOrCreateTable()) {
     return;
   }
   
   // Step 1: Parse the PDF file
   console.log(`${colors.bright}${colors.blue}STEP 1: Parsing PDF Catalog${colors.reset}`);
-  const pdfParseResult = runScript('parse_larson_catalog.js');
+  const pdfText = await parsePdfCatalog();
   
-  if (!pdfParseResult) {
+  if (!pdfText) {
     console.error(`${colors.red}PDF parsing failed. Cannot continue.${colors.reset}`);
     return;
   }
   
   // Step 2: Extract matboard data
   console.log(`${colors.bright}${colors.blue}STEP 2: Extracting Matboard Data${colors.reset}`);
-  runScript('extract_matboard_data.js');
+  const matboardData = extractMatboardData();
   
-  // Check if extraction created a JSON file
-  const jsonPath = path.join(__dirname, 'extracted_matboards.json');
-  if (!fs.existsSync(jsonPath)) {
-    console.error(`${colors.red}Extraction failed - no JSON file created at ${jsonPath}${colors.reset}`);
+  // Check if extraction created matboards
+  if (matboardData.length === 0) {
+    console.error(`${colors.red}Extraction found no matboards. Cannot continue.${colors.reset}`);
     return;
   }
   
-  // Step 3: Ask user if they want to import the data to Supabase
-  console.log(`${colors.bright}${colors.blue}STEP 3: Import to Supabase${colors.reset}`);
+  console.log(`${colors.green}Found ${matboardData.length} matboards to import.${colors.reset}`);
   
-  // Read the number of matboards extracted
-  let matboardCount = 0;
-  try {
-    const extractedData = JSON.parse(fs.readFileSync(jsonPath, 'utf8'));
-    matboardCount = extractedData.length;
-  } catch (error) {
-    console.error(`${colors.red}Error reading extracted matboards JSON:${colors.reset}`, error.message);
+  // Step 3: Import data to Supabase
+  console.log(`${colors.bright}${colors.blue}STEP 3: Import to Database${colors.reset}`);
+  
+  const importChoice = process.argv.includes('--import') ? 'y' : 'n';
+  
+  if (importChoice.toLowerCase() === 'y') {
+    console.log(`${colors.cyan}Importing matboard data...${colors.reset}`);
+    
+    // Import to Supabase
+    await importToSupabase(matboardData);
+    
+    // Also import directly to PostgreSQL for fallback
+    try {
+      console.log(`${colors.cyan}Importing data directly to PostgreSQL...${colors.reset}`);
+      
+      // Prepare data for SQL insert
+      const valueStrings = matboardData.map(mat => {
+        return `('${mat.id.replace(/'/g, "''")}', 
+                '${mat.name.replace(/'/g, "''")}', 
+                '${mat.hex_color.replace(/'/g, "''")}', 
+                ${mat.price}, 
+                '${mat.code.replace(/'/g, "''")}', 
+                '${(mat.crescent_code || '').replace(/'/g, "''")}', 
+                '${(mat.description || '').replace(/'/g, "''")}', 
+                '${(mat.category || '').replace(/'/g, "''")}', 
+                '${mat.manufacturer.replace(/'/g, "''")}')`
+      });
+      
+      // Create batches of 100 rows
+      const batchSize = 100;
+      for (let i = 0; i < valueStrings.length; i += batchSize) {
+        const batch = valueStrings.slice(i, i + batchSize);
+        const insertSQL = `
+        INSERT INTO larson_juhl_catalog (id, name, hex_color, price, code, crescent_code, description, category, manufacturer)
+        VALUES ${batch.join(',\n')}
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          hex_color = EXCLUDED.hex_color,
+          price = EXCLUDED.price,
+          code = EXCLUDED.code,
+          crescent_code = EXCLUDED.crescent_code,
+          description = EXCLUDED.description,
+          category = EXCLUDED.category,
+          manufacturer = EXCLUDED.manufacturer;`;
+        
+        const success = await runSqlQuery(insertSQL);
+        if (success) {
+          console.log(`${colors.green}✓ Imported batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(valueStrings.length/batchSize)}${colors.reset}`);
+        }
+      }
+    } catch (error) {
+      console.error(`${colors.red}Error during direct PostgreSQL import:${colors.reset}`, error);
+    }
+  } else {
+    console.log(`${colors.yellow}Skipping import. Run with --import flag to import data.${colors.reset}`);
   }
-  
-  if (matboardCount === 0) {
-    console.log(`${colors.yellow}No matboards were extracted. Skipping import.${colors.reset}`);
-    return;
-  }
-  
-  console.log(`${colors.green}Found ${matboardCount} matboards to import.${colors.reset}`);
-  console.log(`\n${colors.yellow}To import this data to Supabase:${colors.reset}`);
-  console.log(`1. Open extract_matboard_data.js`);
-  console.log(`2. Uncomment the importToSupabase(matboardData) line at the end of the file`);
-  console.log(`3. Run node extract_matboard_data.js\n`);
   
   console.log(`${colors.bright}${colors.green}Import process completed!${colors.reset}`);
 }
