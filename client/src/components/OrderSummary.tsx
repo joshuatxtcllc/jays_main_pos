@@ -35,7 +35,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   specialServices,
   onCreateOrder,
   onSaveQuote,
-  onCreateWholesaleOrder
+  onCreateWholesaleOrder,
+  onProceedToCheckout,
+  orderGroupId,
+  showCheckoutButton = false
 }) => {
   // Calculate prices
   const framePrice = frame ? calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frame.price)) : 0;
@@ -135,30 +138,49 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       
       {/* Action Buttons */}
       <div className="mt-6 space-y-3">
-        <button 
-          className={`w-full py-3 ${!frame || !matColor || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
-          onClick={() => {
-            console.log('Create Order button clicked in OrderSummary');
-            console.log('Button disabled state:', (!frame || !matColor || !glassOption));
-            onCreateOrder();
-          }}
-          disabled={!frame || !matColor || !glassOption}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          Create Order
-        </button>
-        
-        <button 
-          className="w-full py-3 border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg text-light-text dark:text-dark-text rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-bg/80 transition-colors flex items-center justify-center"
-          onClick={onSaveQuote}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
-          Save as Quote
-        </button>
+        {!showCheckoutButton ? (
+          <>
+            <button 
+              className={`w-full py-3 ${!frame || !matColor || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
+              onClick={() => {
+                console.log('Create Order button clicked in OrderSummary');
+                console.log('Button disabled state:', (!frame || !matColor || !glassOption));
+                onCreateOrder();
+              }}
+              disabled={!frame || !matColor || !glassOption}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Create Order
+            </button>
+            
+            <button 
+              className="w-full py-3 border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg text-light-text dark:text-dark-text rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-bg/80 transition-colors flex items-center justify-center"
+              onClick={onSaveQuote}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Save as Quote
+            </button>
+          </>
+        ) : (
+          <button 
+            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
+            onClick={() => {
+              if (orderGroupId && onProceedToCheckout) {
+                onProceedToCheckout(orderGroupId);
+              }
+            }}
+            disabled={!orderGroupId}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Proceed to Checkout
+          </button>
+        )}
       </div>
       
       {/* Wholesale Order Details */}

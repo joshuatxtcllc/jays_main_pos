@@ -3,6 +3,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import {
   Table,
   TableBody,
@@ -61,10 +62,17 @@ const Orders = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isWholesaleDialogOpen, setIsWholesaleDialogOpen] = useState(false);
+  const [_, setLocation] = useLocation();
 
   // Fetch orders
-  const { data: orders, isLoading, isError } = useQuery({
+  const { data: orders, isLoading: ordersLoading, isError: ordersError } = useQuery({
     queryKey: ['/api/orders'],
+    staleTime: 30000, // 30 seconds
+  });
+  
+  // Fetch order groups
+  const { data: orderGroups, isLoading: orderGroupsLoading, isError: orderGroupsError } = useQuery({
+    queryKey: ['/api/order-groups'],
     staleTime: 30000, // 30 seconds
   });
 
@@ -178,14 +186,30 @@ const Orders = () => {
     setIsWholesaleDialogOpen(true);
   };
 
+  // Check if any order has orderGroupId that matches
+  const findOrderGroupForOrder = (orderId: number) => {
+    if (!orderGroups) return null;
+    return orderGroups.find((group: any) => 
+      group.status === 'pending' && group.orders.some((oid: number) => oid === orderId)
+    );
+  };
+  
+  // Handle proceeding to checkout for an order
+  const handleProceedToCheckout = (orderGroupId: number) => {
+    setLocation(`/checkout/${orderGroupId}`);
+  };
+
   // Filter orders based on search term and status
-  const filteredOrders = orders ? orders.filter((order: Order) => {
+  const filteredOrders = orders ? orders.filter((order: any) => {
     const matchesSearch = 
       getCustomerName(order.customerId).toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toString().includes(searchTerm);
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   }) : [];
+
+  const isLoading = ordersLoading || orderGroupsLoading;
+  const isError = ordersError || orderGroupsError;
 
   if (isLoading) {
     return (
@@ -205,7 +229,10 @@ const Orders = () => {
         <Button 
           variant="outline" 
           className="mt-4"
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/orders'] })}
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+            queryClient.invalidateQueries({ queryKey: ['/api/order-groups'] });
+          }}
         >
           Retry
         </Button>
@@ -304,13 +331,36 @@ const Orders = () => {
                               <SelectItem value="cancelled">Cancelled</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openWholesaleDialog(order)}
-                          >
-                            Order Materials
-                          </Button>
+                          <div className="flex gap-2">
+                            {order.status === 'pending' && (
+                              <Button 
+                                variant="default" 
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={() => {
+                                  const orderGroup = findOrderGroupForOrder(order.id);
+                                  if (orderGroup) {
+                                    handleProceedToCheckout(orderGroup.id);
+                                  } else {
+                                    toast({
+                                      title: "Checkout Error",
+                                      description: "No order group found for this order.",
+                                      variant: "destructive"
+                                    });
+                                  }
+                                }}
+                              >
+                                Checkout
+                              </Button>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => openWholesaleDialog(order)}
+                            >
+                              Order Materials
+                            </Button>
+                          </div>
                         </div>
                       </TableCell>
                     </TableRow>
