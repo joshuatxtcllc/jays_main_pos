@@ -24,8 +24,11 @@ export function calculateFramePrice(
   // Apply markup for retail
   let retailPrice = wholesaleCost * markup;
   
-  // Reduce price by 2/3 when aligning with frame size as requested
-  retailPrice = retailPrice * (1/3); // This reduces the price to 1/3 of original (or by 2/3)
+  // First reduce price by 2/3 when aligning with frame size
+  retailPrice = retailPrice * (1/3); // Reduces to 33.3% of original
+  
+  // Further reduce by 50% as requested (cut in half)
+  retailPrice = retailPrice * 0.5; // Final price is 16.67% of the original price
   
   return parseFloat(retailPrice.toFixed(2));
 }
