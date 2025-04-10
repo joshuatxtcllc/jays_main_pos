@@ -909,7 +909,7 @@ const PosSystem = () => {
                           <div
                             key={matColor.id}
                             className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform`}
-                            style={{ backgroundColor: matColor.color }}
+                            style={{ backgroundColor: matColor.color || '#FFFFFF', border: '1px solid #ccc' }}
                             onClick={() => handleMatColorChange(matColor.id)}
                             title={`${matColor.name} (${matColor.code})`}
                           ></div>
@@ -927,7 +927,7 @@ const PosSystem = () => {
                     <div
                       key={matColor.id}
                       className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
-                      style={{ backgroundColor: matColor.color }}
+                      style={{ backgroundColor: matColor.color || '#FFFFFF', border: '1px solid #ccc' }}
                       onClick={() => handleMatColorChange(matColor.id)}
                       title={matColor.name}
                     ></div>
