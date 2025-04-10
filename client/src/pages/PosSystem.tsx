@@ -372,6 +372,8 @@ const PosSystem = () => {
       return;
     }
     
+    console.log("Customer data:", customer);
+    
     try {
       console.log("Creating customer with data:", customer);
       

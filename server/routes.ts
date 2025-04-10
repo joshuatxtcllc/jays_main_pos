@@ -186,14 +186,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/orders', async (req, res) => {
+    console.log('POST /api/orders - Received request body:', req.body);
     try {
       const validatedData = insertOrderSchema.parse(req.body);
+      console.log('POST /api/orders - Validated order data:', validatedData);
       
       // Calculate prices
       if (validatedData.frameId && validatedData.matColorId && validatedData.glassOptionId) {
+        console.log('POST /api/orders - Looking up related entities');
         const frame = await storage.getFrame(validatedData.frameId);
         const matColor = await storage.getMatColor(validatedData.matColorId);
         const glassOption = await storage.getGlassOption(validatedData.glassOptionId);
+        console.log('POST /api/orders - Found entities:', { 
+          frame: frame ? 'Found' : 'Not found', 
+          matColor: matColor ? 'Found' : 'Not found', 
+          glassOption: glassOption ? 'Found' : 'Not found' 
+        });
         
         if (frame && matColor && glassOption) {
           // Calculate perimeter in feet
@@ -235,10 +243,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      console.log('POST /api/orders - Creating order in database with data:', validatedData);
       const order = await storage.createOrder(validatedData);
+      console.log('POST /api/orders - Order created successfully:', order);
       res.status(201).json(order);
     } catch (error) {
+      console.error('POST /api/orders - Error creating order:', error);
       if (error instanceof z.ZodError) {
+        console.error('POST /api/orders - Validation error:', error.errors);
         return res.status(400).json({ message: "Invalid order data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create order" });

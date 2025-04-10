@@ -35,11 +35,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   onCreateWholesaleOrder
 }) => {
   // Calculate prices
-  const framePrice = frame ? calculateFramePrice(artworkWidth, artworkHeight, frame.price) : 0;
-  const matPrice = matColor ? calculateMatPrice(artworkWidth, artworkHeight, matWidth, matColor.price) : 0;
-  const glassPrice = glassOption ? calculateGlassPrice(artworkWidth, artworkHeight, matWidth, glassOption.price) : 0;
-  const backingPrice = calculateBackingPrice(artworkWidth, artworkHeight, matWidth);
-  const laborPrice = calculateLaborPrice(artworkWidth, artworkHeight);
+  const framePrice = frame ? calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frame.price)) : 0;
+  const matPrice = matColor ? calculateMatPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth), Number(matColor.price)) : 0;
+  const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth), Number(glassOption.price)) : 0;
+  const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth));
+  const laborPrice = calculateLaborPrice(Number(artworkWidth), Number(artworkHeight));
   
   // Calculate special services price
   const specialServicesPrice = specialServices.reduce((total, service) => total + Number(service.price), 0);

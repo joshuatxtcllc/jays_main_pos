@@ -283,15 +283,22 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db
-      .insert(orders)
-      .values({
-        ...order,
-        status: 'pending',
-        createdAt: new Date()
-      })
-      .returning();
-    return newOrder;
+    try {
+      console.log('DatabaseStorage.createOrder - Inserting order with data:', order);
+      const [newOrder] = await db
+        .insert(orders)
+        .values({
+          ...order,
+          status: 'pending',
+          createdAt: new Date()
+        })
+        .returning();
+      console.log('DatabaseStorage.createOrder - Order created successfully:', newOrder);
+      return newOrder;
+    } catch (error) {
+      console.error('DatabaseStorage.createOrder - Error creating order:', error);
+      throw error;
+    }
   }
   
   async updateOrder(id: number, data: Partial<Order>): Promise<Order> {
