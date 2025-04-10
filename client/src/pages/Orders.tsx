@@ -193,10 +193,20 @@ const Orders = () => {
   // Check if any order has orderGroupId that matches
   const findOrderGroupForOrder = (orderId: number) => {
     if (!orderGroups) return null;
-    const orderGroupArray = orderGroups as OrderGroup[];
-    return orderGroupArray.find((group) => 
-      group.status === 'pending' && group.orders.some((oid: number) => oid === orderId)
-    );
+    
+    // Find the order group by matching orders with the given order ID
+    // We need to get orders that have the orderGroupId matching the group ID
+    const filteredOrders = orders ? (orders as Order[]).filter(order => 
+      order.id === orderId && order.orderGroupId !== null
+    ) : [];
+    
+    if (filteredOrders.length > 0) {
+      const orderGroupId = filteredOrders[0].orderGroupId;
+      const orderGroupArray = orderGroups as any[];
+      return orderGroupArray.find(group => group.id === orderGroupId && group.status === 'pending');
+    }
+    
+    return null;
   };
   
   // Handle proceeding to checkout for an order
