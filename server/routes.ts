@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { getAllLarsonMatboards, getCrescentMatboards } from "./controllers/matboardController";
+import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
 import { 
   insertCustomerSchema, 
   insertOrderSchema,
@@ -419,6 +420,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Larson Juhl Catalog
   app.get('/api/larson-catalog', getAllLarsonMatboards);
   app.get('/api/larson-catalog/crescent', getCrescentMatboards);
+  
+  // Frame Catalog API
+  app.get('/api/frames', getAllFrames);
+  app.get('/api/frames/:id', getFrameById);
+  app.get('/api/frames/manufacturer/:manufacturer', getFramesByManufacturer);
 
   // Order Groups
   app.get('/api/order-groups', async (req, res) => {
