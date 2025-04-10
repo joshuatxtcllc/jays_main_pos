@@ -262,10 +262,22 @@ export const loadCrescentMatboardsFromSupabase = async (): Promise<void> => {
     console.log('Fetching Crescent matboards from Larson Juhl catalog...');
     const supabaseMatboards = await fetchCrescentMatboards();
     if (supabaseMatboards && supabaseMatboards.length > 0) {
+      // Convert API matboards to MatColor format
+      console.log('Converting API matboards to MatColor format');
+      const convertedMatboards = supabaseMatboards.map(mat => ({
+        id: mat.id,
+        name: mat.name,
+        color: mat.hex_color || '#FFFFFF', // Use hex_color as color
+        price: mat.price,
+        manufacturer: mat.manufacturer,
+        code: mat.code || null,
+        description: mat.description || null,
+        category: mat.category || null
+      }));
       // Replace static Crescent matboards with ones from Supabase
       const basicColors = basicMatColors;
-      matColorCatalog = [...basicColors, ...supabaseMatboards];
-      console.log(`Loaded ${supabaseMatboards.length} Crescent matboards from Larson Juhl catalog`);
+      matColorCatalog = [...basicColors, ...convertedMatboards];
+      console.log(`Loaded and converted ${supabaseMatboards.length} Crescent matboards from Larson Juhl catalog`);
     } else {
       console.log('No Crescent matboards found in Larson Juhl catalog or empty response. Using static fallback data.');
     }
