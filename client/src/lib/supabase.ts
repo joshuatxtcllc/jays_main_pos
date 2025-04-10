@@ -21,7 +21,7 @@ try {
   } else {
     // Browser-only code
     const rawSupabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    const rawSupabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+    const rawSupabaseKey = import.meta.env.VITE_SUPABASE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
     // Validate URL format - ensure it has https:// prefix
     const supabaseUrl = rawSupabaseUrl.startsWith('http')
