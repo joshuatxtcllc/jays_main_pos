@@ -247,6 +247,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log('POST /api/orders - Creating order in database with data:', validatedData);
+      
+      // Create or use existing order group
+      let orderGroupId = validatedData.orderGroupId;
+      if (!orderGroupId) {
+        console.log('POST /api/orders - No order group ID provided, creating a new order group');
+        
+        // Create a new order group for this order
+        const orderGroup = await storage.createOrderGroup({
+          customerId: validatedData.customerId,
+          subtotal: validatedData.subtotal, 
+          tax: validatedData.tax,
+          total: validatedData.total,
+          status: 'open'
+        });
+        console.log('POST /api/orders - Created new order group:', orderGroup);
+        
+        // Use the new order group ID
+        orderGroupId = orderGroup.id;
+        validatedData.orderGroupId = orderGroupId;
+      }
+      
       const order = await storage.createOrder(validatedData);
       console.log('POST /api/orders - Order created successfully:', order);
       res.status(201).json(order);
