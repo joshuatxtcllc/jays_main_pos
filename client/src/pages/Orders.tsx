@@ -143,28 +143,32 @@ const Orders = () => {
   // Get customer name
   const getCustomerName = (customerId: number | null) => {
     if (!customerId || !customers) return 'Unknown';
-    const customer = customers.find((c: Customer) => c.id === customerId);
+    const customerArray = customers as Customer[];
+    const customer = customerArray.find((c) => c.id === customerId);
     return customer ? customer.name : 'Unknown';
   };
 
   // Get frame name
   const getFrameName = (frameId: string | null) => {
     if (!frameId || !frames) return 'Unknown';
-    const frame = frames.find((f: Frame) => f.id === frameId);
+    const frameArray = frames as Frame[];
+    const frame = frameArray.find((f) => f.id === frameId);
     return frame ? frame.name : 'Unknown';
   };
 
   // Get mat color name
   const getMatColorName = (matColorId: string | null) => {
     if (!matColorId || !matColors) return 'Unknown';
-    const matColor = matColors.find((m: MatColor) => m.id === matColorId);
+    const matColorArray = matColors as MatColor[];
+    const matColor = matColorArray.find((m) => m.id === matColorId);
     return matColor ? matColor.name : 'Unknown';
   };
 
   // Get glass option name
   const getGlassOptionName = (glassOptionId: string | null) => {
     if (!glassOptionId || !glassOptions) return 'Unknown';
-    const glassOption = glassOptions.find((g: GlassOption) => g.id === glassOptionId);
+    const glassOptionArray = glassOptions as GlassOption[];
+    const glassOption = glassOptionArray.find((g) => g.id === glassOptionId);
     return glassOption ? glassOption.name : 'Unknown';
   };
 

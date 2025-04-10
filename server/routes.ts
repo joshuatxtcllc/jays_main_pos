@@ -550,11 +550,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Create a Stripe customer if needed
       let stripeCustomerId = customer?.stripeCustomerId;
       if (customer && !stripeCustomerId && customer.email) {
-        const stripeCustomer = await stripe.customers.create({
-          email: customer.email,
-          name: customer.name,
-          phone: customer.phone,
-        });
+        // Create customer params object with required fields
+        const customerParams: Stripe.CustomerCreateParams = {
+          name: customer.name || undefined
+        };
+        
+        // Only add email and phone if they exist and aren't null
+        if (customer.email) customerParams.email = customer.email;
+        if (customer.phone) customerParams.phone = customer.phone;
+        
+        const stripeCustomer = await stripe.customers.create(customerParams);
         stripeCustomerId = stripeCustomer.id;
         
         // Update customer with Stripe ID

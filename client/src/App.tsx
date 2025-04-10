@@ -62,7 +62,7 @@ function App() {
         <ErrorBoundary
           onReset={reset}
           FallbackComponent={ErrorFallback}
-          onError={(error: Error, info: { componentStack: string }) => {
+          onError={(error: Error, info: any) => {
             console.error("App error:", error);
             console.error("Component stack:", info.componentStack);
           }}
