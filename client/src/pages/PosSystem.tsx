@@ -271,9 +271,22 @@ const PosSystem = () => {
   
   // Handle mat color selection
   const handleMatColorChange = (id: string) => {
+    console.log('Changing mat color to ID:', id);
     const matColor = getMatboardById(id);
+    
     if (matColor) {
+      console.log('Found mat color:', matColor);
       setSelectedMatColor(matColor);
+    } else {
+      // Fallback to use static data
+      console.log('Mat color not found in API data, trying static catalog...');
+      const staticMatColor = getMatColorById(id);
+      if (staticMatColor) {
+        console.log('Found mat color in static catalog:', staticMatColor);
+        setSelectedMatColor(staticMatColor);
+      } else {
+        console.error('Mat color not found in any catalog:', id);
+      }
     }
   };
   

@@ -85,8 +85,9 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         <div 
           className="artwork-with-mat" 
           style={{
-            backgroundColor: matColor?.color || 'white',
-            padding: `${matWidth * 16}px` // Scale mat width for display
+            backgroundColor: matColor?.color || '#FFFFFF',
+            padding: `${matWidth * 16}px`, // Scale mat width for display
+            border: `1px solid ${matColor?.color ? 'transparent' : '#ccc'}`
           }}
         >
           <img 

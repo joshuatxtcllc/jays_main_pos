@@ -173,7 +173,10 @@ const FrameVisualizer3D: React.FC<FrameVisualizer3DProps> = ({
               );
               
               // Parse the color and convert to THREE.Color
-              const color = matColor.color;
+              // Make sure we have a valid color (default to white if not)
+              let color = matColor?.color || '#FFFFFF';
+              
+              // Create a THREE.Color with the parsed color
               const threeColor = new THREE.Color(color);
               
               const matMaterial = new THREE.MeshBasicMaterial({
