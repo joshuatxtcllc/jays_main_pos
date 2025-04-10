@@ -9,14 +9,7 @@ import {
   InsertOrder, 
   InsertCustomer 
 } from '@shared/schema';
-import { frameCatalog, filterFrames, getUniqueManufacturers, getUniqueMaterials } from '@/data/frameCatalog';
-import { 
-  matColorCatalog, 
-  getMatColorById, 
-  getMatColorsByManufacturer, 
-  getMatColorsByCategory, 
-  getUniqueMatCategories 
-} from '@/data/matColors';
+import { getMatColorById, getMatColorsByManufacturer, getMatColorsByCategory, getUniqueMatCategories } from '@/data/matColors';
 import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '@/data/glassOptions';
 import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
 import { apiRequest } from '@/lib/queryClient';
@@ -26,6 +19,7 @@ import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
 import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
 import { useMatboards } from '@/hooks/use-matboards';
+import { useFrames } from '@/hooks/use-frames';
 
 const PosSystem = () => {
   const { toast } = useToast();
@@ -83,17 +77,72 @@ const PosSystem = () => {
   // View Mode
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   
+  // Use the frames hook
+  const { frames, loading: framesLoading, error: framesError } = useFrames();
+  
   // Filtered Frames
-  const filteredFrames = filterFrames(
-    materialFilter,
-    manufacturerFilter,
-    widthFilter,
-    priceFilter
-  );
+  const filteredFrames = React.useMemo(() => {
+    if (!frames) return [];
+    
+    return frames.filter(frame => {
+      // Material filter
+      if (materialFilter !== 'all' && frame.material !== materialFilter) {
+        return false;
+      }
+      
+      // Manufacturer filter
+      if (manufacturerFilter !== 'all' && frame.manufacturer !== manufacturerFilter) {
+        return false;
+      }
+      
+      // Width filter
+      if (widthFilter !== 'all') {
+        const width = parseFloat(frame.width);
+        switch(widthFilter) {
+          case 'narrow':
+            if (width >= 1.0) return false;
+            break;
+          case 'medium':
+            if (width < 1.0 || width >= 2.0) return false;
+            break;
+          case 'wide':
+            if (width < 2.0) return false;
+            break;
+        }
+      }
+      
+      // Price filter
+      if (priceFilter !== 'all') {
+        const price = parseFloat(frame.price);
+        switch(priceFilter) {
+          case 'economy':
+            if (price >= 15.0) return false;
+            break;
+          case 'standard':
+            if (price < 15.0 || price >= 30.0) return false;
+            break;
+          case 'premium':
+            if (price < 30.0) return false;
+            break;
+        }
+      }
+      
+      return true;
+    });
+  }, [frames, materialFilter, manufacturerFilter, widthFilter, priceFilter]);
   
   // Manufacturers and Materials for filters
-  const manufacturers = getUniqueManufacturers();
-  const materials = getUniqueMaterials();
+  const manufacturers = React.useMemo(() => {
+    if (!frames) return [];
+    const uniqueManufacturers = Array.from(new Set(frames.map(frame => frame.manufacturer)));
+    return uniqueManufacturers;
+  }, [frames]);
+  
+  const materials = React.useMemo(() => {
+    if (!frames) return [];
+    const uniqueMaterials = Array.from(new Set(frames.map(frame => frame.material)));
+    return uniqueMaterials;
+  }, [frames]);
   
   // Handle file upload
   const handleFileUpload = async (file: File) => {
@@ -930,7 +979,7 @@ const PosSystem = () => {
               {/* Simple grid for Basic matboards or All view */}
               {(matManufacturerFilter === 'Basic' || matManufacturerFilter === 'all') && (
                 <div className="grid grid-cols-4 gap-2">
-                  {(matManufacturerFilter === 'all' ? matColorCatalog : getMatColorsByManufacturer('Basic')).map(matColor => (
+                  {(matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
                     <div
                       key={matColor.id}
                       className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
@@ -996,6 +1045,7 @@ const PosSystem = () => {
           {/* Glass Options */}
           <h3 className="text-lg font-medium mb-3">Glass Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {/* Using static glass options catalog for now, will be replaced with API data */}
             {glassOptionCatalog.map(glassOption => (
               <div 
                 key={glassOption.id}

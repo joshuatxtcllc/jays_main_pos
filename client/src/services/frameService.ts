@@ -1,6 +1,5 @@
-import { Frame } from "@shared/schema";
+import { Frame } from '@shared/schema';
 
-// Types for API frame data
 export interface FrameApiData {
   id: string;
   name: string;
@@ -18,13 +17,9 @@ export interface FrameApiData {
  * Fetches all frames from the catalog API
  * @returns Promise with the frame data
  */
-export async function fetchFrameCatalog(): Promise<FrameApiData[]> {
+export async function fetchFrameCatalog(): Promise<Frame[]> {
   try {
-    console.log('Fetching frames from catalog API...');
-    const response = await fetch('/api/frames', {
-      method: 'GET',
-      credentials: 'include'
-    });
+    const response = await fetch('/api/frames');
     
     if (!response.ok) {
       throw new Error(`Error fetching frames: ${response.statusText}`);
@@ -33,8 +28,8 @@ export async function fetchFrameCatalog(): Promise<FrameApiData[]> {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error fetching frames from API:', error);
-    return [];
+    console.error('Error in fetchFrameCatalog:', error);
+    throw error;
   }
 }
 
@@ -43,13 +38,9 @@ export async function fetchFrameCatalog(): Promise<FrameApiData[]> {
  * @param manufacturer The manufacturer to filter by
  * @returns Promise with the frame data for that manufacturer
  */
-export async function fetchFramesByManufacturer(manufacturer: string): Promise<FrameApiData[]> {
+export async function fetchFramesByManufacturer(manufacturer: string): Promise<Frame[]> {
   try {
-    console.log(`Fetching frames from manufacturer: ${manufacturer}`);
-    const response = await fetch(`/api/frames/manufacturer/${manufacturer}`, {
-      method: 'GET',
-      credentials: 'include'
-    });
+    const response = await fetch(`/api/frames/manufacturer/${manufacturer}`);
     
     if (!response.ok) {
       throw new Error(`Error fetching frames by manufacturer: ${response.statusText}`);
@@ -58,31 +49,28 @@ export async function fetchFramesByManufacturer(manufacturer: string): Promise<F
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error(`Error fetching frames by manufacturer ${manufacturer}:`, error);
-    return [];
+    console.error(`Error in fetchFramesByManufacturer(${manufacturer}):`, error);
+    throw error;
   }
 }
 
 /**
- * Converts API frame data to Frame format for use in the application
- * @param frameData The frame data from the API
- * @returns Frame array
+ * Fetches a frame by ID
+ * @param id The frame ID
+ * @returns Promise with the frame data
  */
-export function convertToFrames(frameData: FrameApiData[]): Frame[] {
-  console.log("Converting API frame data to Frame format");
-  
-  return frameData.map(frame => {
-    return {
-      id: frame.id,
-      name: frame.name,
-      manufacturer: frame.manufacturer,
-      material: frame.material,
-      width: frame.width,
-      depth: frame.depth,
-      price: frame.price,
-      catalogImage: frame.catalog_image,
-      edgeTexture: frame.edge_texture || null,
-      corner: frame.corner || null
-    };
-  });
+export async function fetchFrameById(id: string): Promise<Frame> {
+  try {
+    const response = await fetch(`/api/frames/${id}`);
+    
+    if (!response.ok) {
+      throw new Error(`Error fetching frame by ID: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(`Error in fetchFrameById(${id}):`, error);
+    throw error;
+  }
 }
