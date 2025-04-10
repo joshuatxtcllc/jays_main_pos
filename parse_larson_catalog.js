@@ -1,8 +1,15 @@
 
-const fs = require('fs');
-const path = require('path');
-const pdf = require('pdf-parse');
-require('dotenv').config();
+import fs from 'fs';
+import path from 'path';
+import pdf from 'pdf-parse';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+dotenv.config();
+
+// Get current file path in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path to the PDF file
 const pdfPath = path.join(__dirname, 'attached_assets', 'Larson_price_catalog_USA_en_$10,000 - $24,999.pdf');
@@ -82,15 +89,21 @@ async function parsePdfCatalog() {
   }
 }
 
-// Run the function and handle the results
-parsePdfCatalog()
-  .then(text => {
-    if (text) {
-      console.log('PDF parsing completed successfully.');
-    } else {
-      console.log('PDF parsing failed or returned no content.');
-    }
-  })
-  .catch(err => {
-    console.error('Unexpected error running parsePdfCatalog:', err);
-  });
+// Main execution
+if (import.meta.url === `file://${process.argv[1]}`) {
+  // Run the function and handle the results only if this module is executed directly
+  parsePdfCatalog()
+    .then(text => {
+      if (text) {
+        console.log('PDF parsing completed successfully.');
+      } else {
+        console.log('PDF parsing failed or returned no content.');
+      }
+    })
+    .catch(err => {
+      console.error('Unexpected error running parsePdfCatalog:', err);
+    });
+}
+
+// Export the function for use in other modules
+export { parsePdfCatalog };

@@ -1,8 +1,15 @@
 
-const fs = require('fs');
-const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+import fs from 'fs';
+import path from 'path';
+import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+
+dotenv.config();
+
+// Get current file path in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Supabase environment variables
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -248,8 +255,17 @@ console.log(`Extraction complete. Found ${matboardData.length} matboards.`);
 if (matboardData.length > 0) {
   console.log('\nTo import this data to Supabase, uncomment the importToSupabase line at the end of this file.');
   console.log('Make sure your VITE_SUPABASE_URL and VITE_SUPABASE_KEY environment variables are set correctly.');
-  // Uncomment the following line when ready to import
-  // importToSupabase(matboardData);
+  
+  // Check if import was requested via command line arg
+  if (process.argv.includes('--import')) {
+    console.log('\nImport flag detected. Importing to Supabase...');
+    importToSupabase(matboardData);
+  } else {
+    console.log('\nTo import data, run: node extract_matboard_data.js --import');
+  }
 } else {
   console.log('No data to import. Please adjust the extraction patterns and try again.');
 }
+
+// Export functions for use in other modules
+export { extractMatboardData, importToSupabase };

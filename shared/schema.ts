@@ -154,3 +154,20 @@ export const users = pgTable("users", {
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// Larson Juhl catalog model for matboards
+export const larsonJuhlCatalog = pgTable("larson_juhl_catalog", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  hex_color: text("hex_color").notNull(),
+  price: numeric("price", { precision: 10, scale: 6 }).notNull(),
+  code: text("code").notNull(),
+  crescent_code: text("crescent_code"),
+  description: text("description"),
+  category: text("category"),
+  manufacturer: text("manufacturer").notNull()
+});
+
+export const insertLarsonJuhlCatalogSchema = createInsertSchema(larsonJuhlCatalog);
+export type InsertLarsonJuhlCatalog = z.infer<typeof insertLarsonJuhlCatalogSchema>;
+export type LarsonJuhlCatalog = typeof larsonJuhlCatalog.$inferSelect;
