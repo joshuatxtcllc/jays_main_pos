@@ -25,13 +25,14 @@ export function useMatboards() {
           console.log('Loaded Crescent matboards from API:', apiMatboards.length);
           const converted = convertToMatColors(apiMatboards);
           setCrescentMatboards(converted);
+          // Include both basic and API-loaded crescent matboards
+          setMatboards([...basicMatColors, ...converted]);
         } else {
           console.log('No Crescent matboards found in Larson Juhl catalog or empty response. Using static fallback data.');
           setCrescentMatboards(crescentMatColors);
+          // Use static data as fallback
+          setMatboards([...basicMatColors, ...crescentMatColors]);
         }
-        
-        // Always include basic mat colors
-        setMatboards([...basicMatColors, ...crescentMatColors]);
         
         setError(null);
       } catch (err) {

@@ -109,7 +109,7 @@ const FrameVisualizer3D: React.FC<FrameVisualizer3DProps> = ({
   
   // Update the 3D model when frame or artwork changes
   useEffect(() => {
-    if (!sceneRef.current || !frame || !containerRef.current) return;
+    if (!sceneRef.current || !frame || !matColor || !containerRef.current) return;
     
     setIsLoading(true);
     

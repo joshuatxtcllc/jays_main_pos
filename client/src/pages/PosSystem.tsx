@@ -24,6 +24,8 @@ import FrameVisualizer from '@/components/FrameVisualizer';
 import FrameVisualizer3D from '@/components/FrameVisualizer3D';
 import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
+import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
+import { useMatboards } from '@/hooks/use-matboards';
 
 const PosSystem = () => {
   const { toast } = useToast();
@@ -59,7 +61,16 @@ const PosSystem = () => {
   const [priceFilter, setPriceFilter] = useState<string>('all');
   
   // Mat Options
-  const [selectedMatColor, setSelectedMatColor] = useState<MatColor>(matColorCatalog[0]);
+  const { matboards, crescentMatboards, loading: matboardsLoading, getMatboardById } = useMatboards();
+  // Initialize with null and update when matboards load
+  const [selectedMatColor, setSelectedMatColor] = useState<MatColor | null>(null);
+  
+  // Update selectedMatColor when matboards loads
+  useEffect(() => {
+    if (matboards && matboards.length > 0 && !selectedMatColor) {
+      setSelectedMatColor(matboards[0]);
+    }
+  }, [matboards, selectedMatColor]);
   const [matWidth, setMatWidth] = useState<number>(2);
   const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
   
@@ -260,7 +271,7 @@ const PosSystem = () => {
   
   // Handle mat color selection
   const handleMatColorChange = (id: string) => {
-    const matColor = getMatColorById(id);
+    const matColor = getMatboardById(id);
     if (matColor) {
       setSelectedMatColor(matColor);
     }
@@ -353,9 +364,14 @@ const PosSystem = () => {
         glassOption: selectedGlassOption ? "Selected" : "Missing" 
       });
       
+      let missingItems = [];
+      if (!selectedFrame) missingItems.push("frame");
+      if (!selectedMatColor) missingItems.push("mat color");
+      if (!selectedGlassOption) missingItems.push("glass option");
+      
       toast({
         title: "Incomplete Order",
-        description: "Please select a frame, mat color, and glass option.",
+        description: `Please select a ${missingItems.join(", ")}.`,
         variant: "destructive"
       });
       return;
@@ -493,7 +509,8 @@ const PosSystem = () => {
     setManufacturerFilter('all');
     setWidthFilter('all');
     setPriceFilter('all');
-    setSelectedMatColor(matColorCatalog[0]);
+    // Use first matboard from API or null if not available yet
+    setSelectedMatColor(matboards && matboards.length > 0 ? matboards[0] : null);
     setMatWidth(2);
     setMatManufacturerFilter('all');
     setSelectedGlassOption(glassOptionCatalog[0]);
@@ -878,7 +895,7 @@ const PosSystem = () => {
                         {getMatColorsByCategory(category).map(matColor => (
                           <div
                             key={matColor.id}
-                            className={`mat-color-option ${selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform`}
+                            className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform`}
                             style={{ backgroundColor: matColor.color }}
                             onClick={() => handleMatColorChange(matColor.id)}
                             title={`${matColor.name} (${matColor.code})`}
@@ -896,7 +913,7 @@ const PosSystem = () => {
                   {(matManufacturerFilter === 'all' ? matColorCatalog : getMatColorsByManufacturer('Basic')).map(matColor => (
                     <div
                       key={matColor.id}
-                      className={`mat-color-option ${selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
+                      className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
                       style={{ backgroundColor: matColor.color }}
                       onClick={() => handleMatColorChange(matColor.id)}
                       title={matColor.name}
