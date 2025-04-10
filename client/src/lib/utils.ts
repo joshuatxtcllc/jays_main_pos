@@ -22,7 +22,10 @@ export function calculateFramePrice(
   const wholesaleCost = perimeterInFeet * framePrice;
   
   // Apply markup for retail
-  const retailPrice = wholesaleCost * markup;
+  let retailPrice = wholesaleCost * markup;
+  
+  // Reduce price by 2/3 when aligning with frame size as requested
+  retailPrice = retailPrice * (1/3); // This reduces the price to 1/3 of original (or by 2/3)
   
   return parseFloat(retailPrice.toFixed(2));
 }
