@@ -908,11 +908,18 @@ const PosSystem = () => {
                         {getMatColorsByCategory(category).map(matColor => (
                           <div
                             key={matColor.id}
-                            className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform`}
-                            style={{ backgroundColor: matColor.color || '#FFFFFF', border: '1px solid #ccc' }}
+                            className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
                             onClick={() => handleMatColorChange(matColor.id)}
                             title={`${matColor.name} (${matColor.code})`}
-                          ></div>
+                          >
+                            <div 
+                              className="w-full h-full" 
+                              style={{ 
+                                backgroundColor: matColor.color || '#FFFFFF',
+                                border: '2px solid transparent'
+                              }}
+                            ></div>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -926,11 +933,18 @@ const PosSystem = () => {
                   {(matManufacturerFilter === 'all' ? matColorCatalog : getMatColorsByManufacturer('Basic')).map(matColor => (
                     <div
                       key={matColor.id}
-                      className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-light-border dark:border-dark-border'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform`}
-                      style={{ backgroundColor: matColor.color || '#FFFFFF', border: '1px solid #ccc' }}
+                      className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
                       onClick={() => handleMatColorChange(matColor.id)}
                       title={matColor.name}
-                    ></div>
+                    >
+                      <div 
+                        className="w-full h-full" 
+                        style={{ 
+                          backgroundColor: matColor.color || '#FFFFFF',
+                          border: '2px solid transparent'
+                        }}
+                      ></div>
+                    </div>
                   ))}
                 </div>
               )}
@@ -938,13 +952,21 @@ const PosSystem = () => {
               {/* Selected mat color details */}
               {selectedMatColor && (
                 <div className="mt-2 text-xs">
-                  <p>
-                    <span className="font-medium">{selectedMatColor.name}</span>
-                    {selectedMatColor.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary">({selectedMatColor.code})</span>}
-                  </p>
-                  {selectedMatColor.manufacturer && selectedMatColor.manufacturer !== 'Basic' && (
-                    <p className="text-light-textSecondary dark:text-dark-textSecondary">{selectedMatColor.manufacturer}</p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-4 h-4 rounded-full inline-block border border-gray-300" 
+                      style={{ backgroundColor: selectedMatColor.color || '#FFFFFF' }}
+                    ></div>
+                    <div>
+                      <p>
+                        <span className="font-medium">{selectedMatColor.name}</span>
+                        {selectedMatColor.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary">({selectedMatColor.code})</span>}
+                      </p>
+                      {selectedMatColor.manufacturer && selectedMatColor.manufacturer !== 'Basic' && (
+                        <p className="text-light-textSecondary dark:text-dark-textSecondary">{selectedMatColor.manufacturer}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
