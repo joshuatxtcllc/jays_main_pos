@@ -67,14 +67,19 @@ export async function fetchCrescentMatboards(): Promise<LarsonJuhlMatboard[]> {
  * @returns MatColor array
  */
 export function convertToMatColors(matboards: LarsonJuhlMatboard[]): MatColor[] {
-  return matboards.map(matboard => ({
-    id: matboard.id,
-    name: matboard.name,
-    color: matboard.hex_color,
-    price: matboard.price,
-    manufacturer: matboard.manufacturer,
-    code: matboard.code || null,
-    description: matboard.description || null,
-    category: matboard.category || null
-  }));
+  return matboards.map(matboard => {
+    if (!matboard.hex_color) {
+      console.warn(`Missing hex_color for matboard ${matboard.id}: ${matboard.name}`);
+    }
+    return {
+      id: matboard.id,
+      name: matboard.name,
+      color: matboard.hex_color || '#FFFFFF', // Default to white if missing
+      price: matboard.price,
+      manufacturer: matboard.manufacturer,
+      code: matboard.code || null,
+      description: matboard.description || null,
+      category: matboard.category || null
+    };
+  });
 }
