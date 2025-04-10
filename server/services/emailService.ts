@@ -1,8 +1,12 @@
-import sgMail from '@sendgrid/mail';
+import { MailService } from '@sendgrid/mail';
+import type { MailDataRequired } from '@sendgrid/mail';
+
+// Create a new instance of the MailService
+const mailService = new MailService();
 
 // Initialize SendGrid with API key
 if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  mailService.setApiKey(process.env.SENDGRID_API_KEY);
 } else {
   console.warn('SENDGRID_API_KEY not found. Email service will not work.');
 }
@@ -25,17 +29,31 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     return false;
   }
 
-  const msg = {
-    to: options.to,
-    from: options.from || 'noreply@jaysframesguru.com', // Default sender
-    subject: options.subject,
-    text: options.text,
-    html: options.html,
-    attachments: options.attachments,
-  };
-
   try {
-    await sgMail.send(msg);
+    // Create email data for SendGrid
+    const msg: MailDataRequired = {
+      to: options.to,
+      from: options.from || 'noreply@jaysframesguru.com',
+      subject: options.subject,
+      text: options.text || options.subject // Ensure we always have text content
+    };
+
+    // Add text content if provided
+    if (options.text) {
+      msg.text = options.text;
+    }
+
+    // Add HTML content if provided
+    if (options.html) {
+      msg.html = options.html;
+    }
+
+    // Add attachments if provided
+    if (options.attachments && options.attachments.length > 0) {
+      msg.attachments = options.attachments;
+    }
+
+    await mailService.send(msg);
     return true;
   } catch (error) {
     console.error('SendGrid Error:', error);

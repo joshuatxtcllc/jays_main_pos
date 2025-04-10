@@ -11,7 +11,6 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
-import { sendPaymentReceipt, sendOrderStatusUpdate } from './services/emailService';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
@@ -633,9 +632,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Import email service
-  import { sendPaymentReceipt, sendOrderStatusUpdate } from './services/emailService';
-
   // Helper function to handle Stripe webhook events
   async function handleStripeEvent(event: any) {
     switch (event.type) {
@@ -660,32 +656,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
-          // Get customer information for email
+          // Get customer information for email notification
           if (orders.length > 0 && orders[0].customerId) {
             const customer = await storage.getCustomer(orders[0].customerId);
             if (customer && customer.email) {
-              // Send payment receipt email
-              await sendPaymentReceipt(
-                customer.email,
-                customer.name || 'Valued Customer',
-                parseInt(orderGroupId),
-                {
-                  amount: paymentIntent.amount / 100, // Convert from cents to dollars
-                  date: new Date(),
-                  transactionId: paymentIntent.id,
-                  method: 'Credit Card'
-                }
-              );
-              
-              // Send order status update emails for each order
-              for (const order of orders) {
-                await sendOrderStatusUpdate(
-                  customer.email,
-                  customer.name || 'Valued Customer',
-                  order.id,
-                  'in_progress'
-                );
-              }
+              // Email notifications will be handled here
+              console.log(`Payment success for customer ${customer.email}, orderGroupId: ${orderGroupId}`);
+              // TODO: Send email notifications using emailService
             }
           }
         }
