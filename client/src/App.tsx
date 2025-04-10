@@ -7,6 +7,8 @@ import Header from "./components/Header";
 import PosSystem from "./pages/PosSystem";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
+import Checkout from "./pages/Checkout";
+import PaymentStatus from "./pages/PaymentStatus";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -73,6 +75,8 @@ function App() {
                   <Route path="/" component={PosSystem} />
                   <Route path="/orders" component={Orders} />
                   <Route path="/dashboard" component={Dashboard} />
+                  <Route path="/checkout/:orderGroupId" component={Checkout} />
+                  <Route path="/payment-status" component={PaymentStatus} />
                   <Route component={NotFound} />
                 </Switch>
               </main>

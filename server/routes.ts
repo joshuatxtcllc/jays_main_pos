@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateOrderGroup(parseInt(orderGroupId), {
             status: 'paid',
             stripePaymentStatus: 'succeeded',
-            paymentDate: new Date().toISOString(),
+            paymentDate: new Date(),
           });
           
           // Update order statuses

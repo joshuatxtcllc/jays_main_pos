@@ -20,6 +20,9 @@ interface OrderSummaryProps {
   onCreateOrder: () => void;
   onSaveQuote: () => void;
   onCreateWholesaleOrder: () => void;
+  onProceedToCheckout?: (orderGroupId: number) => void;
+  orderGroupId?: number;
+  showCheckoutButton?: boolean;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
