@@ -8,7 +8,8 @@ import PosSystem from "./pages/PosSystem";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "@/pages/not-found";
-import { QueryErrorResetBoundary, ErrorBoundary } from 'react-error-boundary'; //added imports
+import { ErrorBoundary } from 'react-error-boundary'; //added imports
+import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 
 // Error fallback component
@@ -51,13 +52,7 @@ function App() {
     }
   };
 
-  const ErrorFallback = ({ error, resetErrorBoundary }) => (
-    <div role="alert">
-      <h2>Something went wrong:</h2>
-      <pre style={{ whiteSpace: 'pre-wrap' }}>{error.message}</pre>
-      <button onClick={resetErrorBoundary}>Try again</button>
-    </div>
-  );
+  // The ErrorFallback component is already defined above, so we can remove this duplicate
 
   return (
     <QueryErrorResetBoundary>
@@ -65,7 +60,7 @@ function App() {
         <ErrorBoundary
           onReset={reset}
           FallbackComponent={ErrorFallback}
-          onError={(error: Error, info: React.ErrorInfo) => {
+          onError={(error: Error, info: { componentStack: string }) => {
             console.error("App error:", error);
             console.error("Component stack:", info.componentStack);
           }}
