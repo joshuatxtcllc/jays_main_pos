@@ -76,7 +76,10 @@ export function calculateGlassPrice(
   const wholesaleCost = glassArea * glassPrice;
   
   // Apply markup for retail
-  const retailPrice = wholesaleCost * markup;
+  let retailPrice = wholesaleCost * markup;
+  
+  // Reduce glass price by 55% (slightly more than half) as requested
+  retailPrice = retailPrice * 0.45; // Reduces to 45% of original price
   
   return parseFloat(retailPrice.toFixed(2));
 }
