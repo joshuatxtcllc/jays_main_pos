@@ -9,6 +9,7 @@ export const customers = pgTable("customers", {
   email: text("email"),
   phone: text("phone"),
   address: text("address"),
+  stripeCustomerId: text("stripe_customer_id"),
   createdAt: timestamp("created_at").defaultNow()
 });
 
@@ -85,6 +86,9 @@ export const orderGroups = pgTable("order_groups", {
   paymentMethod: text("payment_method"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  stripePaymentStatus: text("stripe_payment_status"),
+  paymentDate: timestamp("payment_date"),
 });
 
 export const insertOrderGroupSchema = createInsertSchema(orderGroups).omit({ id: true, createdAt: true });

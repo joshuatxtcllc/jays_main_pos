@@ -10,6 +10,7 @@ import {
   insertOrderGroupSchema
 } from "@shared/schema";
 import { z } from "zod";
+import Stripe from "stripe";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
