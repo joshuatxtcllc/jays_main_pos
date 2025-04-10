@@ -30,7 +30,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Order, Customer, Frame, MatColor, GlassOption, WholesaleOrder } from '@shared/schema';
+import { Order, Customer, Frame, MatColor, GlassOption, WholesaleOrder, OrderGroup } from '@shared/schema';
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -193,7 +193,8 @@ const Orders = () => {
   // Check if any order has orderGroupId that matches
   const findOrderGroupForOrder = (orderId: number) => {
     if (!orderGroups) return null;
-    return orderGroups.find((group: any) => 
+    const orderGroupArray = orderGroups as OrderGroup[];
+    return orderGroupArray.find((group) => 
       group.status === 'pending' && group.orders.some((oid: number) => oid === orderId)
     );
   };
@@ -204,7 +205,7 @@ const Orders = () => {
   };
 
   // Filter orders based on search term and status
-  const filteredOrders = orders ? orders.filter((order: any) => {
+  const filteredOrders = orders ? (orders as Order[]).filter((order) => {
     const matchesSearch = 
       getCustomerName(order.customerId).toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.id.toString().includes(searchTerm);
