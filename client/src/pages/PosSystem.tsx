@@ -886,8 +886,29 @@ const PosSystem = () => {
           
           {/* Frame Catalog */}
           <div className="h-64 overflow-y-auto p-2 border border-light-border dark:border-dark-border rounded-lg mb-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {filteredFrames.map(frame => (
+            {framesLoading ? (
+              <div className="flex justify-center items-center h-full">
+                <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
+                <span className="ml-3 text-gray-500">Loading frames...</span>
+              </div>
+            ) : filteredFrames.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                <p>No frames match your filter criteria.</p>
+                <button 
+                  className="mt-2 text-primary hover:underline"
+                  onClick={() => {
+                    setMaterialFilter('all');
+                    setManufacturerFilter('all');
+                    setWidthFilter('all');
+                    setPriceFilter('all');
+                  }}
+                >
+                  Reset filters
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {filteredFrames.map(frame => (
                 <div 
                   key={frame.id}
                   className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrame?.id === frame.id ? 'border-2 border-primary' : ''}`}
@@ -914,7 +935,8 @@ const PosSystem = () => {
                   )}
                 </div>
               ))}
-            </div>
+              </div>
+            )}
           </div>
           
           {/* Mat Options */}
@@ -950,51 +972,67 @@ const PosSystem = () => {
               {/* Category sections for Crescent matboards */}
               {matManufacturerFilter === 'Crescent' && (
                 <div className="mb-2 max-h-40 overflow-y-auto pr-2">
-                  {getUniqueMatCategories().map(category => (
-                    <div key={category} className="mb-2">
-                      <h4 className="text-xs text-light-textSecondary dark:text-dark-textSecondary font-medium mb-1">{category}</h4>
-                      <div className="grid grid-cols-5 gap-1">
-                        {getMatColorsByCategory(category).map(matColor => (
-                          <div
-                            key={matColor.id}
-                            className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
-                            onClick={() => handleMatColorChange(matColor.id)}
-                            title={`${matColor.name} (${matColor.code})`}
-                          >
-                            <div 
-                              className="w-full h-full" 
-                              style={{ 
-                                backgroundColor: matColor.color || '#FFFFFF',
-                                border: '2px solid transparent'
-                              }}
-                            ></div>
-                          </div>
-                        ))}
-                      </div>
+                  {matboardsLoading ? (
+                    <div className="flex justify-center items-center py-6">
+                      <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
+                      <span className="ml-3 text-gray-500">Loading matboards...</span>
                     </div>
-                  ))}
+                  ) : (
+                    <>
+                      {getUniqueMatCategories().map(category => (
+                        <div key={category} className="mb-2">
+                          <h4 className="text-xs text-light-textSecondary dark:text-dark-textSecondary font-medium mb-1">{category}</h4>
+                          <div className="grid grid-cols-5 gap-1">
+                            {getMatColorsByCategory(category).map(matColor => (
+                              <div
+                                key={matColor.id}
+                                className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
+                                onClick={() => handleMatColorChange(matColor.id)}
+                                title={`${matColor.name} (${matColor.code})`}
+                              >
+                                <div 
+                                  className="w-full h-full" 
+                                  style={{ 
+                                    backgroundColor: matColor.color || '#FFFFFF',
+                                    border: '2px solid transparent'
+                                  }}
+                                ></div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
               
               {/* Simple grid for Basic matboards or All view */}
               {(matManufacturerFilter === 'Basic' || matManufacturerFilter === 'all') && (
                 <div className="grid grid-cols-4 gap-2">
-                  {(matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
-                    <div
-                      key={matColor.id}
-                      className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
-                      onClick={() => handleMatColorChange(matColor.id)}
-                      title={matColor.name}
-                    >
-                      <div 
-                        className="w-full h-full" 
-                        style={{ 
-                          backgroundColor: matColor.color || '#FFFFFF',
-                          border: '2px solid transparent'
-                        }}
-                      ></div>
+                  {matboardsLoading ? (
+                    <div className="flex justify-center items-center py-6 col-span-4">
+                      <div className="animate-spin w-6 h-6 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
+                      <span className="ml-3 text-gray-500">Loading matboards...</span>
                     </div>
-                  ))}
+                  ) : (
+                    (matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
+                      <div
+                        key={matColor.id}
+                        className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
+                        onClick={() => handleMatColorChange(matColor.id)}
+                        title={matColor.name}
+                      >
+                        <div 
+                          className="w-full h-full" 
+                          style={{ 
+                            backgroundColor: matColor.color || '#FFFFFF',
+                            border: '2px solid transparent'
+                          }}
+                        ></div>
+                      </div>
+                    ))
+                  )}
                 </div>
               )}
               
