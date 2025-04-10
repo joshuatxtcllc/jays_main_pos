@@ -951,19 +951,23 @@ const PosSystem = () => {
               
               {/* Selected mat color details */}
               {selectedMatColor && (
-                <div className="mt-2 text-xs">
-                  <div className="flex items-center gap-2">
+                <div className="mt-4 text-sm">
+                  <h3 className="font-medium mb-2">Selected Mat</h3>
+                  <div className="flex items-center gap-3">
                     <div 
-                      className="w-4 h-4 rounded-full inline-block border border-gray-300" 
+                      className="w-12 h-12 rounded-md inline-block border border-gray-300 shadow-sm" 
                       style={{ backgroundColor: selectedMatColor.color || '#FFFFFF' }}
                     ></div>
                     <div>
-                      <p>
-                        <span className="font-medium">{selectedMatColor.name}</span>
-                        {selectedMatColor.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary">({selectedMatColor.code})</span>}
+                      <p className="font-semibold text-base">
+                        {selectedMatColor.name}
+                        {selectedMatColor.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary text-sm">({selectedMatColor.code})</span>}
                       </p>
                       {selectedMatColor.manufacturer && selectedMatColor.manufacturer !== 'Basic' && (
                         <p className="text-light-textSecondary dark:text-dark-textSecondary">{selectedMatColor.manufacturer}</p>
+                      )}
+                      {selectedMatColor.category && (
+                        <p className="text-light-textSecondary dark:text-dark-textSecondary text-xs">{selectedMatColor.category}</p>
                       )}
                     </div>
                   </div>
