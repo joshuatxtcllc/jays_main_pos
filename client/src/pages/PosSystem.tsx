@@ -344,7 +344,15 @@ const PosSystem = () => {
   
   // Handle create order
   const handleCreateOrder = async () => {
+    console.log("Create Order button clicked");
+    
     if (!selectedFrame || !selectedMatColor || !selectedGlassOption) {
+      console.log("Missing required selections:", { 
+        frame: selectedFrame ? "Selected" : "Missing", 
+        matColor: selectedMatColor ? "Selected" : "Missing", 
+        glassOption: selectedGlassOption ? "Selected" : "Missing" 
+      });
+      
       toast({
         title: "Incomplete Order",
         description: "Please select a frame, mat color, and glass option.",
@@ -354,6 +362,8 @@ const PosSystem = () => {
     }
     
     if (!customer.name) {
+      console.log("Missing customer name");
+      
       toast({
         title: "Customer Information Required",
         description: "Please enter customer name.",
@@ -363,8 +373,11 @@ const PosSystem = () => {
     }
     
     try {
+      console.log("Creating customer with data:", customer);
+      
       // First create or get customer
       const customerResponse = await createCustomerMutation.mutateAsync(customer);
+      console.log("Customer created/retrieved:", customerResponse);
       
       // Calculate prices for the order
       const framePrice = selectedFrame.price;
@@ -388,11 +401,16 @@ const PosSystem = () => {
         artworkImage
       };
       
+      console.log("Creating order with data:", orderData);
+      
       // Create the order
       const orderResponse = await createOrderMutation.mutateAsync(orderData);
+      console.log("Order created successfully:", orderResponse);
       
       // Create special service relationships
       if (selectedServices.length > 0) {
+        console.log("Adding special services:", selectedServices);
+        
         await Promise.all(selectedServices.map(service => 
           apiRequest('POST', '/api/order-special-services', {
             orderId: orderResponse.id,

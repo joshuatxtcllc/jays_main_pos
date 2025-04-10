@@ -133,8 +133,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       {/* Action Buttons */}
       <div className="mt-6 space-y-3">
         <button 
-          className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors flex items-center justify-center"
-          onClick={onCreateOrder}
+          className={`w-full py-3 ${!frame || !matColor || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
+          onClick={() => {
+            console.log('Create Order button clicked in OrderSummary');
+            console.log('Button disabled state:', (!frame || !matColor || !glassOption));
+            onCreateOrder();
+          }}
           disabled={!frame || !matColor || !glassOption}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
