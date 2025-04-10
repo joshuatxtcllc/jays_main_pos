@@ -507,6 +507,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Initialize Stripe
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    console.error("Missing STRIPE_SECRET_KEY environment variable");
+  }
+  
+  const stripe = new Stripe(stripeSecretKey || '', {
+    apiVersion: '2023-10-16' as any,
+  });
+
+  // Payment Processing Routes
+  app.post('/api/create-payment-intent', async (req, res) => {
+    try {
+      const { orderGroupId } = req.body;
+      
+      if (!orderGroupId) {
+        return res.status(400).json({ message: "Order group ID is required" });
+      }
+      
+      const orderGroup = await storage.getOrderGroup(parseInt(orderGroupId));
+      if (!orderGroup) {
+        return res.status(404).json({ message: "Order group not found" });
+      }
+      
+      // Get the customer
+      const customer = orderGroup.customerId ? 
+        await storage.getCustomer(orderGroup.customerId) : null;
+        
+      // Get all orders in the group to calculate total
+      const orders = await storage.getOrdersByGroupId(orderGroup.id);
+      
+      // Calculate the total amount for all orders
+      let totalAmount = 0;
+      for (const order of orders) {
+        totalAmount += Number(order.total);
+      }
+      
+      // Convert amount to cents for Stripe
+      const amountInCents = Math.round(totalAmount * 100);
+      
+      // Create a Stripe customer if needed
+      let stripeCustomerId = customer?.stripeCustomerId;
+      if (customer && !stripeCustomerId && customer.email) {
+        const stripeCustomer = await stripe.customers.create({
+          email: customer.email,
+          name: customer.name,
+          phone: customer.phone,
+        });
+        stripeCustomerId = stripeCustomer.id;
+        
+        // Update customer with Stripe ID
+        if (stripeCustomerId) {
+          await storage.updateCustomer(customer.id, { stripeCustomerId });
+        }
+      }
+      
+      // Create the payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amountInCents,
+        currency: 'usd',
+        ...(stripeCustomerId ? { customer: stripeCustomerId } : {}),
+        automatic_payment_methods: {
+          enabled: true,
+        },
+        metadata: {
+          orderGroupId: orderGroup.id.toString(),
+          customer: customer ? customer.name : 'Guest',
+        },
+      });
+      
+      // Update the order group with the payment intent ID
+      await storage.updateOrderGroup(orderGroup.id, {
+        stripePaymentIntentId: paymentIntent.id,
+        stripePaymentStatus: 'pending',
+      });
+      
+      res.json({
+        clientSecret: paymentIntent.client_secret,
+      });
+    } catch (error) {
+      console.error('Error creating payment intent:', error);
+      res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
+  // Webhook for handling Stripe events
+  app.post('/api/webhook', async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    
+    // For testing without webhook setup
+    if (!endpointSecret || !sig) {
+      // Handle raw event directly for development
+      const event = req.body;
+      try {
+        await handleStripeEvent(event);
+        res.json({ received: true });
+      } catch (error: any) {
+        console.error('Error handling webhook event:', error);
+        res.status(400).send(`Webhook Error: ${error.message || 'Unknown error'}`);
+      }
+      return;
+    }
+    
+    // Production webhook handling with signature verification
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body, 
+        sig, 
+        endpointSecret
+      );
+      await handleStripeEvent(event);
+      res.json({ received: true });
+    } catch (error: any) {
+      console.error('Error verifying webhook signature:', error);
+      res.status(400).send(`Webhook Error: ${error.message || 'Unknown error'}`);
+    }
+  });
+
+  // Helper function to handle Stripe webhook events
+  async function handleStripeEvent(event: any) {
+    switch (event.type) {
+      case 'payment_intent.succeeded':
+        const paymentIntent = event.data.object;
+        
+        // Get the order group ID from metadata
+        const orderGroupId = paymentIntent.metadata.orderGroupId;
+        if (orderGroupId) {
+          // Update order group status
+          await storage.updateOrderGroup(parseInt(orderGroupId), {
+            status: 'paid',
+            stripePaymentStatus: 'succeeded',
+            paymentDate: new Date().toISOString(),
+          });
+          
+          // Update order statuses
+          const orders = await storage.getOrdersByGroupId(parseInt(orderGroupId));
+          for (const order of orders) {
+            await storage.updateOrder(order.id, {
+              status: 'in_progress'
+            });
+          }
+        }
+        break;
+      
+      case 'payment_intent.payment_failed':
+        const failedPaymentIntent = event.data.object;
+        const failedOrderGroupId = failedPaymentIntent.metadata.orderGroupId;
+        
+        if (failedOrderGroupId) {
+          await storage.updateOrderGroup(parseInt(failedOrderGroupId), {
+            stripePaymentStatus: 'failed',
+          });
+        }
+        break;
+    }
+  }
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;

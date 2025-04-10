@@ -19,6 +19,7 @@ export interface IStorage {
   getCustomerByEmail(email: string): Promise<Customer | undefined>;
   getAllCustomers(): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, data: Partial<Customer>): Promise<Customer>;
 
   // Frame methods
   getFrame(id: string): Promise<Frame | undefined>;
@@ -89,6 +90,20 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return newCustomer;
+  }
+  
+  async updateCustomer(id: number, data: Partial<Customer>): Promise<Customer> {
+    const [updatedCustomer] = await db
+      .update(customers)
+      .set(data)
+      .where(eq(customers.id, id))
+      .returning();
+    
+    if (!updatedCustomer) {
+      throw new Error('Customer not found');
+    }
+    
+    return updatedCustomer;
   }
 
   // Frame methods
