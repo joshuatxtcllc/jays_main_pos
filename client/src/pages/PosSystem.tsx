@@ -1016,22 +1016,24 @@ const PosSystem = () => {
                       <span className="ml-3 text-gray-500">Loading matboards...</span>
                     </div>
                   ) : (
-                    (matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
-                      <div
-                        key={matColor.id}
-                        className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
-                        onClick={() => handleMatColorChange(matColor.id)}
-                        title={matColor.name}
-                      >
-                        <div 
-                          className="w-full h-full" 
-                          style={{ 
-                            backgroundColor: matColor.color || '#FFFFFF',
-                            border: '2px solid transparent'
-                          }}
-                        ></div>
-                      </div>
-                    ))
+                    <>
+                      {(matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
+                        <div
+                          key={matColor.id}
+                          className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
+                          onClick={() => handleMatColorChange(matColor.id)}
+                          title={matColor.name}
+                        >
+                          <div 
+                            className="w-full h-full" 
+                            style={{ 
+                              backgroundColor: matColor.color || '#FFFFFF',
+                              border: '2px solid transparent'
+                            }}
+                          ></div>
+                        </div>
+                      ))}
+                    </>
                   )}
                 </div>
               )}
