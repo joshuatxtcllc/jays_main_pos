@@ -207,32 +207,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         if (frame && matColor && glassOption) {
+          // Calculate united inch (width + height)
+          const unitedInch = Number(validatedData.artworkWidth) + Number(validatedData.artworkHeight);
+          console.log('Frame united inch:', unitedInch);
+          
           // Calculate perimeter in feet
-          const perimeter = 2 * (Number(validatedData.artworkWidth) + Number(validatedData.artworkHeight)) / 12;
+          const perimeter = 2 * unitedInch / 12;
           console.log('Frame perimeter:', perimeter, 'feet');
           
-          // Frame price (with markup, reduced by 83.33% as requested - to 1/6th of original)
-          // Original calculation: perimeter * Number(frame.price) * 3.5
-          // Now: perimeter * Number(frame.price) * 3.5 * 0.1667
+          // Frame price using united inch pricing with wholesale-to-retail factor (reduced by 83.33% as requested)
           const framePrice = perimeter * Number(frame.price) * 3.5 * 0.1667;
           console.log('Frame price:', framePrice, 'from base price:', Number(frame.price));
           
-          // Mat price (with markup)
-          const matArea = ((Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth)) * 
-                           (Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth))) - 
-                           (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight));
+          // Mat pricing using united inch approach
+          // For matboard, we need the outer dimensions (including the matboard border)
+          const outerWidth = Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth);
+          const outerHeight = Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth);
+          const outerUnitedInch = outerWidth + outerHeight;
+          console.log('Mat outer united inch:', outerUnitedInch);
+          
+          // Calculate mat area as well for reference
+          const matArea = (outerWidth * outerHeight) - (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight));
           console.log('Mat area:', matArea, 'square inches');
           
-          // If the mat price from database is very small (less than 0.01), it's likely per square inch
-          // If the mat price is large (greater than 1), it's probably already a retail price
+          // Handle price calculation based on price format in database
           const matPriceBase = Number(matColor.price);
           let matPrice;
+          
           if (matPriceBase < 0.01) {
-            // Using original formula with reasonable markup
+            // If price is very small (like 0.000025), it's likely a wholesale price per square inch
+            // Apply mat price * area * markup (conservative markup for matboard)
             matPrice = matArea * matPriceBase * 3;
           } else {
-            // Using a square foot rate with a smaller conversion factor if price already seems retail
-            matPrice = matArea / 144 * matPriceBase;
+            // If price is already retail-like, use united inch pricing approach
+            // The matboard price is typically per united inch of the outer dimensions
+            matPrice = outerUnitedInch * matPriceBase * 0.25; // Using a more moderate markup factor
           }
           console.log('Mat price:', matPrice, 'from base price:', matPriceBase);
           
