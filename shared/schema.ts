@@ -34,7 +34,11 @@ export const frames = pgTable("frames", {
 
 export const insertFrameSchema = createInsertSchema(frames);
 export type InsertFrame = z.infer<typeof insertFrameSchema>;
-export type Frame = typeof frames.$inferSelect;
+
+// Extend the Frame type to include the color property that's added programmatically in storage.ts
+export type Frame = typeof frames.$inferSelect & {
+  color?: string;
+};
 
 // Mat color model
 export const matColors = pgTable("mat_colors", {

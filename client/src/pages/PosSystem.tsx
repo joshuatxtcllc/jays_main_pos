@@ -978,11 +978,17 @@ const PosSystem = () => {
                   className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrame?.id === frame.id ? 'border-2 border-primary' : ''}`}
                   onClick={() => setSelectedFrame(frame)}
                 >
-                  <img 
-                    src={frame.catalogImage} 
-                    alt={frame.name} 
-                    className="w-full h-24 object-cover"
-                  />
+                  <div 
+                    className="w-full h-24 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center"
+                    style={{
+                      backgroundColor: frame.color || '#8B4513',
+                      backgroundImage: `repeating-linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 2px, transparent 2px, transparent 8px)`
+                    }}
+                  >
+                    <span className="text-white text-xs font-mono tracking-tight opacity-70">
+                      {frame.manufacturer.split('-')[0]} #{frame.id.split('-')[1]}
+                    </span>
+                  </div>
                   <div className="bg-black/70 text-white text-xs p-1 absolute bottom-0 left-0 right-0">
                     <div className="font-medium truncate">{frame.name}</div>
                     <div className="flex justify-between">

@@ -405,21 +405,23 @@ export class DatabaseStorage implements IStorage {
       console.error("Storage: Error in getAllFrames:", error);
       // Fallback to return enhanced static catalog data if database access fails
       return frameCatalog.map(frame => {
-        // Add default color and enhanced images
-        let frameColor = '#8B4513'; // Default brown color
+        // Add color based on frame material or name
+        let frameColor = determineFrameColor(frame);
+        
+        // Add consistent fallback images that don't depend on external sites
+        const frameNumber = frame.id.split('-')[1];
         let enhancedImage = frame.catalogImage;
         
-        // Add more detailed wholesaler images based on manufacturer
+        // No longer using direct links to wholesaler websites as they cause CORS issues
+        // Instead, using placeholder images with consistent URLs that look like frame corners
         if (frame.manufacturer === 'Larson-Juhl') {
-          const frameNumber = frame.id.split('-')[1];
-          if (frameNumber) {
-            enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
-          }
-        } else if (frame.manufacturer === 'Nielsen') {
-          const frameNumber = frame.id.split('-')[1];
-          if (frameNumber) {
-            enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
-          }
+          enhancedImage = `https://images.unsplash.com/photo-1594194208961-0fdf358251d3?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fHBpY3R1cmUlMjBmcmFtZXxlbnwwfHwwfHx8MA%3D%3D`;
+        } else if (frame.manufacturer === 'Roma') {
+          enhancedImage = `https://images.unsplash.com/photo-1579541591661-567c1ea5dc56?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fHBpY3R1cmUlMjBmcmFtZXxlbnwwfHwwfHx8MA%3D%3D`;
+        } else if (frame.manufacturer === 'Omega') {
+          enhancedImage = `https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8ZnJhbWV8ZW58MHx8MHx8fDA%3D`;
+        } else {
+          enhancedImage = `https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fGZyYW1lfGVufDB8fDB8fHww`;
         }
         
         return {
