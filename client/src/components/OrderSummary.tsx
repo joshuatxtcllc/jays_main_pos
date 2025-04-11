@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Frame, MatColor, GlassOption, SpecialService } from '@shared/schema';
 import { 
   calculateFramePrice, 
@@ -8,6 +8,7 @@ import {
   calculateLaborPrice, 
   calculateTotalPrice 
 } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface OrderSummaryProps {
   frame: Frame | null;
@@ -40,6 +41,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   orderGroupId,
   showCheckoutButton = false
 }) => {
+  // State for wholesale order checkbox
+  const [addToWholesaleOrder, setAddToWholesaleOrder] = useState(false);
+  
   // Calculate prices
   const framePrice = frame ? calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frame.price)) : 0;
   const matPrice = matColor ? calculateMatPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth), Number(matColor.price)) : 0;
@@ -134,6 +138,21 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>${total.toFixed(2)}</span>
           </div>
         </div>
+        
+        {/* Add to Wholesale Order Checkbox */}
+        <div className="flex items-center space-x-2 mt-4">
+          <Checkbox 
+            id="add-to-wholesale" 
+            checked={addToWholesaleOrder}
+            onCheckedChange={(checked) => setAddToWholesaleOrder(checked as boolean)}
+          />
+          <label 
+            htmlFor="add-to-wholesale" 
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Add To Wholesale Order
+          </label>
+        </div>
       </div>
       
       {/* Action Buttons */}
@@ -145,7 +164,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               onClick={() => {
                 console.log('Create Order button clicked in OrderSummary');
                 console.log('Button disabled state:', (!frame || !matColor || !glassOption));
+                console.log('Add to wholesale order:', addToWholesaleOrder);
                 onCreateOrder();
+                
+                // If checked, also create a wholesale order automatically
+                if (addToWholesaleOrder) {
+                  onCreateWholesaleOrder();
+                }
               }}
               disabled={!frame || !matColor || !glassOption}
             >

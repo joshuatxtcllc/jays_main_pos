@@ -385,9 +385,13 @@ const PosSystem = () => {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate the orders and order groups queries to refresh the cart
+      queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/order-groups'] });
+      
       toast({
         title: "Order Created",
-        description: "The order has been successfully created.",
+        description: "The order has been successfully created and added to your cart.",
       });
     },
     onError: (error) => {
