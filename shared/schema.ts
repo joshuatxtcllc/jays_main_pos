@@ -28,8 +28,8 @@ export const frames = pgTable("frames", {
   price: numeric("price").notNull(), // per foot (wholesale)
   catalogImage: text("catalog_image").notNull(),
   edgeTexture: text("edge_texture"),
-  corner: text("corner"),
-  color: text("color") // hex color for fallback rendering
+  corner: text("corner")
+  // color is added programmatically in storage.ts
 });
 
 export const insertFrameSchema = createInsertSchema(frames);

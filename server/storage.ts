@@ -114,10 +114,59 @@ export class DatabaseStorage implements IStorage {
       // First try to get from the database
       const [frame] = await db.select().from(frames).where(eq(frames.id, id));
       
-      // If found in database, return it
+      // If found in database, enhance it with real images and color
       if (frame) {
         console.log(`Storage: Found frame in database: ${frame.name}`);
-        return frame;
+        
+        // Determine color based on material if not present
+        let frameColor = '#8B4513'; // Default brown color
+        if (frame.material?.toLowerCase().includes('gold')) {
+          frameColor = '#D4AF37';
+        } else if (frame.material?.toLowerCase().includes('silver')) {
+          frameColor = '#C0C0C0';
+        } else if (frame.material?.toLowerCase().includes('black')) {
+          frameColor = '#000000';
+        } else if (frame.material?.toLowerCase().includes('white')) {
+          frameColor = '#FFFFFF';
+        }
+        
+        // Find a real catalog image based on manufacturer
+        let enhancedImage = frame.catalogImage;
+        let realCornerImage = frame.corner || '';
+        let realEdgeImage = frame.edgeTexture || '';
+        
+        // Add more detailed wholesaler images for Larson-Juhl frames
+        if (frame.manufacturer === 'Larson-Juhl') {
+          // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
+          const frameNumber = frame.id.split('-')[1];
+          if (frameNumber) {
+            // Use actual Larson-Juhl catalog images when available
+            enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+            realCornerImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_corner.jpg`;
+            realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
+          }
+        }
+        
+        // Add more detailed wholesaler images for Nielsen frames
+        if (frame.manufacturer === 'Nielsen') {
+          // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
+          const frameNumber = frame.id.split('-')[1];
+          if (frameNumber) {
+            // Use actual Nielsen catalog images when available
+            enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+            realCornerImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Corner.jpg`;
+            realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
+          }
+        }
+        
+        // Return enhanced frame with proper images and color
+        return {
+          ...frame,
+          catalogImage: enhancedImage,
+          corner: realCornerImage,
+          edgeTexture: realEdgeImage,
+          color: frameColor
+        };
       }
       
       // If not found in database, check catalog
@@ -128,8 +177,22 @@ export class DatabaseStorage implements IStorage {
         
         // Enhance the frame with real wholesaler images
         let enhancedImage = catalogFrame.catalogImage;
-        let realCornerImage = catalogFrame.corner;
-        let realEdgeImage = catalogFrame.edgeTexture;
+        let realCornerImage = catalogFrame.corner || '';
+        let realEdgeImage = catalogFrame.edgeTexture || '';
+        
+        // Determine color based on material
+        let frameColor = catalogFrame.color || '#8B4513'; // Default brown color
+        if (!catalogFrame.color) {
+          if (catalogFrame.material?.toLowerCase().includes('gold')) {
+            frameColor = '#D4AF37';
+          } else if (catalogFrame.material?.toLowerCase().includes('silver')) {
+            frameColor = '#C0C0C0';
+          } else if (catalogFrame.material?.toLowerCase().includes('black')) {
+            frameColor = '#000000';
+          } else if (catalogFrame.material?.toLowerCase().includes('white')) {
+            frameColor = '#FFFFFF';
+          }
+        }
         
         // Add more detailed wholesaler images for Larson-Juhl frames
         if (catalogFrame.manufacturer === 'Larson-Juhl') {
@@ -155,24 +218,30 @@ export class DatabaseStorage implements IStorage {
           }
         }
         
-        const enhancedFrame = {
+        // For database compatibility, don't include color in the object
+        // saved to the database - only add it for UI rendering
+        const dbSafeFrame = {
           ...catalogFrame,
           catalogImage: enhancedImage,
-          corner: realCornerImage || catalogFrame.corner,
-          edgeTexture: realEdgeImage || catalogFrame.edgeTexture
+          corner: realCornerImage,
+          edgeTexture: realEdgeImage
         };
         
-        // Insert enhanced frame into database
-        console.log(`Storage: Inserting enhanced frame into database: ${enhancedFrame.name}`);
+        // Try to insert the database-safe frame
+        console.log(`Storage: Inserting enhanced frame into database: ${dbSafeFrame.name}`);
         try {
-          await db.insert(frames).values(enhancedFrame);
+          await db.insert(frames).values(dbSafeFrame);
           console.log(`Storage: Successfully inserted frame into database`);
-          return enhancedFrame;
         } catch (error) {
           console.error(`Storage: Error inserting frame into database:`, error);
-          // Return the enhanced frame even if database insert fails
-          return enhancedFrame;
+          // Continue anyway, we'll return the enhanced frame
         }
+        
+        // Return enhanced frame with color added for UI rendering
+        return {
+          ...dbSafeFrame,
+          color: frameColor
+        };
       }
       
       console.log(`Storage: Frame not found in catalog`);
@@ -181,7 +250,31 @@ export class DatabaseStorage implements IStorage {
       console.error(`Storage: Error in getFrame(${id}):`, error);
       // Fallback to static catalog
       const catalogFrame = frameCatalog.find(f => f.id === id);
-      return catalogFrame || undefined;
+      if (catalogFrame) {
+        // Add default color and enhanced image
+        let frameColor = '#8B4513'; // Default brown color
+        let enhancedImage = catalogFrame.catalogImage;
+        
+        // Add wholesaler images based on manufacturer
+        if (catalogFrame.manufacturer === 'Larson-Juhl') {
+          const frameNumber = catalogFrame.id.split('-')[1];
+          if (frameNumber) {
+            enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+          }
+        } else if (catalogFrame.manufacturer === 'Nielsen') {
+          const frameNumber = catalogFrame.id.split('-')[1];
+          if (frameNumber) {
+            enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+          }
+        }
+        
+        return {
+          ...catalogFrame,
+          catalogImage: enhancedImage,
+          color: frameColor
+        };
+      }
+      return undefined;
     }
   }
   
@@ -192,71 +285,149 @@ export class DatabaseStorage implements IStorage {
       const dbFrames = await db.select().from(frames);
       console.log(`Storage: Found ${dbFrames.length} frames in database`);
       
-      // If no frames in database, initialize with catalog
-      if (dbFrames.length === 0) {
-        console.log("Storage: No frames in database, initializing with catalog");
-        try {
-          // Add wholesale frame images from external sources if available
-          const enhancedCatalog = frameCatalog.map(frame => {
-            // Find a real catalog image based on manufacturer
-            let enhancedImage = frame.catalogImage;
-            let realCornerImage = frame.corner;
-            let realEdgeImage = frame.edgeTexture;
-            
-            // Add more detailed wholesaler images for Larson-Juhl frames
-            if (frame.manufacturer === 'Larson-Juhl') {
-              // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
-              const frameNumber = frame.id.split('-')[1];
-              if (frameNumber) {
-                // Use actual Larson-Juhl catalog images when available
-                enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
-                realCornerImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_corner.jpg`;
-                realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
-              }
-            }
-            
-            // Add more detailed wholesaler images for Nielsen frames
-            if (frame.manufacturer === 'Nielsen') {
-              // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
-              const frameNumber = frame.id.split('-')[1];
-              if (frameNumber) {
-                // Use actual Nielsen catalog images when available
-                enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
-                realCornerImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Corner.jpg`;
-                realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
-              }
-            }
-            
-            return {
-              ...frame,
-              catalogImage: enhancedImage,
-              corner: realCornerImage || frame.corner,
-              edgeTexture: realEdgeImage || frame.edgeTexture
-            };
-          });
-          
-          console.log("Storage: Inserting enhanced frame catalog into database");
-          // Insert frames in smaller batches to avoid potential DB limitations
-          const batchSize = 20;
-          for (let i = 0; i < enhancedCatalog.length; i += batchSize) {
-            const batch = enhancedCatalog.slice(i, i + batchSize);
-            await db.insert(frames).values(batch);
+      // If frames are in the database, enhance them with wholesaler images
+      if (dbFrames.length > 0) {
+        console.log("Storage: Enhancing existing frames with real wholesaler images");
+        // Add additional data to frames from database
+        return dbFrames.map(frame => {
+          // Determine color based on material if not present
+          let frameColor = '#8B4513'; // Default brown color
+          if (frame.material?.toLowerCase().includes('gold')) {
+            frameColor = '#D4AF37';
+          } else if (frame.material?.toLowerCase().includes('silver')) {
+            frameColor = '#C0C0C0';
+          } else if (frame.material?.toLowerCase().includes('black')) {
+            frameColor = '#000000';
+          } else if (frame.material?.toLowerCase().includes('white')) {
+            frameColor = '#FFFFFF';
           }
           
-          console.log(`Storage: Inserted ${enhancedCatalog.length} frames into database`);
-          return enhancedCatalog;
-        } catch (error) {
-          console.error("Storage: Error inserting frames into database:", error);
-          // If there was an error with the database, still return the catalog data
-          return frameCatalog;
-        }
+          // Find a real catalog image based on manufacturer
+          let enhancedImage = frame.catalogImage;
+          let realCornerImage = frame.corner || '';
+          let realEdgeImage = frame.edgeTexture || '';
+          
+          // Add more detailed wholesaler images for Larson-Juhl frames
+          if (frame.manufacturer === 'Larson-Juhl') {
+            // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
+            const frameNumber = frame.id.split('-')[1];
+            if (frameNumber) {
+              // Use actual Larson-Juhl catalog images when available
+              enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+              realCornerImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_corner.jpg`;
+              realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
+            }
+          }
+          
+          // Add more detailed wholesaler images for Nielsen frames
+          if (frame.manufacturer === 'Nielsen') {
+            // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
+            const frameNumber = frame.id.split('-')[1];
+            if (frameNumber) {
+              // Use actual Nielsen catalog images when available
+              enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+              realCornerImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Corner.jpg`;
+              realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
+            }
+          }
+          
+          // Return the enhanced frame with additional properties
+          return {
+            ...frame,
+            catalogImage: enhancedImage,
+            corner: realCornerImage,
+            edgeTexture: realEdgeImage,
+            color: frameColor
+          };
+        });
       }
       
-      return dbFrames;
+      // If no frames in database, return enhanced catalog data
+      console.log("Storage: No frames in database, returning enhanced catalog data");
+      // Add wholesale frame images from external sources
+      const enhancedCatalog = frameCatalog.map(frame => {
+        // Find a real catalog image based on manufacturer
+        let enhancedImage = frame.catalogImage;
+        let realCornerImage = frame.corner || '';
+        let realEdgeImage = frame.edgeTexture || '';
+        let frameColor = frame.color || '#8B4513'; // Use default if not present
+        
+        // Add more detailed wholesaler images for Larson-Juhl frames
+        if (frame.manufacturer === 'Larson-Juhl') {
+          // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
+          const frameNumber = frame.id.split('-')[1];
+          if (frameNumber) {
+            // Use actual Larson-Juhl catalog images when available
+            enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+            realCornerImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_corner.jpg`;
+            realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
+          }
+        }
+        
+        // Add more detailed wholesaler images for Nielsen frames
+        if (frame.manufacturer === 'Nielsen') {
+          // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
+          const frameNumber = frame.id.split('-')[1];
+          if (frameNumber) {
+            // Use actual Nielsen catalog images when available
+            enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+            realCornerImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Corner.jpg`;
+            realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
+          }
+        }
+        
+        // For database compatibility, don't include color in the object
+        // saved to the database - only add it for UI rendering
+        const dbSafeFrame = {
+          ...frame,
+          catalogImage: enhancedImage,
+          corner: realCornerImage,
+          edgeTexture: realEdgeImage
+        };
+        
+        // Try to save to the database if possible - in smaller batches
+        try {
+          db.insert(frames).values(dbSafeFrame).execute();
+        } catch (error) {
+          console.error(`Storage: Error inserting frame ${frame.id} into database:`, error);
+          // Continue with the next frame, we'll still return the enhanced frame
+        }
+        
+        // Return the enhanced frame to the client with the color included
+        return {
+          ...dbSafeFrame,
+          color: frameColor
+        };
+      });
+      
+      return enhancedCatalog;
     } catch (error) {
       console.error("Storage: Error in getAllFrames:", error);
-      // Fallback to return static catalog data if database access fails
-      return frameCatalog;
+      // Fallback to return enhanced static catalog data if database access fails
+      return frameCatalog.map(frame => {
+        // Add default color and enhanced images
+        let frameColor = '#8B4513'; // Default brown color
+        let enhancedImage = frame.catalogImage;
+        
+        // Add more detailed wholesaler images based on manufacturer
+        if (frame.manufacturer === 'Larson-Juhl') {
+          const frameNumber = frame.id.split('-')[1];
+          if (frameNumber) {
+            enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+          }
+        } else if (frame.manufacturer === 'Nielsen') {
+          const frameNumber = frame.id.split('-')[1];
+          if (frameNumber) {
+            enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+          }
+        }
+        
+        return {
+          ...frame,
+          catalogImage: enhancedImage,
+          color: frameColor
+        };
+      });
     }
   }
   
