@@ -1,7 +1,7 @@
 import { useToast } from '@/hooks/use-toast';
 import { Order, ProductionStatus } from '@shared/schema';
-import { useQuery, useMutation, queryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
 export function useProductionKanban() {
   const { toast } = useToast();

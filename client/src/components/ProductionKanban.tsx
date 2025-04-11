@@ -47,7 +47,8 @@ function OrderCard({ order, onMoveLeft, onMoveRight, canMoveLeft, canMoveRight, 
           </Badge>
         </div>
         <CardDescription>
-          {order.customerName || 'Customer'}
+          {/* We use a generic customer reference since the customerName is added in the query result */}
+          Customer #{order.customerId || 'Unknown'}
         </CardDescription>
       </CardHeader>
       <CardContent className="text-sm space-y-2 pb-2">
@@ -68,12 +69,12 @@ function OrderCard({ order, onMoveLeft, onMoveRight, canMoveLeft, canMoveRight, 
         
         <div className="flex items-center space-x-2">
           <Phone className="h-3 w-3" />
-          <span className="text-xs">{order.customerPhone || 'No phone'}</span>
+          <span className="text-xs">Contact customer for details</span>
         </div>
         
         <div className="flex items-center space-x-2">
           <Mail className="h-3 w-3" />
-          <span className="text-xs">{order.customerEmail || 'No email'}</span>
+          <span className="text-xs">Order #{order.id}</span>
         </div>
 
         {order.estimatedCompletionDays && (
@@ -279,7 +280,7 @@ export function ProductionKanban() {
   // Filter orders by their status
   const getOrdersByStatus = (status: ProductionStatus) => {
     if (!orders) return [];
-    return orders.filter(order => order.productionStatus === status);
+    return orders.filter((order: Order) => order.productionStatus === status);
   };
 
   if (error) {

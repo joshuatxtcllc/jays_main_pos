@@ -1,11 +1,11 @@
 import React from 'react';
 import { ProductionKanban } from '@/components/ProductionKanban';
-import { MainLayout } from '@/components/layout/MainLayout';
+// No layout wrapper needed since we have the Header in App.tsx
 
 export default function ProductionPage() {
   return (
-    <MainLayout>
+    <div className="production-page">
       <ProductionKanban />
-    </MainLayout>
+    </div>
   );
 }
