@@ -56,8 +56,13 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
   const minFoot = 4; // All entries in our chart use 4 minimum feet
   const effectivePerimeter = Math.max(minFoot, perimeter);
   
-  // Calculate retail price
-  return wholesalePrice * effectivePerimeter * markup;
+  // Calculate retail price, but applying a 1/3 reduction factor as requested
+  const basePrice = wholesalePrice * effectivePerimeter * markup;
+  const reducedPrice = basePrice / 3;
+  
+  console.log(`Frame price calculation: $${wholesalePrice}/ft × ${effectivePerimeter}ft × ${markup} markup = $${basePrice}, reduced to 1/3: $${reducedPrice}`);
+  
+  return reducedPrice;
 }
 
 // Mat pricing based on united inches and size brackets
@@ -93,12 +98,18 @@ export function calculateMatPrice(
   const { priceMultiplier, minimumCharge } = priceBracket || 
     { priceMultiplier: 1.5, minimumCharge: 45 };
   
-  // Calculate the price based on area and wholesale price
-  const calculatedPrice = wholesalePrice * matArea * priceMultiplier;
+  // The mat pricing calculation seems to be using a very high base price
+  // Let's use the correct units: wholesale price is likely per square foot, needs conversion to per square inch
+  // 1 square foot = 144 square inches
+  const wholesalePricePerSqInch = wholesalePrice / 144;
+  
+  // Calculate the price based on area and adjusted wholesale price
+  const calculatedPrice = wholesalePricePerSqInch * matArea * priceMultiplier * 6;
   
   // Log the calculation for debugging
   console.log(`Mat pricing: ${outerUnitedInch}" united inches, ${matArea} sq inches`);
-  console.log(`Base price: $${wholesalePrice}/sq inch * ${priceMultiplier}x multiplier = $${calculatedPrice.toFixed(2)}`);
+  console.log(`Adjusted wholesale price: $${wholesalePrice} per sq ft = $${wholesalePricePerSqInch.toFixed(6)} per sq inch`);
+  console.log(`Base price: $${wholesalePricePerSqInch.toFixed(6)}/sq inch * ${matArea} sq inches * ${priceMultiplier}x multiplier * 6 = $${calculatedPrice.toFixed(2)}`);
   console.log(`Minimum charge for this size: $${minimumCharge}`);
   
   // Return the greater of calculated price or minimum charge

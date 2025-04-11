@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,9 +7,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProductionKanban } from '@/hooks/use-production';
-import { Loader2, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info } from 'lucide-react';
+import { Loader2, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info, GripVertical } from 'lucide-react';
 import { Order, ProductionStatus, productionStatuses } from '@shared/schema';
 import { formatCurrency } from '@/lib/utils';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
+// Define item types for drag and drop
+const ItemTypes = {
+  ORDER_CARD: 'order',
+};
 
 interface OrderCardProps {
   order: Order;
@@ -18,11 +25,23 @@ interface OrderCardProps {
   canMoveLeft: boolean;
   canMoveRight: boolean;
   onSchedule: (days: number) => void;
+  index: number;
+  moveOrder: (id: number, targetStatus: ProductionStatus) => void;
 }
 
-function OrderCard({ order, onMoveLeft, onMoveRight, canMoveLeft, canMoveRight, onSchedule }: OrderCardProps) {
+function OrderCard({ 
+  order, 
+  onMoveLeft, 
+  onMoveRight, 
+  canMoveLeft, 
+  canMoveRight, 
+  onSchedule, 
+  index,
+  moveOrder
+}: OrderCardProps) {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
   const [estimatedDays, setEstimatedDays] = useState(7);
+  const ref = useRef<HTMLDivElement>(null);
 
   const formatStatus = (status: string) => {
     return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -33,8 +52,30 @@ function OrderCard({ order, onMoveLeft, onMoveRight, canMoveLeft, canMoveRight, 
     setIsScheduleDialogOpen(false);
   };
 
+  // Setup drag source
+  const [{ isDragging }, drag] = useDrag({
+    type: ItemTypes.ORDER_CARD,
+    item: { 
+      id: order.id, 
+      status: order.productionStatus,
+      index
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  // Apply drag ref to the component
+  drag(ref);
+
   return (
-    <Card className="mb-4 shadow-sm">
+    <Card 
+      ref={ref} 
+      className={`mb-4 shadow-sm relative cursor-move ${isDragging ? 'opacity-50' : ''}`}
+    >
+      <div className="absolute top-2 right-2 text-muted-foreground">
+        <GripVertical className="h-4 w-4" />
+      </div>
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
           <CardTitle className="text-md">Order #{order.id}</CardTitle>
@@ -169,6 +210,47 @@ function KanbanColumn({
   scheduleOrder: (id: number, days: number) => void;
   currentStatus: ProductionStatus;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  // Set up drop target for the column
+  const [{ isOver, canDrop }, drop] = useDrop({
+    accept: ItemTypes.ORDER_CARD,
+    drop: (item: { id: number; status: ProductionStatus }) => {
+      // Only update if the status is different
+      if (item.status !== currentStatus) {
+        updateOrderStatus(item.id, currentStatus);
+      }
+      return { status: currentStatus };
+    },
+    canDrop: (item: { id: number; status: ProductionStatus }) => {
+      // Only allow drops if:
+      // 1. The source column is adjacent to target (previous or next) or
+      // 2. The delayed column can accept from any column
+      if (currentStatus === 'delayed') return true;
+      if (item.status === previousStatus || item.status === nextStatus) return true;
+      return false;
+    },
+    collect: (monitor) => ({
+      isOver: monitor.isOver(),
+      canDrop: monitor.canDrop(),
+    }),
+  });
+  
+  // Apply drop ref to the column
+  drop(ref);
+  
+  // Determine the column highlight styling based on drag state
+  const getColumnStyle = () => {
+    if (isOver && canDrop) {
+      return 'bg-primary/10 border-primary border-2';
+    } else if (canDrop) {
+      return 'bg-muted/30 border-primary/30 border-2';
+    } else if (isOver) {
+      return 'bg-destructive/10 border-destructive border-2';
+    }
+    return 'bg-muted/30';
+  };
+
   return (
     <div className="kanban-column min-w-[280px] max-w-[280px]">
       <div className="bg-muted rounded-t-lg p-3 sticky top-0 z-10">
@@ -177,7 +259,10 @@ function KanbanColumn({
           {orders.length} order{orders.length !== 1 ? 's' : ''}
         </div>
       </div>
-      <div className="p-3 min-h-[calc(100vh-180px)] bg-muted/30 rounded-b-lg">
+      <div 
+        ref={ref}
+        className={`p-3 min-h-[calc(100vh-180px)] rounded-b-lg ${getColumnStyle()} transition-colors duration-150`}
+      >
         {isLoading ? (
           <div className="flex items-center justify-center h-20">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -188,7 +273,7 @@ function KanbanColumn({
             <p className="text-xs">No orders in this column</p>
           </div>
         ) : (
-          orders.map((order) => (
+          orders.map((order, index) => (
             <OrderCard
               key={order.id}
               order={order}
@@ -197,6 +282,8 @@ function KanbanColumn({
               onMoveLeft={() => updateOrderStatus(order.id, previousStatus as ProductionStatus)}
               onMoveRight={() => updateOrderStatus(order.id, nextStatus as ProductionStatus)}
               onSchedule={(days) => scheduleOrder(order.id, days)}
+              index={index}
+              moveOrder={updateOrderStatus}
             />
           ))
         )}
@@ -292,7 +379,7 @@ export function ProductionKanban() {
     );
   }
 
-  return (
+  const KanbanBoard = () => (
     <div className="container mx-auto py-4">
       <div className="flex justify-between items-center mb-6">
         <div>
@@ -320,7 +407,7 @@ export function ProductionKanban() {
                 <div>
                   <h3 className="font-medium">Moving Orders</h3>
                   <p className="text-sm text-muted-foreground">
-                    Use the 'Back' and 'Next' buttons to move orders between production stages.
+                    Use drag and drop to move cards between production stages, or use the 'Back' and 'Next' buttons.
                   </p>
                 </div>
                 <div>
@@ -374,5 +461,12 @@ export function ProductionKanban() {
         </div>
       )}
     </div>
+  );
+
+  // Wrap the entire Kanban board in the DndProvider with HTML5Backend
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <KanbanBoard />
+    </DndProvider>
   );
 }
