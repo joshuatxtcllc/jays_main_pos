@@ -176,6 +176,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Dashboard
             </span>
           </Link>
+          <Link href="/customers">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location.startsWith("/customers") && "text-primary"
+            )}>
+              Customers
+            </span>
+          </Link>
         </nav>
       </div>
     </header>
