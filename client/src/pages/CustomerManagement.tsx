@@ -73,7 +73,11 @@ export default function CustomerManagement() {
   const [location] = useLocation();
   const pathSegments = location.split('/');
   const idFromPath = pathSegments[pathSegments.length - 1];
-  const customerId = !isNaN(parseInt(idFromPath)) ? parseInt(idFromPath) : 1;
+  
+  // Check if we're on the "new" customer route
+  const isNewCustomerRoute = idFromPath === 'new';
+  // If we're on the new route, there's no customerId
+  const customerId = !isNewCustomerRoute && !isNaN(parseInt(idFromPath)) ? parseInt(idFromPath) : undefined;
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
@@ -129,6 +133,32 @@ export default function CustomerManagement() {
       });
     }
   });
+  
+  // Mutation for creating a new customer
+  const createCustomerMutation = useMutation({
+    mutationFn: async (customerData: Partial<CustomerInfo>) => {
+      const res = await apiRequest('POST', '/api/customers', customerData);
+      return await res.json();
+    },
+    onSuccess: (newCustomer) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/customers'] });
+      setEditMode(false);
+      toast({
+        title: "Customer created",
+        description: "New customer has been created successfully.",
+        variant: "default",
+      });
+      // Navigate to the new customer's page
+      navigate(`/customers/${newCustomer.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Creation failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,7 +169,17 @@ export default function CustomerManagement() {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateCustomerMutation.mutate(formData);
+    
+    // Determine if we're creating a new customer or updating an existing one
+    const isNewCustomer = customerId === undefined || isNaN(customerId) || !customer;
+    
+    if (isNewCustomer) {
+      // Create a new customer
+      createCustomerMutation.mutate(formData);
+    } else {
+      // Update existing customer
+      updateCustomerMutation.mutate(formData);
+    }
   };
 
   // Enable edit mode and populate form with current data
@@ -215,15 +255,58 @@ export default function CustomerManagement() {
     );
   }
 
-  if (!customer) {
+  // We're creating a new customer, so if we don't have a customer record,
+  // we'll show a form to create one
+  const isCreatingNewCustomer = !customer && editMode;
+  
+  if (!customer && !isCreatingNewCustomer) {
     return (
-      <Alert variant="destructive" className="mb-4">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Customer Not Found</AlertTitle>
-        <AlertDescription>
-          The requested customer information could not be found.
-        </AlertDescription>
-      </Alert>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Customer Account</h1>
+          <div className="flex gap-2">
+            <Button variant="default" onClick={() => {
+              // Reset form data and go into create mode
+              setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                address: '',
+              });
+              setEditMode(true);
+            }}>
+              New Customer
+            </Button>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              Back to POS
+            </Button>
+          </div>
+        </div>
+        
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Customer Not Found</AlertTitle>
+          <AlertDescription>
+            The requested customer information could not be found. You can create a new customer using the "New Customer" button above.
+          </AlertDescription>
+        </Alert>
+        
+        {isCreatingNewCustomer && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New Customer</CardTitle>
+              <CardDescription>
+                Enter the information for the new customer
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Form contents for new customer (same as in the edit form) */}
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     );
   }
 
@@ -231,9 +314,17 @@ export default function CustomerManagement() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Customer Account</h1>
-        <Button variant="outline" onClick={() => navigate("/")}>
-          Back to POS
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="default" onClick={() => {
+            // Navigate to the new customer route
+            navigate("/customers/new");
+          }}>
+            New Customer
+          </Button>
+          <Button variant="outline" onClick={() => navigate("/")}>
+            Back to POS
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="profile" className="w-full">
@@ -307,12 +398,12 @@ export default function CustomerManagement() {
                     </Button>
                     <Button 
                       type="submit"
-                      disabled={updateCustomerMutation.isPending}
+                      disabled={updateCustomerMutation.isPending || createCustomerMutation.isPending}
                     >
-                      {updateCustomerMutation.isPending && (
+                      {(updateCustomerMutation.isPending || createCustomerMutation.isPending) && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      Save Changes
+                      {customerId && customer ? 'Save Changes' : 'Create Customer'}
                     </Button>
                   </div>
                 </form>
