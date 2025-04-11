@@ -375,6 +375,13 @@ const Orders = () => {
                             >
                               Order Materials
                             </Button>
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              onClick={() => setLocation(`/order-progress/${order.id}`)}
+                            >
+                              Track Progress
+                            </Button>
                           </div>
                         </div>
                       </TableCell>
