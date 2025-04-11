@@ -53,6 +53,7 @@ const PosSystem = () => {
   const [manufacturerFilter, setManufacturerFilter] = useState<string>('all');
   const [widthFilter, setWidthFilter] = useState<string>('all');
   const [priceFilter, setPriceFilter] = useState<string>('all');
+  const [frameSearch, setFrameSearch] = useState<string>('');
   
   // Mat Options
   const { matboards, crescentMatboards, loading: matboardsLoading, getMatboardById } = useMatboards();
@@ -85,6 +86,18 @@ const PosSystem = () => {
     if (!frames) return [];
     
     return frames.filter(frame => {
+      // Search filter
+      if (frameSearch.trim() !== '') {
+        const searchLower = frameSearch.trim().toLowerCase();
+        const idMatch = frame.id.toLowerCase().includes(searchLower);
+        const nameMatch = frame.name.toLowerCase().includes(searchLower);
+        const manufacturerMatch = frame.manufacturer.toLowerCase().includes(searchLower);
+        
+        if (!(idMatch || nameMatch || manufacturerMatch)) {
+          return false;
+        }
+      }
+      
       // Material filter
       if (materialFilter !== 'all' && frame.material !== materialFilter) {
         return false;
@@ -129,7 +142,7 @@ const PosSystem = () => {
       
       return true;
     });
-  }, [frames, materialFilter, manufacturerFilter, widthFilter, priceFilter]);
+  }, [frames, materialFilter, manufacturerFilter, widthFilter, priceFilter, frameSearch]);
   
   // Manufacturers and Materials for filters
   const manufacturers = React.useMemo(() => {
@@ -815,6 +828,57 @@ const PosSystem = () => {
               >
                 <span>3D View</span>
               </button>
+            </div>
+          </div>
+          
+          {/* Frame Search */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+              Search Frame by Item Number
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                className="w-full p-2 pl-8 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                placeholder="Enter frame item number or name..."
+                value={frameSearch}
+                onChange={(e) => setFrameSearch(e.target.value)}
+              />
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-4 w-4 absolute left-2 top-3 text-gray-400" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                />
+              </svg>
+              {frameSearch && (
+                <button
+                  className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
+                  onClick={() => setFrameSearch('')}
+                >
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4" 
+                    fill="none" 
+                    viewBox="0 0 24 24" 
+                    stroke="currentColor"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M6 18L18 6M6 6l12 12" 
+                    />
+                  </svg>
+                </button>
+              )}
             </div>
           </div>
           
