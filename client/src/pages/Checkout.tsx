@@ -13,7 +13,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, DollarSign, CreditCard, Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { DiscountPanel } from '@/components/DiscountPanel';
 
 // Initialize Stripe with the public key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -97,23 +101,180 @@ const PaymentForm = ({ orderGroupId }: { orderGroupId: number }) => {
   );
 };
 
+// Cash or Check Payment Form
+const CashCheckPaymentForm = ({ orderGroupId }: { orderGroupId: number }) => {
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'check'>('cash');
+  const [cashAmount, setCashAmount] = useState<string>('');
+  const [checkNumber, setCheckNumber] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { toast } = useToast();
+  const [_, setLocation] = useLocation();
+
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (paymentMethod === 'cash' && (!cashAmount || Number(cashAmount) <= 0)) {
+      toast({
+        title: 'Invalid cash amount',
+        description: 'Please enter a valid cash amount.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    if (paymentMethod === 'check' && !checkNumber) {
+      toast({
+        title: 'Check number required',
+        description: 'Please enter the check number.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await apiRequest('POST', '/api/process-cash-check-payment', {
+        orderGroupId,
+        paymentMethod,
+        cashAmount: paymentMethod === 'cash' ? cashAmount : undefined,
+        checkNumber: paymentMethod === 'check' ? checkNumber : undefined,
+        notes: notes || undefined
+      });
+      
+      if (response.ok) {
+        toast({
+          title: 'Payment recorded',
+          description: `${paymentMethod === 'cash' ? 'Cash' : 'Check'} payment has been successfully recorded.`,
+        });
+        setLocation('/orders');
+      } else {
+        const errorData = await response.json();
+        toast({
+          title: 'Payment failed',
+          description: errorData.message || 'Failed to process payment.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'There was an error processing your payment. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handlePayment}>
+      <CardContent className="space-y-4 pt-6">
+        <div className="space-y-2">
+          <Label>Payment Method</Label>
+          <div className="flex space-x-4">
+            <Button 
+              type="button" 
+              variant={paymentMethod === 'cash' ? 'default' : 'outline'}
+              onClick={() => setPaymentMethod('cash')}
+              className="flex-1"
+            >
+              <DollarSign className="mr-2 h-4 w-4" />
+              Cash
+            </Button>
+            <Button 
+              type="button" 
+              variant={paymentMethod === 'check' ? 'default' : 'outline'}
+              onClick={() => setPaymentMethod('check')}
+              className="flex-1"
+            >
+              <Check className="mr-2 h-4 w-4" />
+              Check
+            </Button>
+          </div>
+        </div>
+        
+        {paymentMethod === 'cash' ? (
+          <div className="space-y-2">
+            <Label htmlFor="cashAmount">Cash Amount</Label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2">$</span>
+              <Input
+                id="cashAmount"
+                value={cashAmount}
+                onChange={(e) => setCashAmount(e.target.value)}
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                className="pl-8"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="checkNumber">Check Number</Label>
+            <Input
+              id="checkNumber"
+              value={checkNumber}
+              onChange={(e) => setCheckNumber(e.target.value)}
+              placeholder="Check #"
+            />
+          </div>
+        )}
+        
+        <div className="space-y-2">
+          <Label htmlFor="notes">Payment Notes (Optional)</Label>
+          <Input
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Add any payment notes here"
+          />
+        </div>
+      </CardContent>
+      <CardFooter className="pt-6 flex justify-between">
+        <Button variant="outline" onClick={() => setLocation('/orders')}>
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isLoading}
+          className="ml-auto"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing
+            </>
+          ) : (
+            'Record Payment'
+          )}
+        </Button>
+      </CardFooter>
+    </form>
+  );
+};
+
 // Checkout page component
 const Checkout = () => {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const { orderGroupId } = useParams<{ orderGroupId: string }>();
   const { toast } = useToast();
   const [_, setLocation] = useLocation();
+  const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   // Fetch order group details
   const { data: orderGroup, isLoading: orderGroupLoading, error: orderGroupError } = useQuery({
-    queryKey: ['/api/order-groups', orderGroupId], 
+    queryKey: ['/api/order-groups', orderGroupId, refreshTrigger], 
     queryFn: () => fetch(`/api/order-groups/${orderGroupId}`).then(res => res.json()),
     enabled: !!orderGroupId,
   });
 
   // Fetch orders in the group
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useQuery({
-    queryKey: ['/api/order-groups', orderGroupId, 'orders'],
+    queryKey: ['/api/order-groups', orderGroupId, 'orders', refreshTrigger],
     queryFn: () => fetch(`/api/order-groups/${orderGroupId}/orders`).then(res => res.json()),
     enabled: !!orderGroupId,
   });
@@ -138,7 +299,13 @@ const Checkout = () => {
 
       createPaymentIntent();
     }
-  }, [orderGroupId, toast]);
+  }, [orderGroupId, toast, refreshTrigger]);
+
+  // Handle discount application
+  const handleDiscountApplied = () => {
+    // Refresh the data to reflect new totals
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   // Calculate totals
   const subtotal = orders?.reduce((acc: number, order: any) => acc + Number(order.subtotal), 0) || 0;
@@ -177,10 +344,11 @@ const Checkout = () => {
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Checkout</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-        {/* Order Summary */}
-        <div className="md:col-span-2">
-          <Card>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        {/* Left Column */}
+        <div className="md:col-span-5">
+          {/* Order Summary */}
+          <Card className="mb-8">
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
               <CardDescription>
@@ -208,8 +376,19 @@ const Checkout = () => {
                     <p className="text-muted-foreground">Subtotal</p>
                     <p>${subtotal.toFixed(2)}</p>
                   </div>
+                  {orderGroup.discountAmount && orderGroup.discountType && (
+                    <div className="flex justify-between mt-2 text-green-600">
+                      <p>Discount {orderGroup.discountType === 'percentage' ? `(${orderGroup.discountAmount}%)` : ''}</p>
+                      <p>-${orderGroup.discountType === 'percentage' 
+                        ? ((Number(orderGroup.discountAmount) / 100) * subtotal).toFixed(2)
+                        : Number(orderGroup.discountAmount).toFixed(2)
+                      }</p>
+                    </div>
+                  )}
                   <div className="flex justify-between mt-2">
-                    <p className="text-muted-foreground">Tax</p>
+                    <p className="text-muted-foreground">
+                      Tax {orderGroup.taxExempt ? '(Exempt)' : ''}
+                    </p>
                     <p>${tax.toFixed(2)}</p>
                   </div>
                   <Separator className="my-4" />
@@ -221,27 +400,71 @@ const Checkout = () => {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Discount & Tax Exempt Panel */}
+          <DiscountPanel 
+            orderGroupId={Number(orderGroupId)}
+            currentDiscount={
+              orderGroup.discountAmount && orderGroup.discountType 
+                ? { 
+                    type: orderGroup.discountType, 
+                    amount: String(orderGroup.discountAmount) 
+                  } 
+                : undefined
+            }
+            taxExempt={orderGroup.taxExempt}
+            onDiscountApplied={handleDiscountApplied}
+          />
         </div>
         
-        {/* Payment Form */}
-        <div className="md:col-span-3">
+        {/* Right Column: Payment Form */}
+        <div className="md:col-span-7">
           <Card>
             <CardHeader>
-              <CardTitle>Payment Information</CardTitle>
+              <CardTitle>Payment Method</CardTitle>
               <CardDescription>
-                Complete your purchase securely with Stripe
+                Choose how you would like to pay for this order
               </CardDescription>
             </CardHeader>
             
-            {clientSecret ? (
-              <Elements stripe={stripePromise} options={{ clientSecret }}>
-                <PaymentForm orderGroupId={Number(orderGroupId)} />
-              </Elements>
-            ) : (
-              <CardContent className="flex items-center justify-center py-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </CardContent>
-            )}
+            <Tabs defaultValue="credit_card" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="credit_card">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Credit Card
+                </TabsTrigger>
+                <TabsTrigger value="cash">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Cash
+                </TabsTrigger>
+                <TabsTrigger value="check">
+                  <Check className="h-4 w-4 mr-2" />
+                  Check
+                </TabsTrigger>
+              </TabsList>
+              
+              {/* Credit Card Payment */}
+              <TabsContent value="credit_card">
+                {clientSecret ? (
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <PaymentForm orderGroupId={Number(orderGroupId)} />
+                  </Elements>
+                ) : (
+                  <CardContent className="flex items-center justify-center py-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </CardContent>
+                )}
+              </TabsContent>
+              
+              {/* Cash or Check Payment */}
+              <TabsContent value="cash">
+                <CashCheckPaymentForm orderGroupId={Number(orderGroupId)} />
+              </TabsContent>
+              
+              <TabsContent value="check">
+                <CashCheckPaymentForm orderGroupId={Number(orderGroupId)} />
+              </TabsContent>
+            </Tabs>
           </Card>
         </div>
       </div>
