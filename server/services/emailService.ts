@@ -324,21 +324,21 @@ export async function sendOrderStatusUpdate(
 function getNextStep(currentStatus: string): string {
   switch (currentStatus) {
     case 'order_processed':
-      return 'We'll schedule your order for production and provide an estimated completion date.';
+      return "We'll schedule your order for production and provide an estimated completion date.";
     case 'scheduled':
-      return 'We'll order specialized materials for your custom frame from our suppliers.';
+      return "We'll order specialized materials for your custom frame from our suppliers.";
     case 'materials_ordered':
-      return 'Once materials arrive, we'll begin the framing process.';
+      return "Once materials arrive, we'll begin the framing process.";
     case 'materials_arrived':
-      return 'Our master framers will cut your custom frame pieces to precision dimensions.';
+      return "Our master framers will cut your custom frame pieces to precision dimensions.";
     case 'frame_cut':
-      return 'We'll prepare the matboard that will showcase your artwork.';
+      return "We'll prepare the matboard that will showcase your artwork.";
     case 'mat_cut':
-      return 'Final assembly of your custom frame, including mounting your artwork and installing glass.';
+      return "Final assembly of your custom frame, including mounting your artwork and installing glass.";
     case 'prepped':
-      return 'Quality inspection and finishing details, preparing your frame for pickup.';
+      return "Quality inspection and finishing details, preparing your frame for pickup.";
     default:
-      return 'We'll continue processing your order through our production workflow.';
+      return "We'll continue processing your order through our production workflow.";
   }
 }
 

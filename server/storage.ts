@@ -798,18 +798,53 @@ export class DatabaseStorage implements IStorage {
         .where(eq(customers.id, order.customerId));
       
       if (customer) {
-        // Create a notification about the status change
-        await this.createCustomerNotification({
-          customerId: customer.id,
-          orderId: order.id,
-          notificationType: 'status_update',
-          channel: 'email', // Default to email
-          subject: `Order #${order.id} Status Update: ${status}`,
-          message: `Your custom framing order #${order.id} has been updated to status: ${status.replace('_', ' ').toUpperCase()}`,
-          successful: true,
-          previousStatus,
-          newStatus: status
-        });
+        try {
+          // Import email service here to avoid circular dependencies
+          const { sendOrderStatusUpdate } = await import('./services/emailService');
+          
+          // Actually send the email notification
+          const emailSent = await sendOrderStatusUpdate(
+            customer.email,
+            customer.name,
+            order.id,
+            status,
+            previousStatus,
+            order.estimatedCompletionDays
+          );
+          
+          // Create a notification record in the database
+          await this.createCustomerNotification({
+            customerId: customer.id,
+            orderId: order.id,
+            notificationType: 'status_update',
+            channel: 'email',
+            subject: `Order #${order.id} Status Update: ${status}`,
+            message: `Your order is now ${status.split('_').join(' ')}. Check your email for details.`,
+            successful: emailSent,
+            previousStatus,
+            newStatus: status,
+            // Store response data if needed for debugging
+            responseData: emailSent ? { sent: true, timestamp: new Date().toISOString() } : { sent: false, error: 'Email failed to send' }
+          });
+          
+          console.log(`Status update email ${emailSent ? 'sent' : 'failed'} for Order #${order.id} to ${customer.email}`);
+        } catch (error) {
+          console.error('Error sending status update email:', error);
+          
+          // Still record the notification attempt even if email failed
+          await this.createCustomerNotification({
+            customerId: customer.id,
+            orderId: order.id,
+            notificationType: 'status_update',
+            channel: 'email',
+            subject: `Order #${order.id} Status Update: ${status}`,
+            message: `Your order is now ${status.split('_').join(' ')}.`,
+            successful: false,
+            previousStatus,
+            newStatus: status,
+            responseData: { error: (error as Error).message }
+          });
+        }
       }
     }
     
@@ -830,7 +865,7 @@ export class DatabaseStorage implements IStorage {
     // Return formatted data with customer details included
     return dbOrders.map(row => ({
       ...row.order,
-      customerName: row.customer ? `${row.customer.firstName} ${row.customer.lastName}` : 'Unknown Customer',
+      customerName: row.customer ? row.customer.name : 'Unknown Customer',
       customerPhone: row.customer?.phone || 'No phone',
       customerEmail: row.customer?.email || 'No email'
     })) as Order[];

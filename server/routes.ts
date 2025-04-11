@@ -1169,6 +1169,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle order notifications
+  app.patch('/api/orders/:id/notifications', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { enabled } = req.body;
+      
+      if (typeof enabled !== 'boolean') {
+        return res.status(400).json({ message: "Enabled status is required and must be a boolean" });
+      }
+
+      // Update the order's notification settings
+      const [order] = await db
+        .update(orders)
+        .set({ notificationsEnabled: enabled })
+        .where(eq(orders.id, id))
+        .returning();
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.json(order);
+    } catch (error) {
+      console.error('Error updating order notification settings:', error);
+      res.status(500).json({ message: "Failed to update notification settings" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;
