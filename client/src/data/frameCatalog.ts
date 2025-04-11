@@ -71,9 +71,9 @@ export const frameCatalog: Frame[] = [
     name: "Larson Ornate Gold",
     manufacturer: "Larson-Juhl",
     material: "wood",
-    width: 3.5,  // in inches
-    depth: 2.25, // in inches
-    price: 18.99, // per foot
+    width: "3.5",  // in inches
+    depth: "2.25", // in inches
+    price: "18.99", // per foot
     catalogImage: "https://images.unsplash.com/photo-1581814605484-050c5bb1196c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzF8fHBpY3R1cmUlMjBmcmFtZXxlbnwwfHwwfHx8MA%3D%3D",
     edgeTexture: "https://images.unsplash.com/photo-1581814605484-050c5bb1196c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzF8fHBpY3R1cmUlMjBmcmFtZXxlbnwwfHwwfHx8MA%3D%3D",
     corner: "https://images.unsplash.com/photo-1581814605484-050c5bb1196c?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MzF8fHBpY3R1cmUlMjBmcmFtZXxlbnwwfHwwfHx8MA%3D%3D",
@@ -106,11 +106,11 @@ export const getFramesByMaterial = (material: string): Frame[] => {
 export const getFramesByWidthRange = (widthRange: string): Frame[] => {
   switch (widthRange) {
     case 'narrow':
-      return frameCatalog.filter(frame => frame.width <= 1.5);
+      return frameCatalog.filter(frame => parseFloat(frame.width) <= 1.5);
     case 'medium':
-      return frameCatalog.filter(frame => frame.width > 1.5 && frame.width <= 2.5);
+      return frameCatalog.filter(frame => parseFloat(frame.width) > 1.5 && parseFloat(frame.width) <= 2.5);
     case 'wide':
-      return frameCatalog.filter(frame => frame.width > 2.5);
+      return frameCatalog.filter(frame => parseFloat(frame.width) > 2.5);
     default:
       return frameCatalog;
   }
@@ -120,11 +120,11 @@ export const getFramesByWidthRange = (widthRange: string): Frame[] => {
 export const getFramesByPriceRange = (priceRange: string): Frame[] => {
   switch (priceRange) {
     case 'economy':
-      return frameCatalog.filter(frame => frame.price >= 5 && frame.price <= 9);
+      return frameCatalog.filter(frame => parseFloat(frame.price) >= 5 && parseFloat(frame.price) <= 9);
     case 'standard':
-      return frameCatalog.filter(frame => frame.price > 9 && frame.price <= 14);
+      return frameCatalog.filter(frame => parseFloat(frame.price) > 9 && parseFloat(frame.price) <= 14);
     case 'premium':
-      return frameCatalog.filter(frame => frame.price > 14);
+      return frameCatalog.filter(frame => parseFloat(frame.price) > 14);
     default:
       return frameCatalog;
   }
@@ -132,12 +132,14 @@ export const getFramesByPriceRange = (priceRange: string): Frame[] => {
 
 // Get unique manufacturers
 export const getUniqueManufacturers = (): string[] => {
-  return ['all', ...new Set(frameCatalog.map(frame => frame.manufacturer))];
+  const manufacturerSet = new Set(frameCatalog.map(frame => frame.manufacturer));
+  return ['all', ...Array.from(manufacturerSet)];
 };
 
 // Get unique materials
 export const getUniqueMaterials = (): string[] => {
-  return ['all', ...new Set(frameCatalog.map(frame => frame.material))];
+  const materialSet = new Set(frameCatalog.map(frame => frame.material));
+  return ['all', ...Array.from(materialSet)];
 };
 
 // Filter frames by multiple criteria
@@ -150,14 +152,18 @@ export const filterFrames = (
   return frameCatalog.filter(frame => {
     const matchesMaterial = materialFilter === 'all' || frame.material === materialFilter;
     const matchesManufacturer = manufacturerFilter === 'all' || frame.manufacturer === manufacturerFilter;
+    const frameWidth = parseFloat(frame.width);
+    const framePrice = parseFloat(frame.price);
+    
     const matchesWidth = widthFilter === 'all' || 
-      (widthFilter === 'narrow' && frame.width <= 1.5) ||
-      (widthFilter === 'medium' && frame.width > 1.5 && frame.width <= 2.5) ||
-      (widthFilter === 'wide' && frame.width > 2.5);
+      (widthFilter === 'narrow' && frameWidth <= 1.5) ||
+      (widthFilter === 'medium' && frameWidth > 1.5 && frameWidth <= 2.5) ||
+      (widthFilter === 'wide' && frameWidth > 2.5);
+    
     const matchesPrice = priceFilter === 'all' ||
-      (priceFilter === 'economy' && frame.price >= 5 && frame.price <= 9) ||
-      (priceFilter === 'standard' && frame.price > 9 && frame.price <= 14) ||
-      (priceFilter === 'premium' && frame.price > 14);
+      (priceFilter === 'economy' && framePrice >= 5 && framePrice <= 9) ||
+      (priceFilter === 'standard' && framePrice > 9 && framePrice <= 14) ||
+      (priceFilter === 'premium' && framePrice > 14);
     
     return matchesMaterial && matchesManufacturer && matchesWidth && matchesPrice;
   });
