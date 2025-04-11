@@ -89,6 +89,11 @@ export const orderGroups = pgTable("order_groups", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   stripePaymentStatus: text("stripe_payment_status"),
   paymentDate: timestamp("payment_date"),
+  discountAmount: numeric("discount_amount"),
+  discountType: text("discount_type"), // 'percentage' or 'fixed'
+  taxExempt: boolean("tax_exempt").default(false),
+  cashAmount: numeric("cash_amount"),
+  checkNumber: text("check_number"),
 });
 
 export const insertOrderGroupSchema = createInsertSchema(orderGroups).omit({ id: true, createdAt: true });

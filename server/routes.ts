@@ -261,8 +261,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Calculate subtotal
           const subtotal = framePrice + matPrice + glassPrice + backingPrice + laborPrice;
           
-          // Apply tax
-          const tax = subtotal * 0.08;
+          // Check if the order group is tax exempt
+          let tax = 0;
+          if (validatedData.orderGroupId) {
+            const orderGroup = await storage.getOrderGroup(validatedData.orderGroupId);
+            if (orderGroup && !orderGroup.taxExempt) {
+              tax = subtotal * 0.08; // Apply 8% tax if not exempt
+            }
+          } else {
+            tax = subtotal * 0.08; // Apply default tax for new orders
+          }
           
           // Total
           const total = subtotal + tax;
@@ -624,15 +632,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Validate status
       if (req.body.status) {
-        if (!['open', 'completed', 'cancelled'].includes(req.body.status)) {
+        if (!['open', 'completed', 'cancelled', 'paid'].includes(req.body.status)) {
           return res.status(400).json({ message: "Invalid status value" });
         }
       }
       
+      // Validate discount type if provided
+      if (req.body.discountType && !['percentage', 'fixed'].includes(req.body.discountType)) {
+        return res.status(400).json({ message: "Invalid discount type. Use 'percentage' or 'fixed'" });
+      }
+      
       const updatedOrderGroup = await storage.updateOrderGroup(id, req.body);
+      
+      // Recalculate total if tax exempt status or discount has changed
+      if (req.body.taxExempt !== undefined || 
+          req.body.discountAmount !== undefined || 
+          req.body.discountType !== undefined) {
+        
+        // Get all orders in the group
+        const orders = await storage.getOrdersByGroupId(id);
+        
+        // Calculate subtotal from all orders
+        let subtotal = 0;
+        for (const order of orders) {
+          subtotal += Number(order.subtotal);
+        }
+        
+        // Apply discount if available
+        let discountedSubtotal = subtotal;
+        if (updatedOrderGroup.discountAmount && updatedOrderGroup.discountType) {
+          const discountAmount = Number(updatedOrderGroup.discountAmount);
+          if (updatedOrderGroup.discountType === 'percentage') {
+            // Apply percentage discount
+            discountedSubtotal = subtotal * (1 - (discountAmount / 100));
+          } else if (updatedOrderGroup.discountType === 'fixed') {
+            // Apply fixed amount discount
+            discountedSubtotal = Math.max(0, subtotal - discountAmount);
+          }
+        }
+        
+        // Calculate tax unless tax exempt
+        let totalTax = 0;
+        if (!updatedOrderGroup.taxExempt) {
+          totalTax = discountedSubtotal * 0.08; // 8% tax rate
+        }
+        
+        // Calculate total
+        const total = discountedSubtotal + totalTax;
+        
+        // Update the order group with new totals
+        await storage.updateOrderGroup(id, {
+          subtotal: subtotal.toString(),
+          tax: totalTax.toString(),
+          total: total.toString()
+        });
+        
+        // Return the fully updated order group
+        const finalOrderGroup = await storage.getOrderGroup(id);
+        return res.json(finalOrderGroup);
+      }
+      
       res.json(updatedOrderGroup);
     } catch (error) {
+      console.error('Error updating order group:', error);
       res.status(500).json({ message: "Failed to update order group" });
+    }
+  });
+  
+  // Apply discount and tax exemption
+  app.post('/api/order-groups/:id/apply-discount', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { discountType, discountAmount, taxExempt } = req.body;
+      
+      if (!discountType || !discountAmount) {
+        return res.status(400).json({ message: "Discount type and amount are required" });
+      }
+      
+      if (!['percentage', 'fixed'].includes(discountType)) {
+        return res.status(400).json({ message: "Invalid discount type. Use 'percentage' or 'fixed'" });
+      }
+      
+      const orderGroup = await storage.getOrderGroup(id);
+      if (!orderGroup) {
+        return res.status(404).json({ message: "Order group not found" });
+      }
+      
+      // Update order group with discount and tax exempt data
+      const updateData: any = {
+        discountType,
+        discountAmount
+      };
+      
+      if (taxExempt !== undefined) {
+        updateData.taxExempt = taxExempt;
+      }
+      
+      // Get all orders in the group
+      const orders = await storage.getOrdersByGroupId(id);
+      
+      // Calculate subtotal from all orders
+      let subtotal = 0;
+      for (const order of orders) {
+        subtotal += Number(order.subtotal);
+      }
+      
+      // Apply discount
+      let discountedSubtotal = subtotal;
+      if (discountType === 'percentage') {
+        // Apply percentage discount
+        discountedSubtotal = subtotal * (1 - (Number(discountAmount) / 100));
+      } else if (discountType === 'fixed') {
+        // Apply fixed amount discount
+        discountedSubtotal = Math.max(0, subtotal - Number(discountAmount));
+      }
+      
+      // Calculate tax unless tax exempt
+      let totalTax = 0;
+      if (!taxExempt) {
+        totalTax = discountedSubtotal * 0.08; // 8% tax rate
+      }
+      
+      // Calculate total
+      const total = discountedSubtotal + totalTax;
+      
+      // Update the order group with new totals
+      updateData.subtotal = subtotal.toString();
+      updateData.tax = totalTax.toString();
+      updateData.total = total.toString();
+      
+      const updatedOrderGroup = await storage.updateOrderGroup(id, updateData);
+      
+      res.json({
+        success: true,
+        message: `Applied ${discountType} discount of ${discountAmount}${discountType === 'percentage' ? '%' : '$'}${taxExempt ? ' and tax exemption' : ''}`,
+        orderGroup: updatedOrderGroup
+      });
+    } catch (error) {
+      console.error('Error applying discount:', error);
+      res.status(500).json({ message: "Failed to apply discount" });
     }
   });
 
@@ -671,6 +809,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let totalAmount = 0;
       for (const order of orders) {
         totalAmount += Number(order.total);
+      }
+
+      // Apply discount if available
+      if (orderGroup.discountAmount && orderGroup.discountType) {
+        const discountAmount = Number(orderGroup.discountAmount);
+        if (orderGroup.discountType === 'percentage') {
+          // Apply percentage discount
+          totalAmount = totalAmount * (1 - (discountAmount / 100));
+        } else if (orderGroup.discountType === 'fixed') {
+          // Apply fixed amount discount
+          totalAmount = Math.max(0, totalAmount - discountAmount);
+        }
       }
       
       // Convert amount to cents for Stripe
@@ -723,6 +873,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error creating payment intent:', error);
       res.status(500).json({ message: "Failed to create payment intent" });
+    }
+  });
+
+  // Process cash or check payment
+  app.post('/api/process-cash-check-payment', async (req, res) => {
+    try {
+      const { orderGroupId, paymentMethod, cashAmount, checkNumber, notes } = req.body;
+      
+      if (!orderGroupId) {
+        return res.status(400).json({ message: "Order group ID is required" });
+      }
+      
+      if (!paymentMethod || !['cash', 'check'].includes(paymentMethod)) {
+        return res.status(400).json({ message: "Valid payment method (cash or check) is required" });
+      }
+      
+      const orderGroup = await storage.getOrderGroup(parseInt(orderGroupId));
+      if (!orderGroup) {
+        return res.status(404).json({ message: "Order group not found" });
+      }
+      
+      // If it's cash payment, validate cash amount
+      if (paymentMethod === 'cash' && !cashAmount) {
+        return res.status(400).json({ message: "Cash amount is required for cash payments" });
+      }
+      
+      // If it's check payment, validate check number
+      if (paymentMethod === 'check' && !checkNumber) {
+        return res.status(400).json({ message: "Check number is required for check payments" });
+      }
+      
+      // Update the order group with payment details
+      const updateData: any = {
+        status: 'paid',
+        paymentMethod,
+        paymentDate: new Date()
+      };
+      
+      if (notes) {
+        updateData.notes = notes;
+      }
+      
+      if (paymentMethod === 'cash') {
+        updateData.cashAmount = cashAmount;
+      } else if (paymentMethod === 'check') {
+        updateData.checkNumber = checkNumber;
+      }
+      
+      const updatedOrderGroup = await storage.updateOrderGroup(orderGroup.id, updateData);
+      
+      // Update all orders in the group to "in_progress"
+      const orders = await storage.getOrdersByGroupId(orderGroup.id);
+      for (const order of orders) {
+        await storage.updateOrder(order.id, {
+          status: 'in_progress'
+        });
+      }
+      
+      res.json({
+        success: true,
+        orderGroup: updatedOrderGroup
+      });
+    } catch (error) {
+      console.error('Error processing cash or check payment:', error);
+      res.status(500).json({ message: "Failed to process payment" });
     }
   });
 
