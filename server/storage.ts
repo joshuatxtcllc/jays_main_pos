@@ -5,9 +5,10 @@ import {
   glassOptions, type GlassOption, type InsertGlassOption,
   specialServices, type SpecialService, type InsertSpecialService,
   orderGroups, type OrderGroup, type InsertOrderGroup,
-  orders, type Order, type InsertOrder,
+  orders, type Order, type InsertOrder, type ProductionStatus,
   orderSpecialServices, type OrderSpecialService, type InsertOrderSpecialService,
-  wholesaleOrders, type WholesaleOrder, type InsertWholesaleOrder
+  wholesaleOrders, type WholesaleOrder, type InsertWholesaleOrder,
+  customerNotifications, type CustomerNotification, type InsertCustomerNotification
 } from "@shared/schema";
 import { frameCatalog } from "../client/src/data/frameCatalog";
 import { matColorCatalog } from "../client/src/data/matColors";
@@ -124,6 +125,17 @@ export interface IStorage {
   getAllWholesaleOrders(): Promise<WholesaleOrder[]>;
   createWholesaleOrder(wholesaleOrder: InsertWholesaleOrder): Promise<WholesaleOrder>;
   updateWholesaleOrder(id: number, data: Partial<WholesaleOrder>): Promise<WholesaleOrder>;
+  
+  // Production Kanban methods
+  getOrdersByProductionStatus(status: ProductionStatus): Promise<Order[]>;
+  updateOrderProductionStatus(id: number, status: ProductionStatus): Promise<Order>;
+  getOrdersForKanban(): Promise<Order[]>;
+  scheduleOrderForProduction(id: number, estimatedDays: number): Promise<Order>;
+  
+  // Customer notification methods
+  createCustomerNotification(notification: InsertCustomerNotification): Promise<CustomerNotification>;
+  getCustomerNotifications(customerId: number): Promise<CustomerNotification[]>;
+  getNotificationsByOrder(orderId: number): Promise<CustomerNotification[]>;
 }
 
 import { db } from "./db";
@@ -743,6 +755,163 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedWholesaleOrder;
+  }
+
+  // Production Kanban methods
+  async getOrdersByProductionStatus(status: ProductionStatus): Promise<Order[]> {
+    return await db
+      .select()
+      .from(orders)
+      .where(eq(orders.productionStatus, status))
+      .orderBy(orders.lastStatusChange);
+  }
+
+  async updateOrderProductionStatus(id: number, status: ProductionStatus): Promise<Order> {
+    // First get the order to check current status
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id));
+    
+    if (!order) {
+      throw new Error('Order not found');
+    }
+
+    // Record the status change
+    const previousStatus = order.productionStatus;
+    
+    // Update the order with new status
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        productionStatus: status,
+        lastStatusChange: new Date()
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    // Check if notifications are enabled for this order
+    if (updatedOrder.notificationsEnabled) {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.id, order.customerId));
+      
+      if (customer) {
+        // Create a notification about the status change
+        await this.createCustomerNotification({
+          customerId: customer.id,
+          orderId: order.id,
+          notificationType: 'status_update',
+          channel: 'email', // Default to email
+          subject: `Order #${order.id} Status Update: ${status}`,
+          message: `Your custom framing order #${order.id} has been updated to status: ${status.replace('_', ' ').toUpperCase()}`,
+          successful: true,
+          previousStatus,
+          newStatus: status
+        });
+      }
+    }
+    
+    return updatedOrder;
+  }
+
+  async getOrdersForKanban(): Promise<Order[]> {
+    // Get all orders with associated customer data for the kanban board
+    const dbOrders = await db
+      .select({
+        order: orders,
+        customer: customers
+      })
+      .from(orders)
+      .leftJoin(customers, eq(orders.customerId, customers.id))
+      .orderBy(orders.lastStatusChange);
+    
+    // Return formatted data with customer details included
+    return dbOrders.map(row => ({
+      ...row.order,
+      customerName: row.customer ? `${row.customer.firstName} ${row.customer.lastName}` : 'Unknown Customer',
+      customerPhone: row.customer?.phone || 'No phone',
+      customerEmail: row.customer?.email || 'No email'
+    })) as Order[];
+  }
+
+  async scheduleOrderForProduction(id: number, estimatedDays: number): Promise<Order> {
+    // Get order to make sure it exists
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id));
+    
+    if (!order) {
+      throw new Error('Order not found');
+    }
+    
+    // Update the estimated completion days
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({
+        estimatedCompletionDays: estimatedDays,
+        productionStatus: 'scheduled' as ProductionStatus
+      })
+      .where(eq(orders.id, id))
+      .returning();
+    
+    // Create a notification about the scheduled production
+    if (updatedOrder.notificationsEnabled) {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.id, order.customerId));
+      
+      if (customer) {
+        const estimatedCompletionDate = new Date();
+        estimatedCompletionDate.setDate(estimatedCompletionDate.getDate() + estimatedDays);
+        
+        await this.createCustomerNotification({
+          customerId: customer.id,
+          orderId: order.id,
+          notificationType: 'estimated_completion',
+          channel: 'email',
+          subject: `Your Custom Framing Order #${order.id} Has Been Scheduled`,
+          message: `Your custom framing order #${order.id} has been scheduled for production. The estimated completion date is ${estimatedCompletionDate.toLocaleDateString()}.`,
+          successful: true,
+          previousStatus: order.productionStatus,
+          newStatus: 'scheduled'
+        });
+      }
+    }
+    
+    return updatedOrder;
+  }
+
+  // Customer notification methods
+  async createCustomerNotification(notification: InsertCustomerNotification): Promise<CustomerNotification> {
+    const [newNotification] = await db
+      .insert(customerNotifications)
+      .values({
+        ...notification,
+        sentAt: new Date()
+      })
+      .returning();
+    
+    return newNotification;
+  }
+
+  async getCustomerNotifications(customerId: number): Promise<CustomerNotification[]> {
+    return await db
+      .select()
+      .from(customerNotifications)
+      .where(eq(customerNotifications.customerId, customerId))
+      .orderBy(customerNotifications.sentAt, 'desc');
+  }
+
+  async getNotificationsByOrder(orderId: number): Promise<CustomerNotification[]> {
+    return await db
+      .select()
+      .from(customerNotifications)
+      .where(eq(customerNotifications.orderId, orderId))
+      .orderBy(customerNotifications.sentAt, 'desc');
   }
 }
 
