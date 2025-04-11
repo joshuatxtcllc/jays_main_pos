@@ -41,7 +41,7 @@ const crescentSelectMats = [
   // Fourth row (half-width mats)
   { id: "crescent-9525", name: "Sage Advice", code: "9525", color: "#B8B99B", category: "Greens", manufacturer: "Crescent" },
   { id: "crescent-9920", name: "Lizard", code: "9920", alt_code: "89920", color: "#8A9379", category: "Greens", manufacturer: "Crescent" },
-  { id: "crescent-9827", name: "Wise Green", code: "9827", alt_code: "89827", color: "#899176", category: "Greens", manufacturer: "Crescent" },
+  { id: "crescent-9827-wisegreen", name: "Wise Green", code: "9827", alt_code: "89827", color: "#899176", category: "Greens", manufacturer: "Crescent" },
   { id: "crescent-9819", name: "Moss Green", code: "9819", alt_code: "89819", color: "#7E8665", category: "Greens", manufacturer: "Crescent" },
   { id: "crescent-9621", name: "Bud", code: "9621", color: "#A4BD88", category: "Greens", manufacturer: "Crescent" },
   { id: "crescent-9531", name: "Spinach", code: "9531", color: "#99B47D", category: "Greens", manufacturer: "Crescent" },
@@ -84,7 +84,7 @@ const crescentSelectMats = [
   { id: "crescent-9897", name: "Water Fall", code: "9897", color: "#3D7FB2", category: "Blues", manufacturer: "Crescent" },
   { id: "crescent-9551", name: "Blue Wave", code: "9551", color: "#3C74AF", category: "Blues", manufacturer: "Crescent" },
   { id: "crescent-9607", name: "Blue Chip", code: "9607", color: "#5071AC", category: "Blues", manufacturer: "Crescent" },
-  { id: "crescent-9827", name: "Flag Blue", code: "9827", alt_code: "89827", color: "#5B72AD", category: "Blues", manufacturer: "Crescent" }
+  { id: "crescent-9827-flagblue", name: "Flag Blue", code: "9827", alt_code: "89827", color: "#5B72AD", category: "Blues", manufacturer: "Crescent" }
 ];
 
 /**

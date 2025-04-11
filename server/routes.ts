@@ -468,6 +468,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/larson-catalog/crescent', getCrescentMatboards);
   app.post('/api/larson-catalog/sync', syncMatboardsToMatColors);
   
+  // Crescent Select Matboards
+  app.get('/api/crescent-select', getCrescentSelect);
+  app.post('/api/crescent-select/import', importCrescentSelect);
+  
   // Frame Catalog API
   app.get('/api/frames', getAllFrames);
   app.get('/api/frames/:id', getFrameById);
