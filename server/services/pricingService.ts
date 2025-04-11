@@ -60,20 +60,39 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
   return wholesalePrice * effectivePerimeter * markup;
 }
 
+// Mat pricing sliding scale based on united inches
+const matSlidingScaleMarkup: {range: [number, number], markup: number}[] = [
+  { range: [0, 20], markup: 10 },
+  { range: [21, 40], markup: 9 },
+  { range: [41, 60], markup: 8 },
+  { range: [61, 80], markup: 7 },
+  { range: [81, 1000], markup: 6 }
+];
+
 /**
- * Calculate matboard price
- * For now using a simple markup factor until we get the sliding scale
+ * Calculate matboard price using sliding scale markup based on united inches
  */
 export function calculateMatPrice(
   wholesalePrice: number, 
   matArea: number,
   outerUnitedInch: number
 ): number {
+  // Find the appropriate markup based on united inches
+  const markupEntry = matSlidingScaleMarkup.find(
+    entry => outerUnitedInch >= entry.range[0] && outerUnitedInch <= entry.range[1]
+  );
+  
+  // Default to lowest markup if no match found
+  const markup = markupEntry ? markupEntry.markup : 6;
+  
+  console.log(`Using mat markup ${markup}x for united inches ${outerUnitedInch}`);
+  
   if (wholesalePrice < 0.01) {
     // If price is very small (like 0.000025), it's likely a wholesale price per square inch
-    return matArea * wholesalePrice * 3;
+    return matArea * wholesalePrice * markup;
   } else {
-    // If price is already retail-like, use united inch pricing approach
+    // For select mats with higher base prices, use a more controlled markup
+    // Use 25% of the sliding scale to avoid excessive pricing
     return outerUnitedInch * wholesalePrice * 0.25;
   }
 }
