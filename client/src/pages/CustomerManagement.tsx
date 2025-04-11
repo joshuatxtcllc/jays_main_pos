@@ -7,20 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2, PackageOpen, CreditCard } from "lucide-react";
+import { AlertCircle, PackageOpen, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
-import { useRouter, useParams } from "wouter";
+import { useLocation } from "wouter";
 
 interface CustomerInfo {
   id: number;
   name: string;
-  email: string;
-  phone: string;
-  address: string;
-  stripeCustomerId?: string;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  stripeCustomerId?: string | null;
   createdAt: string;
 }
 
@@ -34,46 +34,48 @@ interface Order {
   artworkWidth: string;
   artworkHeight: string;
   matWidth: string;
-  artworkDescription?: string;
-  artworkType?: string;
+  artworkDescription?: string | null;
+  artworkType?: string | null;
   subtotal: string;
   tax: string;
   total: string;
   status: string;
   createdAt: string;
-  dueDate?: string;
-  artworkImage?: string;
+  dueDate?: string | null;
+  artworkImage?: string | null;
 }
 
 interface OrderGroup {
   id: number;
   customerId: number;
-  subtotal?: string;
-  tax?: string;
-  total?: string;
+  subtotal?: string | null;
+  tax?: string | null;
+  total?: string | null;
   status: string;
-  paymentMethod?: string;
-  notes?: string;
+  paymentMethod?: string | null;
+  notes?: string | null;
   createdAt: string;
-  stripePaymentIntentId?: string;
-  stripePaymentStatus?: string;
-  paymentDate?: string;
+  stripePaymentIntentId?: string | null;
+  stripePaymentStatus?: string | null;
+  paymentDate?: string | null;
 }
 
 interface OrderHistory {
   orderGroup: OrderGroup;
   orders: Order[];
   orderDate: string;
-  paymentDate?: string;
-  paymentStatus?: string;
-  total?: string;
+  paymentDate?: string | null;
+  paymentStatus?: string | null;
+  total?: string | null;
 }
 
 export default function CustomerManagement() {
-  const [params] = useParams();
-  const customerId = params.id ? parseInt(params.id) : 1; // Default to 1 if no ID provided
+  const [location] = useLocation();
+  const pathSegments = location.split('/');
+  const idFromPath = pathSegments[pathSegments.length - 1];
+  const customerId = !isNaN(parseInt(idFromPath)) ? parseInt(idFromPath) : 1;
   const { toast } = useToast();
-  const [_, navigate] = useRouter();
+  const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<Partial<CustomerInfo>>({});
@@ -110,7 +112,7 @@ export default function CustomerManagement() {
       const res = await apiRequest('PATCH', `/api/customers/${customerId}`, customerData);
       return await res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/customers', customerId] });
       setEditMode(false);
       toast({
@@ -145,7 +147,7 @@ export default function CustomerManagement() {
     if (customer) {
       setFormData({
         name: customer.name,
-        email: customer.email,
+        email: customer.email || '',
         phone: customer.phone || '',
         address: customer.address || '',
       });
@@ -154,7 +156,7 @@ export default function CustomerManagement() {
   };
 
   // Format date helper function
-  const formatDate = (dateString?: string) => {
+  const formatDate = (dateString?: string | null) => {
     if (!dateString) return "N/A";
     try {
       return format(new Date(dateString), "MMM d, yyyy h:mm a");
@@ -417,10 +419,21 @@ export default function CustomerManagement() {
                                 <PackageOpen className="h-5 w-5 mr-2 text-muted-foreground" />
                                 <div>
                                   <p className="font-medium">Frame #{order.id}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {order.artworkWidth}" x {order.artworkHeight}" 
-                                    {order.artworkDescription ? ` - ${order.artworkDescription}` : ''}
-                                  </p>
+                                  <div className="grid grid-cols-1 text-sm text-muted-foreground gap-1">
+                                    <p>
+                                      <span className="font-medium">Image Size:</span> {order.artworkWidth}" x {order.artworkHeight}"
+                                    </p>
+                                    <p>
+                                      <span className="font-medium">Mat Width:</span> {order.matWidth}"
+                                    </p>
+                                    {/* Calculate finished size (image + mat on all sides) */}
+                                    <p>
+                                      <span className="font-medium">Finished Size:</span> {(parseFloat(order.artworkWidth) + parseFloat(order.matWidth) * 2).toFixed(1)}" x {(parseFloat(order.artworkHeight) + parseFloat(order.matWidth) * 2).toFixed(1)}"
+                                    </p>
+                                    {order.artworkDescription && 
+                                      <p><span className="font-medium">Description:</span> {order.artworkDescription}</p>
+                                    }
+                                  </div>
                                 </div>
                               </div>
                               <Button 
