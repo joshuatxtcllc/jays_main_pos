@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../db';
 import { larsonJuhlCatalog, matColors } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { importCrescentSelectMats } from '../services/crescentSelectService';
 
 /**
  * Fetches all matboards from the Larson Juhl catalog
