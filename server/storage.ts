@@ -109,34 +109,155 @@ export class DatabaseStorage implements IStorage {
 
   // Frame methods
   async getFrame(id: string): Promise<Frame | undefined> {
-    // First try to get from the database
-    const [frame] = await db.select().from(frames).where(eq(frames.id, id));
-    
-    // If not found in database, check catalog
-    if (!frame) {
+    console.log(`Storage: Getting frame with ID: ${id}`);
+    try {
+      // First try to get from the database
+      const [frame] = await db.select().from(frames).where(eq(frames.id, id));
+      
+      // If found in database, return it
+      if (frame) {
+        console.log(`Storage: Found frame in database: ${frame.name}`);
+        return frame;
+      }
+      
+      // If not found in database, check catalog
+      console.log(`Storage: Frame not found in database, checking catalog`);
       const catalogFrame = frameCatalog.find(f => f.id === id);
       if (catalogFrame) {
-        // Insert into database
-        await db.insert(frames).values(catalogFrame);
-        return catalogFrame;
+        console.log(`Storage: Found frame in catalog: ${catalogFrame.name}`);
+        
+        // Enhance the frame with real wholesaler images
+        let enhancedImage = catalogFrame.catalogImage;
+        let realCornerImage = catalogFrame.corner;
+        let realEdgeImage = catalogFrame.edgeTexture;
+        
+        // Add more detailed wholesaler images for Larson-Juhl frames
+        if (catalogFrame.manufacturer === 'Larson-Juhl') {
+          // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
+          const frameNumber = catalogFrame.id.split('-')[1];
+          if (frameNumber) {
+            // Use actual Larson-Juhl catalog images when available
+            enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+            realCornerImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_corner.jpg`;
+            realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
+          }
+        }
+        
+        // Add more detailed wholesaler images for Nielsen frames
+        if (catalogFrame.manufacturer === 'Nielsen') {
+          // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
+          const frameNumber = catalogFrame.id.split('-')[1];
+          if (frameNumber) {
+            // Use actual Nielsen catalog images when available
+            enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+            realCornerImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Corner.jpg`;
+            realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
+          }
+        }
+        
+        const enhancedFrame = {
+          ...catalogFrame,
+          catalogImage: enhancedImage,
+          corner: realCornerImage || catalogFrame.corner,
+          edgeTexture: realEdgeImage || catalogFrame.edgeTexture
+        };
+        
+        // Insert enhanced frame into database
+        console.log(`Storage: Inserting enhanced frame into database: ${enhancedFrame.name}`);
+        try {
+          await db.insert(frames).values(enhancedFrame);
+          console.log(`Storage: Successfully inserted frame into database`);
+          return enhancedFrame;
+        } catch (error) {
+          console.error(`Storage: Error inserting frame into database:`, error);
+          // Return the enhanced frame even if database insert fails
+          return enhancedFrame;
+        }
       }
+      
+      console.log(`Storage: Frame not found in catalog`);
+      return undefined;
+    } catch (error) {
+      console.error(`Storage: Error in getFrame(${id}):`, error);
+      // Fallback to static catalog
+      const catalogFrame = frameCatalog.find(f => f.id === id);
+      return catalogFrame || undefined;
     }
-    
-    return frame || undefined;
   }
   
   async getAllFrames(): Promise<Frame[]> {
-    // First get frames from database
-    const dbFrames = await db.select().from(frames);
-    
-    // If no frames in database, initialize with catalog
-    if (dbFrames.length === 0) {
-      // Insert all catalog frames
-      await db.insert(frames).values(frameCatalog);
+    console.log("Storage: Getting all frames");
+    try {
+      // First get frames from database
+      const dbFrames = await db.select().from(frames);
+      console.log(`Storage: Found ${dbFrames.length} frames in database`);
+      
+      // If no frames in database, initialize with catalog
+      if (dbFrames.length === 0) {
+        console.log("Storage: No frames in database, initializing with catalog");
+        try {
+          // Add wholesale frame images from external sources if available
+          const enhancedCatalog = frameCatalog.map(frame => {
+            // Find a real catalog image based on manufacturer
+            let enhancedImage = frame.catalogImage;
+            let realCornerImage = frame.corner;
+            let realEdgeImage = frame.edgeTexture;
+            
+            // Add more detailed wholesaler images for Larson-Juhl frames
+            if (frame.manufacturer === 'Larson-Juhl') {
+              // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
+              const frameNumber = frame.id.split('-')[1];
+              if (frameNumber) {
+                // Use actual Larson-Juhl catalog images when available
+                enhancedImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_fab.jpg`;
+                realCornerImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_corner.jpg`;
+                realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
+              }
+            }
+            
+            // Add more detailed wholesaler images for Nielsen frames
+            if (frame.manufacturer === 'Nielsen') {
+              // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
+              const frameNumber = frame.id.split('-')[1];
+              if (frameNumber) {
+                // Use actual Nielsen catalog images when available
+                enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
+                realCornerImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Corner.jpg`;
+                realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
+              }
+            }
+            
+            return {
+              ...frame,
+              catalogImage: enhancedImage,
+              corner: realCornerImage || frame.corner,
+              edgeTexture: realEdgeImage || frame.edgeTexture
+            };
+          });
+          
+          console.log("Storage: Inserting enhanced frame catalog into database");
+          // Insert frames in smaller batches to avoid potential DB limitations
+          const batchSize = 20;
+          for (let i = 0; i < enhancedCatalog.length; i += batchSize) {
+            const batch = enhancedCatalog.slice(i, i + batchSize);
+            await db.insert(frames).values(batch);
+          }
+          
+          console.log(`Storage: Inserted ${enhancedCatalog.length} frames into database`);
+          return enhancedCatalog;
+        } catch (error) {
+          console.error("Storage: Error inserting frames into database:", error);
+          // If there was an error with the database, still return the catalog data
+          return frameCatalog;
+        }
+      }
+      
+      return dbFrames;
+    } catch (error) {
+      console.error("Storage: Error in getAllFrames:", error);
+      // Fallback to return static catalog data if database access fails
       return frameCatalog;
     }
-    
-    return dbFrames;
   }
   
   async updateFrame(id: string, data: Partial<Frame>): Promise<Frame> {

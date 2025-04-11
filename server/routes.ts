@@ -75,9 +75,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Frames
   app.get('/api/frames', async (req, res) => {
     try {
+      console.log("Server: Fetching all frames");
       const frames = await storage.getAllFrames();
+      console.log(`Server: Successfully fetched ${frames.length} frames`);
       res.json(frames);
     } catch (error) {
+      console.error("Server error fetching frames:", error);
       res.status(500).json({ message: "Failed to fetch frames" });
     }
   });
@@ -85,14 +88,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/frames/:id', async (req, res) => {
     try {
       const id = req.params.id;
+      console.log(`Server: Fetching frame with ID: ${id}`);
       const frame = await storage.getFrame(id);
       
       if (!frame) {
+        console.log(`Server: Frame with ID ${id} not found`);
         return res.status(404).json({ message: "Frame not found" });
       }
       
+      console.log(`Server: Successfully fetched frame: ${frame.name}`);
       res.json(frame);
     } catch (error) {
+      console.error(`Server error fetching frame with ID ${req.params.id}:`, error);
       res.status(500).json({ message: "Failed to fetch frame" });
     }
   });
