@@ -209,20 +209,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (frame && matColor && glassOption) {
           // Calculate perimeter in feet
           const perimeter = 2 * (Number(validatedData.artworkWidth) + Number(validatedData.artworkHeight)) / 12;
+          console.log('Frame perimeter:', perimeter, 'feet');
           
-          // Frame price (with markup)
-          const framePrice = perimeter * Number(frame.price) * 3.5;
+          // Frame price (with markup, reduced by 83.33% as requested - to 1/6th of original)
+          // Original calculation: perimeter * Number(frame.price) * 3.5
+          // Now: perimeter * Number(frame.price) * 3.5 * 0.1667
+          const framePrice = perimeter * Number(frame.price) * 3.5 * 0.1667;
+          console.log('Frame price:', framePrice, 'from base price:', Number(frame.price));
           
           // Mat price (with markup)
           const matArea = ((Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth)) * 
                            (Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth))) - 
                            (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight));
-          const matPrice = matArea * Number(matColor.price) * 3;
+          console.log('Mat area:', matArea, 'square inches');
           
-          // Glass price (with markup)
+          // If the mat price from database is very small (less than 0.01), it's likely per square inch
+          // If the mat price is large (greater than 1), it's probably already a retail price
+          const matPriceBase = Number(matColor.price);
+          let matPrice;
+          if (matPriceBase < 0.01) {
+            // Using original formula with reasonable markup
+            matPrice = matArea * matPriceBase * 3;
+          } else {
+            // Using a square foot rate with a smaller conversion factor if price already seems retail
+            matPrice = matArea / 144 * matPriceBase;
+          }
+          console.log('Mat price:', matPrice, 'from base price:', matPriceBase);
+          
+          // Glass price (with markup, reduced by 55% as requested)
+          // Original: glassArea * Number(glassOption.price) * 3
+          // Now: glassArea * Number(glassOption.price) * 3 * 0.45
           const glassArea = (Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth)) * 
                            (Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth));
-          const glassPrice = glassArea * Number(glassOption.price) * 3;
+          const glassPrice = glassArea * Number(glassOption.price) * 3 * 0.45;
+          console.log('Glass price:', glassPrice, 'from base price:', Number(glassOption.price));
           
           // Backing price (with markup)
           const backingPrice = glassArea * 0.03 * 2.5;
