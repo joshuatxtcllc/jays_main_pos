@@ -24,6 +24,7 @@ export interface IStorage {
   // Frame methods
   getFrame(id: string): Promise<Frame | undefined>;
   getAllFrames(): Promise<Frame[]>;
+  updateFrame(id: string, data: Partial<Frame>): Promise<Frame>;
   
   // Mat color methods
   getMatColor(id: string): Promise<MatColor | undefined>;
@@ -136,6 +137,20 @@ export class DatabaseStorage implements IStorage {
     }
     
     return dbFrames;
+  }
+  
+  async updateFrame(id: string, data: Partial<Frame>): Promise<Frame> {
+    const [updatedFrame] = await db
+      .update(frames)
+      .set(data)
+      .where(eq(frames.id, id))
+      .returning();
+    
+    if (!updatedFrame) {
+      throw new Error('Frame not found');
+    }
+    
+    return updatedFrame;
   }
   
   // Mat color methods

@@ -93,10 +93,12 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
             canvas.width = 100;
             canvas.height = 100;
             // Create a wood-like texture pattern
+            const defaultFrameColor = '#8B4513'; // Medium brown wood color
+            const frameColor = frame.color || defaultFrameColor;
             const gradient = ctx.createLinearGradient(0, 0, 100, 0);
-            gradient.addColorStop(0, frame.color || '#8B4513');
-            gradient.addColorStop(0.5, frame.color ? lightenColor(frame.color, 20) : '#A0522D');
-            gradient.addColorStop(1, frame.color || '#8B4513');
+            gradient.addColorStop(0, frameColor);
+            gradient.addColorStop(0.5, lightenColor(frameColor, 20));
+            gradient.addColorStop(1, frameColor);
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
