@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,30 +84,57 @@ export default function CustomerManagement() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<Partial<CustomerInfo>>({});
 
-  // Fetch customer data
+  // Initialize edit mode if we're on the "new" customer route
+  useEffect(() => {
+    if (isNewCustomerRoute) {
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+      });
+      setEditMode(true);
+    }
+  }, [isNewCustomerRoute]);
+
+  // Fetch customer data if we have a customerId
   const { 
     data: customer, 
     isLoading: isLoadingCustomer, 
     error: customerError 
   } = useQuery<CustomerInfo>({ 
     queryKey: ['/api/customers', customerId],
-    queryFn: () => fetch(`/api/customers/${customerId}`).then(res => {
-      if (!res.ok) throw new Error('Failed to fetch customer');
-      return res.json();
-    }),
+    queryFn: () => {
+      // Skip API call if we're creating a new customer
+      if (isNewCustomerRoute || !customerId) {
+        return Promise.resolve(undefined);
+      }
+      return fetch(`/api/customers/${customerId}`).then(res => {
+        if (!res.ok) throw new Error('Failed to fetch customer');
+        return res.json();
+      });
+    },
+    enabled: !isNewCustomerRoute && !!customerId, // Only run query if we have a valid customer ID
   });
 
-  // Fetch customer order history
+  // Fetch customer order history if we have a customerId
   const { 
     data: orderHistory, 
     isLoading: isLoadingHistory, 
     error: historyError 
   } = useQuery<OrderHistory[]>({ 
     queryKey: ['/api/customers', customerId, 'orders'],
-    queryFn: () => fetch(`/api/customers/${customerId}/orders`).then(res => {
-      if (!res.ok) throw new Error('Failed to fetch order history');
-      return res.json();
-    }),
+    queryFn: () => {
+      // Skip API call if we're creating a new customer
+      if (isNewCustomerRoute || !customerId) {
+        return Promise.resolve([]);
+      }
+      return fetch(`/api/customers/${customerId}/orders`).then(res => {
+        if (!res.ok) throw new Error('Failed to fetch order history');
+        return res.json();
+      });
+    },
+    enabled: !isNewCustomerRoute && !!customerId, // Only run query if we have a valid customer ID
   });
 
   // Mutation for updating customer information
@@ -255,53 +282,109 @@ export default function CustomerManagement() {
     );
   }
 
-  // We're creating a new customer, so if we don't have a customer record,
-  // we'll show a form to create one
-  const isCreatingNewCustomer = !customer && editMode;
-  
-  if (!customer && !isCreatingNewCustomer) {
+  // Handle new customer form or not found cases
+  if (isNewCustomerRoute || (!customer && !isLoadingCustomer)) {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Customer Account</h1>
+          <h1 className="text-3xl font-bold">
+            {isNewCustomerRoute ? "Create New Customer" : "Customer Account"}
+          </h1>
           <div className="flex gap-2">
-            <Button variant="default" onClick={() => {
-              // Reset form data and go into create mode
-              setFormData({
-                name: '',
-                email: '',
-                phone: '',
-                address: '',
-              });
-              setEditMode(true);
-            }}>
-              New Customer
-            </Button>
+            {!isNewCustomerRoute && (
+              <Button variant="default" onClick={() => navigate("/customers/new")}>
+                New Customer
+              </Button>
+            )}
             <Button variant="outline" onClick={() => navigate("/")}>
               Back to POS
             </Button>
           </div>
         </div>
         
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Customer Not Found</AlertTitle>
-          <AlertDescription>
-            The requested customer information could not be found. You can create a new customer using the "New Customer" button above.
-          </AlertDescription>
-        </Alert>
+        {!isNewCustomerRoute && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Customer Not Found</AlertTitle>
+            <AlertDescription>
+              The requested customer information could not be found. You can create a new customer using the "New Customer" button above.
+            </AlertDescription>
+          </Alert>
+        )}
         
-        {isCreatingNewCustomer && (
+        {/* Show create form for new customers */}
+        {isNewCustomerRoute && (
           <Card>
             <CardHeader>
-              <CardTitle>Create New Customer</CardTitle>
+              <CardTitle>Customer Information</CardTitle>
               <CardDescription>
                 Enter the information for the new customer
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Form contents for new customer (same as in the edit form) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                      id="name"
+                      name="name"
+                      value={formData.name || ""}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input 
+                      id="phone"
+                      name="phone"
+                      value={formData.phone || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input 
+                      id="address"
+                      name="address"
+                      value={formData.address || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => navigate("/customers")}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={createCustomerMutation.isPending}
+                  >
+                    {createCustomerMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Create Customer
+                  </Button>
+                </div>
               </form>
             </CardContent>
           </Card>
@@ -412,27 +495,27 @@ export default function CustomerManagement() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Full Name</h3>
-                      <p className="mt-1">{customer.name}</p>
+                      <p className="mt-1">{customer?.name ?? "Not available"}</p>
                     </div>
                     
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Email Address</h3>
-                      <p className="mt-1">{customer.email || "Not provided"}</p>
+                      <p className="mt-1">{customer?.email || "Not provided"}</p>
                     </div>
                     
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Phone Number</h3>
-                      <p className="mt-1">{customer.phone || "Not provided"}</p>
+                      <p className="mt-1">{customer?.phone || "Not provided"}</p>
                     </div>
                     
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
-                      <p className="mt-1">{customer.address || "Not provided"}</p>
+                      <p className="mt-1">{customer?.address || "Not provided"}</p>
                     </div>
                     
                     <div>
                       <h3 className="text-sm font-medium text-muted-foreground">Customer Since</h3>
-                      <p className="mt-1">{formatDate(customer.createdAt)}</p>
+                      <p className="mt-1">{formatDate(customer?.createdAt)}</p>
                     </div>
                   </div>
                   
