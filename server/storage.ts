@@ -113,6 +113,7 @@ export interface IStorage {
   getAllOrders(): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, data: Partial<Order>): Promise<Order>;
+  deleteOrder(id: number): Promise<void>;
   
   // Order special service methods
   createOrderSpecialService(orderSpecialService: InsertOrderSpecialService): Promise<OrderSpecialService>;
@@ -670,6 +671,12 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedOrder;
+  }
+  
+  async deleteOrder(id: number): Promise<void> {
+    await db
+      .delete(orders)
+      .where(eq(orders.id, id));
   }
   
   // Order special service methods

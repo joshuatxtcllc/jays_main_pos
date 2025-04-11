@@ -99,6 +99,8 @@ export const orderGroups = pgTable("order_groups", {
   taxExempt: boolean("tax_exempt").default(false),
   cashAmount: numeric("cash_amount"),
   checkNumber: text("check_number"),
+  invoiceEmailSent: boolean("invoice_email_sent").default(false),
+  invoiceEmailDate: timestamp("invoice_email_date"),
 });
 
 export const insertOrderGroupSchema = createInsertSchema(orderGroups).omit({ id: true, createdAt: true });
@@ -118,6 +120,7 @@ export const orders = pgTable("orders", {
   matWidth: numeric("mat_width").notNull(), // in inches
   artworkDescription: text("artwork_description"),
   artworkType: text("artwork_type"),
+  quantity: integer("quantity").notNull().default(1),
   subtotal: numeric("subtotal").notNull(),
   tax: numeric("tax").notNull(),
   total: numeric("total").notNull(),

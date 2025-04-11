@@ -12,7 +12,8 @@ import {
   insertOrderSpecialServiceSchema,
   insertWholesaleOrderSchema,
   insertOrderGroupSchema,
-  orders
+  orders,
+  Order
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
@@ -203,6 +204,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch order" });
     }
   });
+  
+  app.patch('/api/orders/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const order = await storage.getOrder(id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Update quantity and recalculate prices if necessary
+      const updates: Partial<Order> = {};
+      
+      // Handle quantity updates
+      if (req.body.quantity !== undefined) {
+        const quantity = parseInt(req.body.quantity);
+        if (isNaN(quantity) || quantity < 1) {
+          return res.status(400).json({ message: "Invalid quantity value" });
+        }
+        
+        updates.quantity = quantity;
+        
+        // Recalculate subtotal based on new quantity if needed
+        if (quantity !== (order.quantity || 1)) {
+          // For simplicity, we'll multiply the unit price by the new quantity
+          const unitPrice = Number(order.subtotal) / (order.quantity || 1);
+          const newSubtotal = unitPrice * quantity;
+          updates.subtotal = newSubtotal.toString();
+          
+          // Recalculate tax and total
+          const taxRate = Number(order.tax) / Number(order.subtotal);
+          const newTax = newSubtotal * taxRate;
+          updates.tax = newTax.toString();
+          updates.total = (newSubtotal + newTax).toString();
+          
+          // Also update the order group totals
+          if (order.orderGroupId) {
+            const orderGroup = await storage.getOrderGroup(order.orderGroupId);
+            if (orderGroup) {
+              const orderGroupOrders = await storage.getOrdersByGroupId(order.orderGroupId);
+              
+              // Calculate the difference in price due to quantity change
+              const priceDifference = newSubtotal - Number(order.subtotal);
+              const taxDifference = newTax - Number(order.tax);
+              
+              // Update order group totals
+              const updatedGroup = await storage.updateOrderGroup(order.orderGroupId, {
+                subtotal: (Number(orderGroup.subtotal) + priceDifference).toString(),
+                tax: (Number(orderGroup.tax) + taxDifference).toString(),
+                total: (Number(orderGroup.total) + priceDifference + taxDifference).toString()
+              });
+            }
+          }
+        }
+      }
+      
+      const updatedOrder = await storage.updateOrder(id, updates);
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ message: "Failed to update order" });
+    }
+  });
+  
+  app.delete('/api/orders/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const order = await storage.getOrder(id);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // If the order belongs to an order group, update the order group totals
+      if (order.orderGroupId) {
+        const orderGroup = await storage.getOrderGroup(order.orderGroupId);
+        if (orderGroup) {
+          // Subtract this order's subtotal, tax, and total from order group
+          await storage.updateOrderGroup(order.orderGroupId, {
+            subtotal: (Number(orderGroup.subtotal) - Number(order.subtotal)).toString(),
+            tax: (Number(orderGroup.tax) - Number(order.tax)).toString(),
+            total: (Number(orderGroup.total) - Number(order.total)).toString()
+          });
+        }
+      }
+      
+      // Delete the order
+      await storage.deleteOrder(id);
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      res.status(500).json({ message: "Failed to delete order" });
+    }
+  });
 
   app.post('/api/orders', async (req, res) => {
     console.log('POST /api/orders - Received request body:', req.body);
@@ -324,28 +420,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/orders/:id', async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const order = await storage.getOrder(id);
-      
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      
-      // Validate status
-      if (req.body.status) {
-        if (!['pending', 'in_progress', 'completed', 'cancelled'].includes(req.body.status)) {
-          return res.status(400).json({ message: "Invalid status value" });
-        }
-      }
-      
-      const updatedOrder = await storage.updateOrder(id, req.body);
-      res.json(updatedOrder);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update order" });
-    }
-  });
+  // Legacy update endpoint - merged with the one above
 
   // Order Special Services
   app.post('/api/order-special-services', async (req, res) => {
@@ -792,6 +867,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Payment Processing Routes
+  // Process cash or check payments
+  app.post('/api/process-cash-check-payment', async (req, res) => {
+    try {
+      const { orderGroupId, paymentMethod, cashAmount, checkNumber, notes } = req.body;
+      
+      if (!orderGroupId) {
+        return res.status(400).json({ message: "Order group ID is required" });
+      }
+      
+      if (!paymentMethod || !['cash', 'check'].includes(paymentMethod)) {
+        return res.status(400).json({ message: "Valid payment method (cash or check) is required" });
+      }
+      
+      if (paymentMethod === 'cash' && !cashAmount) {
+        return res.status(400).json({ message: "Cash amount is required for cash payments" });
+      }
+      
+      if (paymentMethod === 'check' && !checkNumber) {
+        return res.status(400).json({ message: "Check number is required for check payments" });
+      }
+      
+      const orderGroup = await storage.getOrderGroup(parseInt(orderGroupId));
+      if (!orderGroup) {
+        return res.status(404).json({ message: "Order group not found" });
+      }
+      
+      // Update the order group with payment information
+      const paymentData = {
+        status: 'paid',
+        paymentMethod: paymentMethod,
+        paymentDate: new Date(),
+        paymentNotes: notes || '',
+        ...(paymentMethod === 'cash' ? { cashAmountReceived: cashAmount } : {}),
+        ...(paymentMethod === 'check' ? { checkNumber: checkNumber } : {})
+      };
+      
+      const updatedOrderGroup = await storage.updateOrderGroup(parseInt(orderGroupId), paymentData);
+      
+      res.json({ success: true, orderGroup: updatedOrderGroup });
+    } catch (error) {
+      console.error("Error processing cash/check payment:", error);
+      res.status(500).json({ message: "Failed to process payment" });
+    }
+  });
+  
   app.post('/api/create-payment-intent', async (req, res) => {
     try {
       const { orderGroupId } = req.body;
@@ -883,70 +1003,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Process cash or check payment
-  app.post('/api/process-cash-check-payment', async (req, res) => {
-    try {
-      const { orderGroupId, paymentMethod, cashAmount, checkNumber, notes } = req.body;
-      
-      if (!orderGroupId) {
-        return res.status(400).json({ message: "Order group ID is required" });
-      }
-      
-      if (!paymentMethod || !['cash', 'check'].includes(paymentMethod)) {
-        return res.status(400).json({ message: "Valid payment method (cash or check) is required" });
-      }
-      
-      const orderGroup = await storage.getOrderGroup(parseInt(orderGroupId));
-      if (!orderGroup) {
-        return res.status(404).json({ message: "Order group not found" });
-      }
-      
-      // If it's cash payment, validate cash amount
-      if (paymentMethod === 'cash' && !cashAmount) {
-        return res.status(400).json({ message: "Cash amount is required for cash payments" });
-      }
-      
-      // If it's check payment, validate check number
-      if (paymentMethod === 'check' && !checkNumber) {
-        return res.status(400).json({ message: "Check number is required for check payments" });
-      }
-      
-      // Update the order group with payment details
-      const updateData: any = {
-        status: 'paid',
-        paymentMethod,
-        paymentDate: new Date()
-      };
-      
-      if (notes) {
-        updateData.notes = notes;
-      }
-      
-      if (paymentMethod === 'cash') {
-        updateData.cashAmount = cashAmount;
-      } else if (paymentMethod === 'check') {
-        updateData.checkNumber = checkNumber;
-      }
-      
-      const updatedOrderGroup = await storage.updateOrderGroup(orderGroup.id, updateData);
-      
-      // Update all orders in the group to "in_progress"
-      const orders = await storage.getOrdersByGroupId(orderGroup.id);
-      for (const order of orders) {
-        await storage.updateOrder(order.id, {
-          status: 'in_progress'
-        });
-      }
-      
-      res.json({
-        success: true,
-        orderGroup: updatedOrderGroup
-      });
-    } catch (error) {
-      console.error('Error processing cash or check payment:', error);
-      res.status(500).json({ message: "Failed to process payment" });
-    }
-  });
+
 
   // Webhook for handling Stripe events
   app.post('/api/webhook', async (req, res) => {

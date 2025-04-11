@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
+import { CartWidget } from './CartWidget';
 
 interface HeaderProps {
   darkMode: boolean;
@@ -75,6 +76,9 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
         </nav>
         
         <div className="flex items-center space-x-4">
+          {/* Cart Widget */}
+          <CartWidget />
+          
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -184,6 +188,11 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Customers
             </span>
           </Link>
+          
+          <div className="py-2 flex items-center">
+            <span className="font-medium mr-4">Cart:</span>
+            <CartWidget />
+          </div>
         </nav>
       </div>
     </header>

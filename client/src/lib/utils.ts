@@ -1,151 +1,198 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-// Calculate the price for a custom frame
-export function calculateFramePrice(
-  frameWidth: number, // inches
-  frameHeight: number, // inches
-  framePrice: number, // price per foot (wholesale)
-  markup: number = 3.5 // standard industry markup
-): number {
-  // Calculate perimeter in inches
-  const perimeter = 2 * (frameWidth + frameHeight);
-  
-  // Convert to feet (12 inches = 1 foot)
-  const perimeterInFeet = perimeter / 12;
-  
-  // Calculate wholesale cost
-  const wholesaleCost = perimeterInFeet * framePrice;
-  
-  // Apply markup for retail
-  let retailPrice = wholesaleCost * markup;
-  
-  // First reduce price by 2/3 when aligning with frame size
-  retailPrice = retailPrice * (1/3); // Reduces to 33.3% of original
-  
-  // Further reduce by 50% as requested (cut in half)
-  retailPrice = retailPrice * 0.5; // Final price is 16.67% of the original price
-  
-  return parseFloat(retailPrice.toFixed(2));
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
 }
 
-// Calculate the price for matting
-export function calculateMatPrice(
-  frameWidth: number, // inches
-  frameHeight: number, // inches
-  matWidth: number, // inches
-  matPrice: number, // price per square inch (wholesale)
-  markup: number = 3 // standard industry markup
-): number {
-  // Calculate total mat dimensions
-  const matOuterWidth = frameWidth + (2 * matWidth);
-  const matOuterHeight = frameHeight + (2 * matWidth);
+// Format dimensions as united inches or square inches as needed
+export function formatDimensions(width: number, height: number, format: 'united' | 'square' = 'united'): string {
+  if (format === 'united') {
+    return `${Math.round(width + height)}"`;
+  } else {
+    return `${Math.round(width * height)} sq in`;
+  }
+}
+
+// Calculate frame perimeter in feet (used for pricing)
+export function calculateFramePerimeter(width: number, height: number): number {
+  // Perimeter in inches
+  const perimeterInches = 2 * (width + height);
+  // Convert to feet
+  return perimeterInches / 12;
+}
+
+// Calculate backing price based on dimensions
+export function calculateBackingPrice(width: number, height: number, matWidth: number): number {
+  // Calculate backing size (artwork size + mat width*2)
+  const backingWidth = width + (matWidth * 2);
+  const backingHeight = height + (matWidth * 2);
+  const backingArea = backingWidth * backingHeight;
+  
+  // Base price per square inch
+  const basePricePerSqInch = 0.03;
+  
+  // Apply sliding scale based on size
+  let priceFactor = 1.0;
+  if (backingArea > 500) {
+    priceFactor = 0.9;
+  }
+  if (backingArea > 1000) {
+    priceFactor = 0.85;
+  }
+  if (backingArea > 1500) {
+    priceFactor = 0.8;
+  }
+  
+  return backingArea * basePricePerSqInch * priceFactor;
+}
+
+// Calculate frame price based on dimensions and base price
+export function calculateFramePrice(width: number, height: number, basePrice: number): number {
+  // Calculate united inches (width + height)
+  const unitedInches = width + height;
+  
+  // Calculate frame perimeter in feet
+  const perimeterFeet = calculateFramePerimeter(width, height);
+  
+  // Apply sliding scale based on size
+  let priceFactor = 1.0;
+  
+  if (unitedInches > 40) {
+    priceFactor = 0.95;
+  }
+  if (unitedInches > 60) {
+    priceFactor = 0.90;
+  }
+  if (unitedInches > 80) {
+    priceFactor = 0.85;
+  }
+  if (unitedInches > 100) {
+    priceFactor = 0.80;
+  }
+  
+  // Apply 1/6th price reduction as requested by the client
+  const reducedPriceFactor = 0.1667;
+  
+  // Calculate final price: perimeter in feet * base price per foot * price factor * reduction
+  return perimeterFeet * basePrice * priceFactor * reducedPriceFactor;
+}
+
+// Calculate mat price based on dimensions and base price
+export function calculateMatPrice(width: number, height: number, matWidth: number, basePrice: number): number {
+  // Calculate outer dimensions with mat
+  const outerWidth = width + (matWidth * 2);
+  const outerHeight = height + (matWidth * 2);
+  
+  // Calculate united inches (outer width + outer height)
+  const unitedInches = outerWidth + outerHeight;
   
   // Calculate mat area in square inches
-  const matArea = matOuterWidth * matOuterHeight - (frameWidth * frameHeight);
+  const matArea = (outerWidth * outerHeight) - (width * height);
   
-  // Calculate wholesale cost
-  const wholesaleCost = matArea * matPrice;
+  // Apply sliding scale based on size
+  let priceFactor = 1.0;
+  if (unitedInches > 40) {
+    priceFactor = 0.95;
+  }
+  if (unitedInches > 60) {
+    priceFactor = 0.90;
+  }
+  if (unitedInches > 80) {
+    priceFactor = 0.85;
+  }
+  if (unitedInches > 100) {
+    priceFactor = 0.80;
+  }
   
-  // Apply markup for retail
-  const retailPrice = wholesaleCost * markup;
-  
-  return parseFloat(retailPrice.toFixed(2));
+  // Calculate price: mat area * base price per square inch * price factor
+  return matArea * (basePrice / 100) * priceFactor;
 }
 
-// Calculate the price for glass
-export function calculateGlassPrice(
-  frameWidth: number, // inches
-  frameHeight: number, // inches
-  matWidth: number, // inches
-  glassPrice: number, // price per square inch (wholesale)
-  markup: number = 3 // standard industry markup
-): number {
-  // Calculate total glass dimensions (same as outer mat dimensions)
-  const glassWidth = frameWidth + (2 * matWidth);
-  const glassHeight = frameHeight + (2 * matWidth);
+// Calculate glass price based on dimensions and base price
+export function calculateGlassPrice(width: number, height: number, matWidth: number, basePrice: number): number {
+  // Calculate glass dimensions (artwork + mat)
+  const glassWidth = width + (matWidth * 2);
+  const glassHeight = height + (matWidth * 2);
   
   // Calculate glass area in square inches
   const glassArea = glassWidth * glassHeight;
   
-  // Calculate wholesale cost
-  const wholesaleCost = glassArea * glassPrice;
+  // Calculate united inches
+  const unitedInches = glassWidth + glassHeight;
   
-  // Apply markup for retail
-  let retailPrice = wholesaleCost * markup;
+  // Apply sliding scale based on size
+  let priceFactor = 1.0;
+  if (unitedInches > 40) {
+    priceFactor = 0.95;
+  }
+  if (unitedInches > 60) {
+    priceFactor = 0.90;
+  }
+  if (unitedInches > 80) {
+    priceFactor = 0.85;
+  }
+  if (unitedInches > 100) {
+    priceFactor = 0.80;
+  }
   
-  // Reduce glass price by 55% (slightly more than half) as requested
-  retailPrice = retailPrice * 0.45; // Reduces to 45% of original price
+  // Apply 45% price reduction as requested by the client
+  const reducedPriceFactor = 0.45;
   
-  return parseFloat(retailPrice.toFixed(2));
+  // Calculate price: glass area * base price per square inch * price factor * reduction
+  return glassArea * (basePrice / 100) * priceFactor * reducedPriceFactor;
 }
 
-// Calculate the price for backing
-export function calculateBackingPrice(
-  frameWidth: number, // inches
-  frameHeight: number, // inches
-  matWidth: number, // inches
-  backingPrice: number = 0.03, // price per square inch (wholesale)
-  markup: number = 2.5 // standard industry markup
-): number {
-  // Calculate total backing dimensions (same as outer mat/glass dimensions)
-  const backingWidth = frameWidth + (2 * matWidth);
-  const backingHeight = frameHeight + (2 * matWidth);
+// Calculate labor price based on dimensions
+export function calculateLaborPrice(width: number, height: number): number {
+  // Calculate united inches (width + height)
+  const unitedInches = width + height;
   
-  // Calculate backing area in square inches
-  const backingArea = backingWidth * backingHeight;
+  // Base labor rate
+  let baseRate = 15;
   
-  // Calculate wholesale cost
-  const wholesaleCost = backingArea * backingPrice;
+  // Apply sliding scale based on size
+  if (unitedInches > 40) {
+    baseRate = 20;
+  }
+  if (unitedInches > 60) {
+    baseRate = 25;
+  }
+  if (unitedInches > 80) {
+    baseRate = 30;
+  }
+  if (unitedInches > 100) {
+    baseRate = 35;
+  }
   
-  // Apply markup for retail
-  const retailPrice = wholesaleCost * markup;
-  
-  return parseFloat(retailPrice.toFixed(2));
+  return baseRate;
 }
 
-// Calculate labor price
-export function calculateLaborPrice(
-  frameWidth: number, // inches
-  frameHeight: number, // inches
-  baseRate: number = 20, // base labor rate
-  sizeMultiplier: number = 0.05 // additional cost per square inch
-): number {
-  // Calculate frame area in square inches
-  const frameArea = frameWidth * frameHeight;
-  
-  // Calculate labor price based on size
-  const laborPrice = baseRate + (frameArea * sizeMultiplier);
-  
-  return parseFloat(laborPrice.toFixed(2));
-}
-
-// Calculate total price
+// Calculate total price including tax
 export function calculateTotalPrice(
   framePrice: number,
   matPrice: number,
   glassPrice: number,
   backingPrice: number,
   laborPrice: number,
-  specialServicesPrice: number = 0,
-  taxRate: number = 0.08
-): { subtotal: number, tax: number, total: number } {
+  specialServicesPrice: number
+): { subtotal: number; tax: number; total: number } {
+  // Calculate subtotal
   const subtotal = framePrice + matPrice + glassPrice + backingPrice + laborPrice + specialServicesPrice;
+  
+  // Apply tax rate (use 8.25% as standard sales tax unless tax exempt)
+  const taxRate = 0.0825;
   const tax = subtotal * taxRate;
+  
+  // Calculate total
   const total = subtotal + tax;
   
-  return {
-    subtotal: parseFloat(subtotal.toFixed(2)),
-    tax: parseFloat(tax.toFixed(2)),
-    total: parseFloat(total.toFixed(2))
-  };
-}
-
-// Generate a unique ID
-export function generateId(prefix: string = ''): string {
-  return `${prefix}${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  return { subtotal, tax, total };
 }
