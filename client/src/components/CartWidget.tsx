@@ -122,7 +122,7 @@ export function CartWidget() {
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button variant="outline" size="icon" className="relative dark:text-white dark:hover:bg-gray-800">
           <ShoppingCart className="h-5 w-5" />
           {totalItems > 0 && (
             <Badge variant="destructive" className="absolute -top-2 -right-2 px-1.5 py-0.5 min-w-[1.2rem] h-5">

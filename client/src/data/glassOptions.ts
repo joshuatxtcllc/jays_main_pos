@@ -5,19 +5,19 @@ export const glassOptionCatalog: GlassOption[] = [
     id: 'regular',
     name: 'Regular Glass',
     description: 'Standard protection',
-    price: 0.08 // per square inch (wholesale)
+    price: '0.08' // per square inch (wholesale)
   },
   {
     id: 'uv',
-    name: 'UV Protection',
-    description: '99% UV filtering',
-    price: 0.12 // per square inch (wholesale)
+    name: 'Museum Glass',
+    description: 'Anti-glare + UV protection',
+    price: '0.45' // per square inch (wholesale)
   },
   {
     id: 'museum',
-    name: 'Museum Glass',
-    description: 'Anti-glare + UV',
-    price: 0.25 // per square inch (wholesale)
+    name: 'Conservation Glass',
+    description: 'Premium UV protection',
+    price: '0.25' // per square inch (wholesale)
   }
 ];
 
@@ -32,31 +32,31 @@ export const specialServicesCatalog: SpecialService[] = [
     id: 'float-mount',
     name: 'Float Mount',
     description: 'Artwork appears to float',
-    price: 35.00
+    price: '35.00'
   },
   {
     id: 'glass-float',
     name: 'Glass Float',
     description: 'Suspended between glass',
-    price: 55.00
+    price: '55.00'
   },
   {
     id: 'shadowbox',
     name: 'Shadowbox',
     description: 'For 3D objects',
-    price: 65.00
+    price: '65.00'
   },
   {
     id: 'labor-30min',
     name: 'Additional Labor (30 min)',
     description: 'Custom work',
-    price: 30.00
+    price: '30.00'
   },
   {
     id: 'labor-1hour',
     name: 'Additional Labor (1 hour)',
     description: 'Custom work',
-    price: 55.00
+    price: '55.00'
   }
 ];
 

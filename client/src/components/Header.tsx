@@ -135,15 +135,15 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
         >
           <div className={cn("w-6 h-5 flex flex-col justify-between", isMobileMenuOpen && "relative")}>
             <span className={cn(
-              "w-full h-0.5 bg-gray-800 dark:bg-gray-200 transition-all duration-300",
+              "w-full h-0.5 bg-gray-800 transition-all duration-300",
               isMobileMenuOpen && "absolute top-2 rotate-45"
             )}></span>
             <span className={cn(
-              "w-full h-0.5 bg-gray-800 dark:bg-gray-200 transition-all duration-300",
+              "w-full h-0.5 bg-gray-800 transition-all duration-300",
               isMobileMenuOpen && "opacity-0"
             )}></span>
             <span className={cn(
-              "w-full h-0.5 bg-gray-800 dark:bg-gray-200 transition-all duration-300",
+              "w-full h-0.5 bg-gray-800 transition-all duration-300",
               isMobileMenuOpen && "absolute top-2 -rotate-45"
             )}></span>
           </div>
