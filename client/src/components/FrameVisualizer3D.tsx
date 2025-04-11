@@ -3,6 +3,22 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { Frame, MatColor } from '@shared/schema';
 
+// Utility function to lighten a color for frame visualization
+function lightenColor(color: string, percent: number): string {
+  // Convert hex to RGB
+  let r = parseInt(color.substring(1, 3), 16);
+  let g = parseInt(color.substring(3, 5), 16);
+  let b = parseInt(color.substring(5, 7), 16);
+  
+  // Lighten
+  r = Math.min(255, Math.round(r + (255 - r) * (percent / 100)));
+  g = Math.min(255, Math.round(g + (255 - g) * (percent / 100)));
+  b = Math.min(255, Math.round(b + (255 - b) * (percent / 100)));
+  
+  // Convert back to hex
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
 interface FrameVisualizer3DProps {
   frame: Frame | null;
   matColor: MatColor | null;
@@ -192,24 +208,103 @@ const FrameVisualizer3D: React.FC<FrameVisualizer3DProps> = ({
             
             // Create frame
             if (frame) {
-              // Load frame texture
-              textureLoader.load(
-                frame.catalogImage,
-                (frameTexture) => {
-                  const frameWidth = matWidth > 0 
-                    ? artworkWidth + (matWidth * 2) + (frame.width * 2)
-                    : artworkWidth + (frame.width * 2);
-                    
-                  const frameHeight = matWidth > 0
-                    ? artworkHeight + (matWidth * 2) + (frame.width * 2)
-                    : artworkHeight + (frame.width * 2);
+              // Get frame image URL
+              const frameImageUrl = frame.catalogImage;
+              console.log(`Loading 3D frame image: ${frameImageUrl} for frame: ${frame.id}`);
+              
+              // Create a promise to handle texture loading with fallback
+              const loadFrameTexture = () => {
+                return new Promise<THREE.Texture>((resolve, reject) => {
+                  textureLoader.load(
+                    frameImageUrl,
+                    texture => {
+                      console.log(`Successfully loaded 3D frame texture for ${frame.id}`);
+                      resolve(texture);
+                    },
+                    undefined,
+                    error => {
+                      console.error(`Error loading 3D frame texture for ${frame.id}:`, error);
+                      
+                      // Create a procedural texture as fallback
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      if (ctx) {
+                        canvas.width = 256;
+                        canvas.height = 256;
+                        
+                        // Choose appropriate default color based on material
+                        let defaultFrameColor = '#8B4513'; // Medium brown wood color
+                        
+                        if (frame.material) {
+                          if (frame.material.toLowerCase().includes('gold')) {
+                            defaultFrameColor = '#D4AF37'; // Gold
+                          } else if (frame.material.toLowerCase().includes('silver') || 
+                                     frame.material.toLowerCase().includes('metal')) {
+                            defaultFrameColor = '#C0C0C0'; // Silver
+                          } else if (frame.material.toLowerCase().includes('black')) {
+                            defaultFrameColor = '#2D2D2D'; // Black
+                          } else if (frame.material.toLowerCase().includes('white')) {
+                            defaultFrameColor = '#F5F5F5'; // White
+                          } else if (frame.material.toLowerCase().includes('walnut')) {
+                            defaultFrameColor = '#5C4033'; // Walnut
+                          } else if (frame.material.toLowerCase().includes('cherry')) {
+                            defaultFrameColor = '#722F37'; // Cherry
+                          } else if (frame.material.toLowerCase().includes('oak')) {
+                            defaultFrameColor = '#D8BE75'; // Oak
+                          }
+                        }
+                        
+                        // Use frame.color if available, otherwise use material-based default
+                        const frameColor = frame.color || defaultFrameColor;
+                        
+                        // Create a wood-grain like pattern
+                        const gradient = ctx.createLinearGradient(0, 0, 256, 0);
+                        gradient.addColorStop(0, frameColor);
+                        gradient.addColorStop(0.4, lightenColor(frameColor, 15));
+                        gradient.addColorStop(0.6, lightenColor(frameColor, 15));
+                        gradient.addColorStop(1, frameColor);
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        
+                        // Add grain texture
+                        for (let i = 0; i < 5000; i++) {
+                          const x = Math.random() * canvas.width;
+                          const y = Math.random() * canvas.height;
+                          const r = Math.random() * 1;
+                          ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
+                          ctx.fillRect(x, y, r, r);
+                        }
+                        
+                        // Create texture from canvas
+                        const fallbackTexture = new THREE.CanvasTexture(canvas);
+                        resolve(fallbackTexture);
+                      } else {
+                        // If canvas creation fails, create a solid color texture
+                        const solidColor = frame.color || '#8B4513';
+                        const solidTexture = textureLoader.load(`data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==`);
+                        resolve(solidTexture);
+                      }
+                    }
+                  );
+                });
+              };
+              
+              // Load the texture and continue with frame creation
+              loadFrameTexture().then(frameTexture => {
+                const frameWidth = matWidth > 0 
+                  ? artworkWidth + (matWidth * 2) + (frame.width * 2)
+                  : artworkWidth + (frame.width * 2);
                   
-                  // Create frame material with the loaded texture
-                  const frameMaterial = new THREE.MeshStandardMaterial({
-                    map: frameTexture,
-                    roughness: 0.5,
-                    metalness: 0.2
-                  });
+                const frameHeight = matWidth > 0
+                  ? artworkHeight + (matWidth * 2) + (frame.width * 2)
+                  : artworkHeight + (frame.width * 2);
+                
+                // Create frame material with the loaded texture
+                const frameMaterial = new THREE.MeshStandardMaterial({
+                  map: frameTexture,
+                  roughness: 0.5,
+                  metalness: 0.2
+                });
                   
                   // Create the frame pieces
                   // Top bar

@@ -54,10 +54,14 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
     // Load the frame image
     const frameImg = new Image();
     frameImg.crossOrigin = "Anonymous";
-    frameImg.src = frame.catalogImage;
+    
+    // Check for both catalog_image and catalogImage fields
+    // This helps ensure compatibility regardless of database/API format
+    const frameImageUrl = frame.catalogImage;
+    frameImg.src = frameImageUrl;
     
     // Log for debugging
-    console.log('Loading frame image:', frame.catalogImage);
+    console.log('Loading frame image:', frameImageUrl, 'for frame:', frame.id, frame.name);
     
     // Draw everything once both images are loaded
     Promise.all([
@@ -83,17 +87,41 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         };
       }),
       new Promise<void>(resolve => {
-        frameImg.onload = () => resolve();
+        frameImg.onload = () => {
+          console.log(`Successfully loaded frame image for ${frame.id}`);
+          resolve();
+        };
         frameImg.onerror = () => {
-          console.error('Failed to load frame image, using fallback');
+          console.error(`Failed to load frame image: ${frameImageUrl} for frame: ${frame.id}`);
           // Create a fallback frame texture
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           if (ctx) {
             canvas.width = 100;
             canvas.height = 100;
-            // Create a wood-like texture pattern
-            const defaultFrameColor = '#8B4513'; // Medium brown wood color
+            // Create a wood-like texture pattern based on the frame material
+            let defaultFrameColor = '#8B4513'; // Medium brown wood color
+            
+            // Choose appropriate default color based on material
+            if (frame.material) {
+              if (frame.material.toLowerCase().includes('gold')) {
+                defaultFrameColor = '#D4AF37'; // Gold
+              } else if (frame.material.toLowerCase().includes('silver') || 
+                         frame.material.toLowerCase().includes('metal')) {
+                defaultFrameColor = '#C0C0C0'; // Silver
+              } else if (frame.material.toLowerCase().includes('black')) {
+                defaultFrameColor = '#2D2D2D'; // Black
+              } else if (frame.material.toLowerCase().includes('white')) {
+                defaultFrameColor = '#F5F5F5'; // White
+              } else if (frame.material.toLowerCase().includes('walnut')) {
+                defaultFrameColor = '#5C4033'; // Walnut
+              } else if (frame.material.toLowerCase().includes('cherry')) {
+                defaultFrameColor = '#722F37'; // Cherry
+              } else if (frame.material.toLowerCase().includes('oak')) {
+                defaultFrameColor = '#D8BE75'; // Oak
+              }
+            }
+            
             const frameColor = frame.color || defaultFrameColor;
             const gradient = ctx.createLinearGradient(0, 0, 100, 0);
             gradient.addColorStop(0, frameColor);
