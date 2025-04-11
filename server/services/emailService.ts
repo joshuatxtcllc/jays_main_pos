@@ -196,41 +196,106 @@ export async function sendOrderStatusUpdate(
   customerEmail: string,
   customerName: string,
   orderId: number,
-  newStatus: string
+  newStatus: string,
+  previousStatus?: string,
+  estimatedCompletionDays?: number
 ): Promise<boolean> {
   // Format the status for display
-  const statusDisplay = newStatus
+  const formatStatus = (status: string) => status
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
   
+  const statusDisplay = formatStatus(newStatus);
+  const previousStatusDisplay = previousStatus ? formatStatus(previousStatus) : '';
+  
   const subject = `Order #${orderId} Status Update - ${statusDisplay} - Jay's Frames Guru`;
   
+  // Determine the appropriate message based on the production status
   let statusMessage = '';
+  let progressPercentage = 0;
+
   switch (newStatus) {
-    case 'in_progress':
-      statusMessage = 'We\'ve started working on your custom frame! Our skilled craftsmen are now preparing the materials and will begin the framing process.';
+    case 'order_processed':
+      statusMessage = 'Your custom framing order has been received and is being processed. We\'ll begin working on it soon!';
+      progressPercentage = 10;
+      break;
+    case 'scheduled':
+      const completionDate = estimatedCompletionDays 
+        ? new Date(new Date().setDate(new Date().getDate() + estimatedCompletionDays)).toLocaleDateString() 
+        : 'the estimated completion date';
+      statusMessage = `Your order has been scheduled for production! Our team will complete your framing project by ${completionDate}.`;
+      progressPercentage = 20;
+      break;
+    case 'materials_ordered':
+      statusMessage = 'We\'ve ordered the special materials for your custom frame. This step ensures you get the perfect frame for your artwork.';
+      progressPercentage = 30;
+      break;
+    case 'materials_arrived':
+      statusMessage = 'Good news! The materials for your custom frame have arrived. We\'ll begin cutting and assembling soon.';
+      progressPercentage = 40;
+      break;
+    case 'frame_cut':
+      statusMessage = 'Our frame specialists have custom-cut your frame to the exact dimensions needed for your artwork.';
+      progressPercentage = 60;
+      break;
+    case 'mat_cut':
+      statusMessage = 'The matboard for your artwork has been precision-cut. This will beautifully showcase your piece while providing proper spacing.';
+      progressPercentage = 70;
+      break;
+    case 'prepped':
+      statusMessage = 'Your frame, mat, and glass have been prepared and your artwork is being carefully mounted and assembled.';
+      progressPercentage = 85;
       break;
     case 'completed':
       statusMessage = 'Great news! Your custom frame is complete and ready for pickup. Please visit our store during business hours to collect your beautifully framed piece.';
+      progressPercentage = 100;
       break;
-    case 'cancelled':
-      statusMessage = 'Your order has been cancelled as requested. If you have any questions about this cancellation or would like to place a new order, please contact us.';
+    case 'delayed':
+      statusMessage = 'We apologize, but there\'s been a slight delay with your order. Our team is working diligently to get back on schedule. We\'ll keep you updated on progress.';
+      progressPercentage = previousStatus ? getProgressPercentage(previousStatus) : 50;
       break;
     default:
       statusMessage = `Your order status has been updated to "${statusDisplay}".`;
+      progressPercentage = 50;
+  }
+
+  // Progress bar HTML
+  const progressBarHtml = `
+    <div style="margin: 20px 0;">
+      <p style="margin-bottom: 5px;"><strong>Order Progress: ${progressPercentage}%</strong></p>
+      <div style="background-color: #eee; border-radius: 5px; height: 20px; width: 100%;">
+        <div style="background-color: #4CAF50; border-radius: 5px; height: 20px; width: ${progressPercentage}%"></div>
+      </div>
+      <p style="font-size: 0.8em; color: #666; margin-top: 5px;">Current Stage: ${statusDisplay}</p>
+    </div>
+  `;
+
+  // Next steps message
+  let nextStepsMessage = '';
+  if (newStatus !== 'completed' && newStatus !== 'delayed') {
+    const nextStep = getNextStep(newStatus);
+    nextStepsMessage = `
+      <div style="margin-top: 15px;">
+        <p><strong>What's Next:</strong> ${nextStep}</p>
+      </div>
+    `;
   }
   
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px;">Order Status Update</h2>
+      <h2 style="color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px;">Order Progress Update</h2>
       
       <p>Hello ${customerName},</p>
       
       <div style="background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; padding: 15px; margin: 20px 0;">
         <h3 style="margin-top: 0; color: #555;">Order #${orderId}</h3>
-        <p><strong>New Status:</strong> ${statusDisplay}</p>
-        <p>${statusMessage}</p>
+        
+        ${progressBarHtml}
+        
+        <p><strong>Update:</strong> ${statusMessage}</p>
+        
+        ${nextStepsMessage}
       </div>
       
       <p>If you have any questions about your order, please don't hesitate to contact us.</p>
@@ -251,6 +316,43 @@ export async function sendOrderStatusUpdate(
     to: customerEmail,
     subject,
     html,
-    text: `Order #${orderId} Status Update - ${statusDisplay} - ${statusMessage}`,
+    text: `Order #${orderId} Progress Update - ${statusDisplay} (${progressPercentage}% complete) - ${statusMessage}`,
   });
+}
+
+// Helper function to get the appropriate next step message
+function getNextStep(currentStatus: string): string {
+  switch (currentStatus) {
+    case 'order_processed':
+      return 'We'll schedule your order for production and provide an estimated completion date.';
+    case 'scheduled':
+      return 'We'll order specialized materials for your custom frame from our suppliers.';
+    case 'materials_ordered':
+      return 'Once materials arrive, we'll begin the framing process.';
+    case 'materials_arrived':
+      return 'Our master framers will cut your custom frame pieces to precision dimensions.';
+    case 'frame_cut':
+      return 'We'll prepare the matboard that will showcase your artwork.';
+    case 'mat_cut':
+      return 'Final assembly of your custom frame, including mounting your artwork and installing glass.';
+    case 'prepped':
+      return 'Quality inspection and finishing details, preparing your frame for pickup.';
+    default:
+      return 'We'll continue processing your order through our production workflow.';
+  }
+}
+
+// Helper function to get progress percentage based on status
+function getProgressPercentage(status: string): number {
+  switch (status) {
+    case 'order_processed': return 10;
+    case 'scheduled': return 20;
+    case 'materials_ordered': return 30;
+    case 'materials_arrived': return 40;
+    case 'frame_cut': return 60;
+    case 'mat_cut': return 70;
+    case 'prepped': return 85;
+    case 'completed': return 100;
+    default: return 50;
+  }
 }
