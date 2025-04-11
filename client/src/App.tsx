@@ -38,19 +38,23 @@ function App() {
     // Apply theme
     if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
       setDarkMode(true);
-      document.body.classList.add('dark');
+      document.documentElement.classList.add('dark');
+    } else {
+      setDarkMode(false);
+      document.documentElement.classList.remove('dark');
     }
   }, []);
 
   // Toggle theme function
   const toggleTheme = () => {
-    setDarkMode(!darkMode);
-
-    if (!darkMode) {
-      document.body.classList.add('dark');
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    
+    if (newDarkMode) {
+      document.documentElement.classList.add('dark');
       localStorage.setItem('theme', 'dark');
     } else {
-      document.body.classList.remove('dark');
+      document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
     }
   };
