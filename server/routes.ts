@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { getAllLarsonMatboards, getCrescentMatboards } from "./controllers/matboardController";
+import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors } from "./controllers/matboardController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
 import { 
   insertCustomerSchema, 
@@ -465,6 +465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Larson Juhl Catalog
   app.get('/api/larson-catalog', getAllLarsonMatboards);
   app.get('/api/larson-catalog/crescent', getCrescentMatboards);
+  app.post('/api/larson-catalog/sync', syncMatboardsToMatColors);
   
   // Frame Catalog API
   app.get('/api/frames', getAllFrames);
