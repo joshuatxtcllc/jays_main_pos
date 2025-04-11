@@ -1089,6 +1089,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
+  // Production Kanban Board routes
+  app.get('/api/production/kanban', async (req, res) => {
+    try {
+      const orders = await storage.getOrdersForKanban();
+      res.json(orders);
+    } catch (error) {
+      console.error('Error fetching kanban orders:', error);
+      res.status(500).json({ message: "Failed to fetch production orders" });
+    }
+  });
+
+  app.get('/api/production/status/:status', async (req, res) => {
+    try {
+      const status = req.params.status;
+      // Validate that status is a valid ProductionStatus
+      const orders = await storage.getOrdersByProductionStatus(status as any);
+      res.json(orders);
+    } catch (error) {
+      console.error(`Error fetching orders with status ${req.params.status}:`, error);
+      res.status(500).json({ message: "Failed to fetch orders by status" });
+    }
+  });
+
+  app.patch('/api/production/status/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      if (!status) {
+        return res.status(400).json({ message: "Status is required" });
+      }
+
+      const updatedOrder = await storage.updateOrderProductionStatus(id, status);
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('Error updating order production status:', error);
+      res.status(500).json({ message: "Failed to update order status" });
+    }
+  });
+
+  app.post('/api/production/schedule/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { estimatedDays } = req.body;
+      
+      if (!estimatedDays || isNaN(parseInt(estimatedDays))) {
+        return res.status(400).json({ message: "Valid estimated days value is required" });
+      }
+
+      const updatedOrder = await storage.scheduleOrderForProduction(id, parseInt(estimatedDays));
+      res.json(updatedOrder);
+    } catch (error) {
+      console.error('Error scheduling order for production:', error);
+      res.status(500).json({ message: "Failed to schedule order" });
+    }
+  });
+
+  // Customer notification routes
+  app.get('/api/notifications/customer/:customerId', async (req, res) => {
+    try {
+      const customerId = parseInt(req.params.customerId);
+      const notifications = await storage.getCustomerNotifications(customerId);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching customer notifications:', error);
+      res.status(500).json({ message: "Failed to fetch notifications" });
+    }
+  });
+
+  app.get('/api/notifications/order/:orderId', async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.orderId);
+      const notifications = await storage.getNotificationsByOrder(orderId);
+      res.json(notifications);
+    } catch (error) {
+      console.error('Error fetching order notifications:', error);
+      res.status(500).json({ message: "Failed to fetch order notifications" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;
