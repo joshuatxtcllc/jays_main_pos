@@ -36,22 +36,28 @@ export function calculateBackingPrice(width: number, height: number, matWidth: n
   const backingHeight = height + (matWidth * 2);
   const backingArea = backingWidth * backingHeight;
   
-  // Base price per square inch
-  const basePricePerSqInch = 0.03;
+  // Base wholesale price per square inch
+  const baseWholesalePricePerSqInch = 0.03;
   
   // Apply sliding scale based on size
-  let priceFactor = 1.0;
+  let wholesalePriceFactor = 1.0;
   if (backingArea > 500) {
-    priceFactor = 0.9;
+    wholesalePriceFactor = 0.9;
   }
   if (backingArea > 1000) {
-    priceFactor = 0.85;
+    wholesalePriceFactor = 0.85;
   }
   if (backingArea > 1500) {
-    priceFactor = 0.8;
+    wholesalePriceFactor = 0.8;
   }
   
-  return backingArea * basePricePerSqInch * priceFactor;
+  // Calculate wholesale cost
+  const wholesaleCost = backingArea * baseWholesalePricePerSqInch * wholesalePriceFactor;
+  
+  // Apply retail markup (typically 4-5x for backing materials)
+  const retailMarkup = 4.5;
+  
+  return wholesaleCost * retailMarkup;
 }
 
 // Calculate frame price based on dimensions and base price
@@ -62,27 +68,27 @@ export function calculateFramePrice(width: number, height: number, basePrice: nu
   // Calculate frame perimeter in feet
   const perimeterFeet = calculateFramePerimeter(width, height);
   
-  // Apply sliding scale based on size
-  let priceFactor = 1.0;
+  // Apply sliding scale based on size - adjust markup factors based on united inches
+  let markupFactor = 6.0; // Standard retail markup for custom framing is 5-6x
   
   if (unitedInches > 40) {
-    priceFactor = 0.95;
+    markupFactor = 5.8;
   }
   if (unitedInches > 60) {
-    priceFactor = 0.90;
+    markupFactor = 5.5;
   }
   if (unitedInches > 80) {
-    priceFactor = 0.85;
+    markupFactor = 5.2;
   }
   if (unitedInches > 100) {
-    priceFactor = 0.80;
+    markupFactor = 5.0;
   }
   
-  // Apply 1/6th price reduction as requested by the client
-  const reducedPriceFactor = 0.1667;
+  // Calculate the wholesale price: perimeter in feet * base price per foot
+  const wholesalePrice = perimeterFeet * basePrice;
   
-  // Calculate final price: perimeter in feet * base price per foot * price factor * reduction
-  return perimeterFeet * basePrice * priceFactor * reducedPriceFactor;
+  // Apply retail markup to get final price
+  return wholesalePrice * markupFactor;
 }
 
 // Calculate mat price based on dimensions and base price
@@ -97,23 +103,27 @@ export function calculateMatPrice(width: number, height: number, matWidth: numbe
   // Calculate mat area in square inches
   const matArea = (outerWidth * outerHeight) - (width * height);
   
-  // Apply sliding scale based on size
-  let priceFactor = 1.0;
+  // Apply sliding scale markup based on united inches
+  let markupFactor = 5.0; // Standard retail markup for matboard
+  
   if (unitedInches > 40) {
-    priceFactor = 0.95;
+    markupFactor = 4.8;
   }
   if (unitedInches > 60) {
-    priceFactor = 0.90;
+    markupFactor = 4.5;
   }
   if (unitedInches > 80) {
-    priceFactor = 0.85;
+    markupFactor = 4.2;
   }
   if (unitedInches > 100) {
-    priceFactor = 0.80;
+    markupFactor = 4.0;
   }
   
-  // Calculate price: mat area * base price per square inch * price factor
-  return matArea * (basePrice / 100) * priceFactor;
+  // Calculate wholesale cost: mat area * base price per square inch
+  const wholesaleCost = matArea * (basePrice / 100);
+  
+  // Apply retail markup
+  return wholesaleCost * markupFactor;
 }
 
 // Calculate glass price based on dimensions and base price
@@ -128,26 +138,33 @@ export function calculateGlassPrice(width: number, height: number, matWidth: num
   // Calculate united inches
   const unitedInches = glassWidth + glassHeight;
   
-  // Apply sliding scale based on size
-  let priceFactor = 1.0;
+  // Apply sliding scale markup factor based on united inches
+  let markupFactor = 6.0; // Standard retail markup for specialty glass
+  
   if (unitedInches > 40) {
-    priceFactor = 0.95;
+    markupFactor = 5.5;
   }
   if (unitedInches > 60) {
-    priceFactor = 0.90;
+    markupFactor = 5.0;
   }
   if (unitedInches > 80) {
-    priceFactor = 0.85;
+    markupFactor = 4.7;
   }
   if (unitedInches > 100) {
-    priceFactor = 0.80;
+    markupFactor = 4.5;
   }
   
-  // Apply 45% price reduction as requested by the client
-  const reducedPriceFactor = 0.45;
+  // Calculate the wholesale price: glass area * base price per square inch
+  const wholesaleCost = glassArea * (basePrice / 100);
   
-  // Calculate price: glass area * base price per square inch * price factor * reduction
-  return glassArea * (basePrice / 100) * priceFactor * reducedPriceFactor;
+  // Apply retail markup
+  // For Museum Glass (higher end), we need to ensure prices are proportionally high
+  // Museum glass can be 2.5-3x more expensive than regular glass at retail
+  if (basePrice >= 0.45) { // Museum glass threshold
+    markupFactor *= 1.5; // Increase markup for premium glass
+  }
+  
+  return wholesaleCost * markupFactor;
 }
 
 // Calculate labor price based on dimensions
@@ -155,21 +172,21 @@ export function calculateLaborPrice(width: number, height: number): number {
   // Calculate united inches (width + height)
   const unitedInches = width + height;
   
-  // Base labor rate
-  let baseRate = 15;
+  // Base labor rate - significantly higher for custom framing
+  let baseRate = 50;
   
   // Apply sliding scale based on size
   if (unitedInches > 40) {
-    baseRate = 20;
+    baseRate = 60;
   }
   if (unitedInches > 60) {
-    baseRate = 25;
+    baseRate = 70;
   }
   if (unitedInches > 80) {
-    baseRate = 30;
+    baseRate = 85;
   }
   if (unitedInches > 100) {
-    baseRate = 35;
+    baseRate = 100;
   }
   
   return baseRate;

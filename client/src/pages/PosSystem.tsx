@@ -12,7 +12,7 @@ import {
 import { getMatColorById, getMatColorsByManufacturer, getMatColorsByCategory, getUniqueMatCategories } from '@/data/matColors';
 import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '@/data/glassOptions';
 import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import FrameVisualizer from '@/components/FrameVisualizer';
 import FrameVisualizer3D from '@/components/FrameVisualizer3D';
 import SpecialServices from '@/components/SpecialServices';
