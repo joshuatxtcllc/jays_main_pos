@@ -1,0 +1,322 @@
+const { NlpManager } = require('node-nlp');
+const GoogleSheetsService = require('../../server/services/GoogleSheetsService');
+const logger = require('../../server/utils/logger');
+
+/**
+ * OrderStatusChatbot
+ * 
+ * AI-powered chatbot for handling customer inquiries about order status
+ * integrated with Google Sheets database.
+ */
+class OrderStatusChatbot {
+  constructor() {
+    this.nlpManager = new NlpManager({ languages: ['en'] });
+    this.sheetsService = new GoogleSheetsService();
+    this.initialized = false;
+  }
+
+  /**
+   * Initialize the chatbot with NLP training data
+   * @returns {Promise<boolean>} - True if initialization successful
+   */
+  async initialize() {
+    if (this.initialized) {
+      return true;
+    }
+
+    try {
+      await this.sheetsService.initialize();
+      await this._trainNlpModel();
+      
+      this.initialized = true;
+      logger.info('Order Status Chatbot initialized successfully');
+      return true;
+    } catch (error) {
+      logger.error('Failed to initialize Order Status Chatbot:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Train the NLP model with intents and entities
+   * @private
+   */
+  async _trainNlpModel() {
+    // Add order status intent
+    this.nlpManager.addDocument('en', 'what is the status of my order', 'order.status');
+    this.nlpManager.addDocument('en', 'where is my order', 'order.status');
+    this.nlpManager.addDocument('en', 'track my order', 'order.status');
+    this.nlpManager.addDocument('en', 'check order status', 'order.status');
+    this.nlpManager.addDocument('en', 'when will my order arrive', 'order.status');
+    this.nlpManager.addDocument('en', 'has my order shipped', 'order.status');
+    this.nlpManager.addDocument('en', 'order status', 'order.status');
+    this.nlpManager.addDocument('en', 'is my order ready', 'order.status');
+    
+    // Add shipping info intent
+    this.nlpManager.addDocument('en', 'what is my tracking number', 'order.tracking');
+    this.nlpManager.addDocument('en', 'shipping information', 'order.tracking');
+    this.nlpManager.addDocument('en', 'track shipment', 'order.tracking');
+    this.nlpManager.addDocument('en', 'delivery date', 'order.tracking');
+    this.nlpManager.addDocument('en', 'when will it be delivered', 'order.tracking');
+    
+    // Add order details intent
+    this.nlpManager.addDocument('en', 'what frame did I order', 'order.details');
+    this.nlpManager.addDocument('en', 'show me my order details', 'order.details');
+    this.nlpManager.addDocument('en', 'what was in my order', 'order.details');
+    this.nlpManager.addDocument('en', 'order details', 'order.details');
+    this.nlpManager.addDocument('en', 'what did I purchase', 'order.details');
+    
+    // Add order modification intent
+    this.nlpManager.addDocument('en', 'can I change my order', 'order.modify');
+    this.nlpManager.addDocument('en', 'modify my order', 'order.modify');
+    this.nlpManager.addDocument('en', 'update shipping address', 'order.modify');
+    this.nlpManager.addDocument('en', 'change my frame selection', 'order.modify');
+    this.nlpManager.addDocument('en', 'cancel my order', 'order.cancel');
+    
+    // Add greeting and help intents
+    this.nlpManager.addDocument('en', 'hello', 'greeting');
+    this.nlpManager.addDocument('en', 'hi', 'greeting');
+    this.nlpManager.addDocument('en', 'hey', 'greeting');
+    this.nlpManager.addDocument('en', 'good morning', 'greeting');
+    this.nlpManager.addDocument('en', 'help', 'help');
+    this.nlpManager.addDocument('en', 'what can you do', 'help');
+    this.nlpManager.addDocument('en', 'how do I use this', 'help');
+    
+    // Add order number entity
+    this.nlpManager.addRegexEntity('orderNumber', 'en', /\b(order|#)?(\d{4,10})\b/i);
+    this.nlpManager.addRegexEntity('orderNumber', 'en', /\b(ORD-\d{10}-\d{1,3})\b/i);
+    
+    // Add responses
+    this.nlpManager.addAnswer('en', 'order.status', 'I can help you check your order status. Please provide your order number.');
+    this.nlpManager.addAnswer('en', 'order.tracking', 'I can look up your shipping information. What\'s your order number?');
+    this.nlpManager.addAnswer('en', 'order.details', 'I can show you your order details. Please provide your order number.');
+    this.nlpManager.addAnswer('en', 'order.modify', 'To modify your order, please provide your order number so I can check if it\'s still possible to make changes.');
+    this.nlpManager.addAnswer('en', 'order.cancel', 'To cancel your order, I\'ll need your order number to check if it\'s still possible to cancel.');
+    this.nlpManager.addAnswer('en', 'greeting', 'Hello! I\'m your framing assistant. How can I help you today?');
+    this.nlpManager.addAnswer('en', 'help', 'I can help you check your order status, track shipments, view order details, or make changes to your order. What would you like to do?');
+    
+    // Train the model
+    await this.nlpManager.train();
+    logger.info('NLP model trained successfully');
+  }
+
+  /**
+   * Process a user message and generate a response
+   * @param {string} message - User message text
+   * @param {Object} context - Conversation context
+   * @returns {Promise<Object>} - Response with text and updated context
+   */
+  async processMessage(message, context = {}) {
+    try {
+      await this.initialize();
+      
+      // Process the message with NLP
+      const result = await this.nlpManager.process('en', message);
+      const intent = result.intent;
+      const confidence = result.score;
+      
+      // Initialize response
+      let response = {
+        text: '',
+        context: { ...context }
+      };
+      
+      // Extract order number if present
+      let orderNumber = null;
+      if (result.entities && result.entities.length > 0) {
+        const orderEntity = result.entities.find(entity => entity.entity === 'orderNumber');
+        if (orderEntity) {
+          orderNumber = orderEntity.sourceText;
+          response.context.orderNumber = orderNumber;
+        }
+      }
+      
+      // Use order number from context if available and not in current message
+      if (!orderNumber && context.orderNumber) {
+        orderNumber = context.orderNumber;
+      }
+      
+      // Handle based on intent
+      if (confidence > 0.7) {
+        if (intent === 'order.status' || intent === 'order.tracking' || intent === 'order.details') {
+          if (orderNumber) {
+            const orderInfo = await this._getOrderInformation(orderNumber);
+            if (orderInfo) {
+              response.text = this._formatOrderResponse(intent, orderInfo);
+            } else {
+              response.text = `I couldn't find an order with the number ${orderNumber}. Please check the number and try again.`;
+            }
+          } else {
+            response.text = result.answer;
+            response.context.awaitingOrderNumber = true;
+            response.context.pendingIntent = intent;
+          }
+        } else if (intent === 'order.modify' || intent === 'order.cancel') {
+          if (orderNumber) {
+            const orderInfo = await this._getOrderInformation(orderNumber);
+            if (orderInfo) {
+              if (['New', 'Processing'].includes(orderInfo.status)) {
+                response.text = intent === 'order.modify' 
+                  ? `Your order ${orderNumber} can still be modified. Please contact our customer service at support@customframer.com or call (555) 123-4567 for assistance.`
+                  : `Your order ${orderNumber} can be canceled. Please contact our customer service for immediate assistance.`;
+              } else {
+                response.text = intent === 'order.modify'
+                  ? `I'm sorry, your order ${orderNumber} is already ${orderInfo.status} and cannot be modified at this time.`
+                  : `I'm sorry, your order ${orderNumber} is already ${orderInfo.status} and cannot be canceled at this time.`;
+              }
+            } else {
+              response.text = `I couldn't find an order with the number ${orderNumber}. Please check the number and try again.`;
+            }
+          } else {
+            response.text = result.answer;
+            response.context.awaitingOrderNumber = true;
+            response.context.pendingIntent = intent;
+          }
+        } else if (intent === 'greeting' || intent === 'help') {
+          response.text = result.answer;
+        } else {
+          response.text = "I'm not sure I understand. You can ask about your order status, tracking information, or order details.";
+        }
+      } else {
+        // Handle context-based fallback
+        if (context.awaitingOrderNumber) {
+          // User might be providing order number without clear intent
+          if (orderNumber) {
+            const orderInfo = await this._getOrderInformation(orderNumber);
+            if (orderInfo) {
+              response.text = this._formatOrderResponse(context.pendingIntent, orderInfo);
+              response.context.awaitingOrderNumber = false;
+              response.context.pendingIntent = null;
+            } else {
+              response.text = `I couldn't find an order with the number ${orderNumber}. Please check the number and try again.`;
+            }
+          } else {
+            response.text = "I'm still waiting for your order number. Please provide it so I can help you.";
+          }
+        } else {
+          response.text = "I'm not sure I understand. You can ask about your order status, tracking information, or order details.";
+        }
+      }
+      
+      return response;
+    } catch (error) {
+      logger.error('Error processing message:', error);
+      return {
+        text: "I'm sorry, I'm having trouble processing your request right now. Please try again later.",
+        context: { ...context }
+      };
+    }
+  }
+
+  /**
+   * Get order information from Google Sheets
+   * @param {string} orderNumber - Order number to look up
+   * @returns {Promise<Object|null>} - Order information or null if not found
+   * @private
+   */
+  async _getOrderInformation(orderNumber) {
+    try {
+      return await this.sheetsService.getOrderById(orderNumber);
+    } catch (error) {
+      logger.error(`Error retrieving order information for ${orderNumber}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Format the response based on intent and order information
+   * @param {string} intent - The user's intent
+   * @param {Object} orderInfo - Order information from Google Sheets
+   * @returns {string} - Formatted response text
+   * @private
+   */
+  _formatOrderResponse(intent, orderInfo) {
+    switch (intent) {
+      case 'order.status':
+        return this._formatStatusResponse(orderInfo);
+      case 'order.tracking':
+        return this._formatTrackingResponse(orderInfo);
+      case 'order.details':
+        return this._formatDetailsResponse(orderInfo);
+      default:
+        return `Your order #${orderInfo.orderId} is ${orderInfo.status}.`;
+    }
+  }
+
+  /**
+   * Format status response
+   * @param {Object} orderInfo - Order information
+   * @returns {string} - Formatted status response
+   * @private
+   */
+  _formatStatusResponse(orderInfo) {
+    const statusMessages = {
+      'New': `Your order #${orderInfo.orderId} has been received and is pending processing. We'll begin work on it soon!`,
+      'Processing': `Your order #${orderInfo.orderId} is currently being processed. We're preparing your frame and materials.`,
+      'Framing': `Your order #${orderInfo.orderId} is in the framing stage. Our craftspeople are carefully assembling your custom frame.`,
+      'QualityCheck': `Your order #${orderInfo.orderId} is undergoing quality inspection to ensure everything meets our high standards.`,
+      'Packaging': `Your order #${orderInfo.orderId} has passed quality inspection and is being carefully packaged for shipping.`,
+      'Shipped': `Great news! Your order #${orderInfo.orderId} has been shipped and is on its way to you.`,
+      'Delivered': `Your order #${orderInfo.orderId} has been delivered. We hope you love your custom framing!`,
+      'Cancelled': `Your order #${orderInfo.orderId} has been cancelled.`
+    };
+    
+    return statusMessages[orderInfo.status] || `Your order #${orderInfo.orderId} is ${orderInfo.status}.`;
+  }
+
+  /**
+   * Format tracking response
+   * @param {Object} orderInfo - Order information
+   * @returns {string} - Formatted tracking response
+   * @private
+   */
+  _formatTrackingResponse(orderInfo) {
+    if (orderInfo.status === 'Shipped' || orderInfo.status === 'Delivered') {
+      if (orderInfo.trackingNumber) {
+        const carrier = orderInfo.shippingCarrier || 'our shipping partner';
+        return `Your order #${orderInfo.orderId} was shipped via ${carrier} with tracking number ${orderInfo.trackingNumber}. You can track your package using this number on the carrier's website.`;
+      } else {
+        return `Your order #${orderInfo.orderId} has been shipped, but I don't have the tracking information available. Please contact customer service for assistance.`;
+      }
+    } else {
+      return `Your order #${orderInfo.orderId} is currently ${orderInfo.status} and hasn't shipped yet. We'll send you tracking information once it's on its way!`;
+    }
+  }
+
+  /**
+   * Format details response
+   * @param {Object} orderInfo - Order information
+   * @returns {string} - Formatted details response
+   * @private
+   */
+  _formatDetailsResponse(orderInfo) {
+    let response = `Here are the details for your order #${orderInfo.orderId}:\n\n`;
+    
+    if (orderInfo.frameStyle) {
+      response += `Frame: ${orderInfo.frameStyle}\n`;
+    }
+    
+    if (orderInfo.matColor) {
+      response += `Mat: ${orderInfo.matColor}\n`;
+    }
+    
+    if (orderInfo.dimensions) {
+      response += `Dimensions: ${orderInfo.dimensions}\n`;
+    }
+    
+    if (orderInfo.glassType) {
+      response += `Glass: ${orderInfo.glassType}\n`;
+    }
+    
+    response += `\nOrder Date: ${orderInfo.orderDate || 'Not available'}\n`;
+    response += `Current Status: ${orderInfo.status}\n`;
+    
+    if (orderInfo.estimatedCompletion) {
+      response += `Estimated Completion: ${orderInfo.estimatedCompletion}\n`;
+    }
+    
+    return response;
+  }
+}
+
+module.exports = OrderStatusChatbot;
