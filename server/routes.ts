@@ -12,6 +12,11 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
+import { 
+  calculateFramePrice, 
+  calculateMatPrice, 
+  calculateGlassPrice 
+} from "./services/pricingService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
@@ -215,43 +220,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const perimeter = 2 * unitedInch / 12;
           console.log('Frame perimeter:', perimeter, 'feet');
           
-          // Frame price using united inch pricing with wholesale-to-retail factor (reduced by 83.33% as requested)
-          const framePrice = perimeter * Number(frame.price) * 3.5 * 0.1667;
-          console.log('Frame price:', framePrice, 'from base price:', Number(frame.price));
+          // Calculate frame price using sliding scale markup based on wholesale price per foot
+          const frameWholesalePrice = Number(frame.price);
+          const framePrice = calculateFramePrice(frameWholesalePrice, perimeter);
+          console.log('Frame price:', framePrice, 'from base price:', frameWholesalePrice);
           
-          // Mat pricing using united inch approach
+          // Mat pricing calculations
           // For matboard, we need the outer dimensions (including the matboard border)
           const outerWidth = Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth);
           const outerHeight = Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth);
           const outerUnitedInch = outerWidth + outerHeight;
           console.log('Mat outer united inch:', outerUnitedInch);
           
-          // Calculate mat area as well for reference
+          // Calculate mat area
           const matArea = (outerWidth * outerHeight) - (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight));
           console.log('Mat area:', matArea, 'square inches');
           
-          // Handle price calculation based on price format in database
+          // Calculate mat price using our pricing service
           const matPriceBase = Number(matColor.price);
-          let matPrice;
-          
-          if (matPriceBase < 0.01) {
-            // If price is very small (like 0.000025), it's likely a wholesale price per square inch
-            // Apply mat price * area * markup (conservative markup for matboard)
-            matPrice = matArea * matPriceBase * 3;
-          } else {
-            // If price is already retail-like, use united inch pricing approach
-            // The matboard price is typically per united inch of the outer dimensions
-            matPrice = outerUnitedInch * matPriceBase * 0.25; // Using a more moderate markup factor
-          }
+          const matPrice = calculateMatPrice(matPriceBase, matArea, outerUnitedInch);
           console.log('Mat price:', matPrice, 'from base price:', matPriceBase);
           
-          // Glass price (with markup, reduced by 55% as requested)
-          // Original: glassArea * Number(glassOption.price) * 3
-          // Now: glassArea * Number(glassOption.price) * 3 * 0.45
+          // Glass price calculations
           const glassArea = (Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth)) * 
                            (Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth));
-          const glassPrice = glassArea * Number(glassOption.price) * 3 * 0.45;
-          console.log('Glass price:', glassPrice, 'from base price:', Number(glassOption.price));
+          const glassWholesalePrice = Number(glassOption.price);
+          const glassPrice = calculateGlassPrice(glassWholesalePrice, glassArea);
+          console.log('Glass price:', glassPrice, 'from base price:', glassWholesalePrice);
           
           // Backing price (with markup)
           const backingPrice = glassArea * 0.03 * 2.5;
