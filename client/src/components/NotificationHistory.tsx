@@ -1,129 +1,120 @@
 import React from 'react';
+import { useProduction } from '@/hooks/use-production';
 import { 
   Card, 
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useProduction } from '@/hooks/use-production';
-import { Bell, CheckCircle2, ClockIcon, Mail } from 'lucide-react';
-import { CustomerNotification } from '@shared/schema';
-import { formatRelative } from 'date-fns';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { 
+  Bell, 
+  Clock, 
+  Mail, 
+  MessageSquare, 
+  Check, 
+  AlertTriangle,
+  Calendar,
+  Info
+} from 'lucide-react';
+import { format } from 'date-fns';
+import { CustomerNotification, NotificationType } from '@shared/schema';
 
-interface NotificationHistoryProps {
-  orderId?: number;
-  customerId?: number;
-}
-
-export default function NotificationHistory({
+export default function NotificationHistory({ 
   orderId,
   customerId,
-}: NotificationHistoryProps) {
+  limit = 5
+}: { 
+  orderId?: number;
+  customerId?: number;
+  limit?: number;
+}) {
   const { 
     orderNotifications,
     customerNotifications,
     isLoadingOrderNotifications,
     isLoadingCustomerNotifications
-  } = useProduction({ orderId, customerId });
+  } = useProduction({
+    orderId,
+    customerId
+  });
 
-  // Determine which notifications to display
-  const notifications = orderId 
-    ? orderNotifications 
-    : customerId 
-      ? customerNotifications 
-      : [];
-
-  // Function to format the notification time
-  const formatNotificationTime = (date: Date | string) => {
-    return formatRelative(new Date(date), new Date());
-  };
-
-  // Function to get appropriate icon for notification
-  const getNotificationIcon = (notification: CustomerNotification) => {
-    if (notification.notificationType === 'status_update') {
-      return <CheckCircle2 className="h-4 w-4 mr-2" />;
-    } else if (notification.notificationType === 'estimated_completion') {
-      return <ClockIcon className="h-4 w-4 mr-2" />;
+  const getNotificationIcon = (type: NotificationType) => {
+    if (type === "status_update") {
+      return <Info className="h-4 w-4" />;
+    } else if (type === "estimated_completion") {
+      return <Calendar className="h-4 w-4" />;
+    } else if (type.includes('status_change')) {
+      return <Info className="h-4 w-4" />;
+    } else if (type.includes('due_date')) {
+      return <Calendar className="h-4 w-4" />;
+    } else if (type.includes('completion')) {
+      return <Check className="h-4 w-4" />;
+    } else if (type.includes('delay')) {
+      return <AlertTriangle className="h-4 w-4" />;
     } else {
-      return <Bell className="h-4 w-4 mr-2" />;
+      return <Bell className="h-4 w-4" />;
     }
   };
 
-  // Function to get appropriate color for notification status
-  const getNotificationStatusColor = (notification: CustomerNotification) => {
-    const status = notification.newStatus;
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'delayed':
-        return 'bg-red-100 text-red-800';
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
+  const getChannelIcon = (channel: string) => {
+    switch (channel) {
+      case 'email':
+        return <Mail className="h-4 w-4" />;
+      case 'sms':
+        return <MessageSquare className="h-4 w-4" />;
       default:
-        return 'bg-gray-100 text-gray-800';
+        return <Bell className="h-4 w-4" />;
     }
   };
 
-  // Function to format notification status
-  const formatStatus = (status?: string) => {
-    if (!status) return '';
-    return status
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  };
+  // Determine which notifications to show
+  const notifications = orderId ? orderNotifications : customerId ? customerNotifications : [];
+  
+  // Sort notifications by date, most recent first
+  const sortedNotifications = [...notifications].sort((a, b) => {
+    return new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
+  });
+  
+  // Limit the number of notifications if specified
+  const limitedNotifications = limit ? sortedNotifications.slice(0, limit) : sortedNotifications;
 
-  // Calculate progress percentage based on status
-  const getProgressPercentage = (status?: string) => {
-    if (!status) return 0;
-    
-    switch (status) {
-      case 'order_processed': return 10;
-      case 'scheduled': return 20;
-      case 'materials_ordered': return 30;
-      case 'materials_arrived': return 40;
-      case 'frame_cut': return 60;
-      case 'mat_cut': return 70;
-      case 'prepped': return 85;
-      case 'completed': return 100;
-      default: return 50;
-    }
-  };
+  const isLoading = orderId ? isLoadingOrderNotifications : isLoadingCustomerNotifications;
 
-  if (isLoadingOrderNotifications || isLoadingCustomerNotifications) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>Loading notification history...</CardDescription>
+          <CardTitle>Notification History</CardTitle>
+          <CardDescription>Recent updates about your order</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center py-6">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="animate-spin h-6 w-6 border-4 border-primary border-t-transparent rounded-full"></div>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (!notifications || notifications.length === 0) {
+  if (notifications.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
-          <CardDescription>No notifications found</CardDescription>
+          <CardTitle>Notification History</CardTitle>
+          <CardDescription>Recent updates about your order</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert variant="default">
-            <AlertTitle>No notifications yet</AlertTitle>
-            <AlertDescription>
-              We'll keep you updated on your order status as it progresses through our production workflow.
-            </AlertDescription>
-          </Alert>
+          <div className="py-6 text-center">
+            <Bell className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+            <p className="text-muted-foreground">No notifications have been sent yet.</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -132,65 +123,60 @@ export default function NotificationHistory({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Order Progress Updates</CardTitle>
-        <CardDescription>
-          Track your order's journey through our production process
-        </CardDescription>
+        <CardTitle>Notification History</CardTitle>
+        <CardDescription>Recent updates about your order</CardDescription>
       </CardHeader>
       <CardContent>
         <Accordion type="single" collapsible className="w-full">
-          {notifications.map((notification) => (
+          {limitedNotifications.map((notification) => (
             <AccordionItem key={notification.id} value={`notification-${notification.id}`}>
-              <AccordionTrigger className="flex items-start">
+              <AccordionTrigger>
                 <div className="flex items-center text-left">
-                  {getNotificationIcon(notification)}
+                  <span className="mr-2">{getNotificationIcon(notification.notificationType as NotificationType)}</span>
                   <div>
-                    <span className="font-medium mr-2">{formatStatus(notification.notificationType)}</span>
-                    <span className="text-sm text-muted-foreground">
-                      {formatNotificationTime(notification.sentAt)}
-                    </span>
+                    <span className="font-medium">{notification.subject}</span>
+                    <div className="flex items-center text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3 mr-1" />
+                      <span>
+                        {format(new Date(notification.sentAt), 'PPP p')}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-2">
-                  {notification.newStatus && (
-                    <div className="flex gap-2 items-center mb-1">
-                      <Badge variant="outline" className={getNotificationStatusColor(notification)}>
-                        {formatStatus(notification.newStatus)}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        {notification.previousStatus && 
-                          `(From: ${formatStatus(notification.previousStatus)})`}
-                      </span>
+                  <div className="flex items-start gap-2 pt-2">
+                    <div className="bg-muted p-2 rounded-full">
+                      {getChannelIcon(notification.channel)}
                     </div>
-                  )}
-                  
-                  {notification.newStatus && (
-                    <div className="my-3">
-                      <div className="flex justify-between text-sm text-muted-foreground mb-1">
-                        <span>Progress</span>
-                        <span>{getProgressPercentage(notification.newStatus)}%</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-primary h-2 rounded-full" 
-                          style={{ width: `${getProgressPercentage(notification.newStatus)}%` }}
-                        />
+                    <div>
+                      <p className="whitespace-pre-line">{notification.message}</p>
+                      <div className="flex items-center mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center">
+                          {notification.successful ? (
+                            <>
+                              <Check className="h-3 w-3 mr-1 text-green-500" />
+                              <span className="text-green-600">Delivered</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertTriangle className="h-3 w-3 mr-1 text-amber-500" />
+                              <span className="text-amber-600">Delivery failed</span>
+                            </>
+                          )}
+                        </span>
                       </div>
                     </div>
-                  )}
-                  
-                  <p className="text-sm">{notification.message}</p>
-                  
-                  <div className="flex items-center text-sm text-muted-foreground mt-2">
-                    <Mail className="h-3 w-3 mr-1" />
-                    <span>
-                      {notification.successful 
-                        ? 'Email notification sent'
-                        : 'Email notification failed to send'}
-                    </span>
                   </div>
+
+                  {notification.previousStatus && notification.newStatus && (
+                    <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
+                      <p>
+                        Status changed from <strong>{notification.previousStatus}</strong> to <strong>{notification.newStatus}</strong>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>

@@ -109,7 +109,8 @@ export type OrderGroup = typeof orderGroups.$inferSelect;
 
 // Production status for the Kanban board
 export const productionStatuses = [
-  "order_processed", 
+  "order_processed",
+  "scheduled",
   "materials_ordered", 
   "materials_arrived", 
   "frame_cut", 
@@ -140,6 +141,7 @@ export const orders = pgTable("orders", {
   total: numeric("total").notNull(),
   status: text("status").notNull().default('pending'), // Order payment status
   productionStatus: text("production_status").$type<ProductionStatus>().notNull().default('order_processed'), // Production workflow status
+  previousStatus: text("previous_status").$type<ProductionStatus>(), // Used to track previous status, especially for delays
   createdAt: timestamp("created_at").defaultNow(),
   dueDate: timestamp("due_date"),
   artworkImage: text("artwork_image"),
@@ -211,6 +213,8 @@ export type LarsonJuhlCatalog = typeof larsonJuhlCatalog.$inferSelect;
 
 // Notification types
 export const notificationTypes = [
+  "status_update",
+  "estimated_completion",
   "status_change",
   "due_date_update", 
   "completion_reminder", 

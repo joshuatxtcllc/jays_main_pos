@@ -11,6 +11,7 @@ import Checkout from "./pages/Checkout";
 import PaymentStatus from "./pages/PaymentStatus";
 import CustomerManagement from "./pages/CustomerManagement";
 import ProductionPage from "./pages/ProductionPage";
+import OrderProgressPage from "./pages/OrderProgressPage";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -84,6 +85,7 @@ function App() {
                   <Route path="/production" component={ProductionPage} />
                   <Route path="/checkout/:orderGroupId" component={Checkout} />
                   <Route path="/payment-status" component={PaymentStatus} />
+                  <Route path="/order-progress/:orderId" component={OrderProgressPage} />
                   <Route path="/customers/:id" component={CustomerManagement} />
                   <Route path="/customers" component={CustomerManagement} />
                   <Route component={NotFound} />
