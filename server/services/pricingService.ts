@@ -60,41 +60,52 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
   return wholesalePrice * effectivePerimeter * markup;
 }
 
-// Mat pricing sliding scale based on united inches
-const matSlidingScaleMarkup: {range: [number, number], markup: number}[] = [
-  { range: [0, 20], markup: 10 },
-  { range: [21, 40], markup: 9 },
-  { range: [41, 60], markup: 8 },
-  { range: [61, 80], markup: 7 },
-  { range: [81, 1000], markup: 6 }
+// Mat pricing based on united inches and size brackets
+// For matboard pricing, we calculate a base price per sq inch, then use a size-based sliding scale
+const matPricingTable: {
+  sizeRange: [number, number],   // United inch range [min, max]
+  priceMultiplier: number,       // Multiplier for the base price per sq inch
+  minimumCharge: number          // Minimum charge for this size range
+}[] = [
+  { sizeRange: [0, 20], priceMultiplier: 2.5, minimumCharge: 25 },
+  { sizeRange: [21, 40], priceMultiplier: 2.3, minimumCharge: 30 },
+  { sizeRange: [41, 60], priceMultiplier: 2.0, minimumCharge: 35 },
+  { sizeRange: [61, 80], priceMultiplier: 1.8, minimumCharge: 40 },
+  { sizeRange: [81, 1000], priceMultiplier: 1.5, minimumCharge: 45 }
 ];
 
 /**
- * Calculate matboard price using sliding scale markup based on united inches
+ * Calculate matboard price using size-based pricing and minimums
+ * Industry standard practice is to have a minimum charge that increases with size
+ * plus a per-square-inch charge that decreases with size
  */
 export function calculateMatPrice(
   wholesalePrice: number, 
   matArea: number,
   outerUnitedInch: number
 ): number {
-  // Find the appropriate markup based on united inches
-  const markupEntry = matSlidingScaleMarkup.find(
-    entry => outerUnitedInch >= entry.range[0] && outerUnitedInch <= entry.range[1]
+  // Find the appropriate pricing bracket
+  const priceBracket = matPricingTable.find(
+    bracket => outerUnitedInch >= bracket.sizeRange[0] && outerUnitedInch <= bracket.sizeRange[1]
   );
   
-  // Default to lowest markup if no match found
-  const markup = markupEntry ? markupEntry.markup : 6;
+  // Use the lowest bracket if no match is found
+  const { priceMultiplier, minimumCharge } = priceBracket || 
+    { priceMultiplier: 1.5, minimumCharge: 45 };
   
-  console.log(`Using mat markup ${markup}x for united inches ${outerUnitedInch}`);
+  // Calculate the price based on area and wholesale price
+  const calculatedPrice = wholesalePrice * matArea * priceMultiplier;
   
-  if (wholesalePrice < 0.01) {
-    // If price is very small (like 0.000025), it's likely a wholesale price per square inch
-    return matArea * wholesalePrice * markup;
-  } else {
-    // For select mats with higher base prices, use a more controlled markup
-    // Use 25% of the sliding scale to avoid excessive pricing
-    return outerUnitedInch * wholesalePrice * 0.25;
-  }
+  // Log the calculation for debugging
+  console.log(`Mat pricing: ${outerUnitedInch}" united inches, ${matArea} sq inches`);
+  console.log(`Base price: $${wholesalePrice}/sq inch * ${priceMultiplier}x multiplier = $${calculatedPrice.toFixed(2)}`);
+  console.log(`Minimum charge for this size: $${minimumCharge}`);
+  
+  // Return the greater of calculated price or minimum charge
+  const finalPrice = Math.max(calculatedPrice, minimumCharge);
+  console.log(`Final mat price: $${finalPrice.toFixed(2)}`);
+  
+  return finalPrice;
 }
 
 /**
