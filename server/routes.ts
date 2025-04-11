@@ -1,6 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors } from "./controllers/matboardController";
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
@@ -9,7 +11,8 @@ import {
   insertOrderSchema,
   insertOrderSpecialServiceSchema,
   insertWholesaleOrderSchema,
-  insertOrderGroupSchema
+  insertOrderGroupSchema,
+  orders
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
@@ -524,6 +527,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(orderGroup);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch active order group" });
+    }
+  });
+  
+  // Get all orders for a customer (order history)
+  app.get('/api/customers/:id/orders', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customer = await storage.getCustomer(id);
+      
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      // Get all orders for this customer directly from storage
+      const allOrders = await storage.getAllOrders();
+      const customerOrders = allOrders.filter(o => o.customerId === id);
+      
+      // Get unique order group IDs
+      const uniqueOrderGroupIds: number[] = [];
+      customerOrders.forEach(order => {
+        if (order.orderGroupId !== undefined && order.orderGroupId !== null && 
+            !uniqueOrderGroupIds.includes(order.orderGroupId)) {
+          uniqueOrderGroupIds.push(order.orderGroupId);
+        }
+      });
+      
+      const orderGroups = [];
+      
+      for (const groupId of uniqueOrderGroupIds) {
+        const group = await storage.getOrderGroup(groupId);
+        if (group) {
+          orderGroups.push(group);
+        }
+      }
+      
+      // Create an enhanced response with order details
+      const orderHistory = orderGroups.map(group => {
+        const groupOrders = customerOrders.filter(order => order.orderGroupId === group.id);
+        return {
+          orderGroup: group,
+          orders: groupOrders,
+          orderDate: group.createdAt,
+          paymentDate: group.paymentDate,
+          paymentStatus: group.stripePaymentStatus,
+          total: group.total
+        };
+      });
+      
+      res.json(orderHistory);
+    } catch (error) {
+      console.error('Error fetching customer order history:', error);
+      res.status(500).json({ message: "Failed to fetch customer order history" });
+    }
+  });
+  
+  // Update customer details
+  app.patch('/api/customers/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const customer = await storage.getCustomer(id);
+      
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+      
+      const updatedCustomer = await storage.updateCustomer(id, req.body);
+      res.json(updatedCustomer);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update customer" });
     }
   });
 
