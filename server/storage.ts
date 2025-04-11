@@ -13,6 +13,68 @@ import { frameCatalog } from "../client/src/data/frameCatalog";
 import { matColorCatalog } from "../client/src/data/matColors";
 import { glassOptionCatalog, specialServicesCatalog } from "../client/src/data/glassOptions";
 
+/**
+ * Determines an appropriate color for a frame based on material and name
+ * @param {Frame} frame The frame to determine the color for
+ * @returns {string} A hex color code
+ */
+function determineFrameColor(frame: Frame): string {
+  const { material, name } = frame;
+  const materialLower = material.toLowerCase();
+  const nameLower = name.toLowerCase();
+  
+  // Gold frames
+  if (materialLower.includes('gold') || nameLower.includes('gold')) {
+    return '#D4AF37'; // Gold
+  }
+  
+  // Silver or metal frames
+  if (materialLower.includes('silver') || materialLower.includes('metal') || 
+      nameLower.includes('silver') || nameLower.includes('metal') || 
+      nameLower.includes('chrome') || nameLower.includes('steel')) {
+    return '#C0C0C0'; // Silver
+  }
+  
+  // Black frames
+  if (materialLower.includes('black') || nameLower.includes('black') || 
+      nameLower.includes('ebony') || nameLower.includes('onyx')) {
+    return '#2D2D2D'; // Black
+  }
+  
+  // White frames
+  if (materialLower.includes('white') || nameLower.includes('white')) {
+    return '#F5F5F5'; // White
+  }
+  
+  // Walnut frames
+  if (materialLower.includes('walnut') || nameLower.includes('walnut')) {
+    return '#5C4033'; // Walnut
+  }
+  
+  // Cherry frames
+  if (materialLower.includes('cherry') || nameLower.includes('cherry')) {
+    return '#722F37'; // Cherry
+  }
+  
+  // Oak frames
+  if (materialLower.includes('oak') || nameLower.includes('oak')) {
+    return '#D8BE75'; // Oak
+  }
+  
+  // Mahogany frames
+  if (materialLower.includes('mahogany') || nameLower.includes('mahogany')) {
+    return '#4E2728'; // Mahogany
+  }
+  
+  // Maple frames
+  if (materialLower.includes('maple') || nameLower.includes('maple')) {
+    return '#E8D4A9'; // Maple
+  }
+  
+  // Default wood color for anything else
+  return '#8B4513'; // Medium brown wood color
+}
+
 export interface IStorage {
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
@@ -118,17 +180,8 @@ export class DatabaseStorage implements IStorage {
       if (frame) {
         console.log(`Storage: Found frame in database: ${frame.name}`);
         
-        // Determine color based on material if not present
-        let frameColor = '#8B4513'; // Default brown color
-        if (frame.material?.toLowerCase().includes('gold')) {
-          frameColor = '#D4AF37';
-        } else if (frame.material?.toLowerCase().includes('silver')) {
-          frameColor = '#C0C0C0';
-        } else if (frame.material?.toLowerCase().includes('black')) {
-          frameColor = '#000000';
-        } else if (frame.material?.toLowerCase().includes('white')) {
-          frameColor = '#FFFFFF';
-        }
+        // Determine color based on the frame's material and name
+        let frameColor = determineFrameColor(frame);
         
         // Find a real catalog image based on manufacturer
         let enhancedImage = frame.catalogImage;
@@ -180,19 +233,8 @@ export class DatabaseStorage implements IStorage {
         let realCornerImage = catalogFrame.corner || '';
         let realEdgeImage = catalogFrame.edgeTexture || '';
         
-        // Determine color based on material
-        let frameColor = catalogFrame.color || '#8B4513'; // Default brown color
-        if (!catalogFrame.color) {
-          if (catalogFrame.material?.toLowerCase().includes('gold')) {
-            frameColor = '#D4AF37';
-          } else if (catalogFrame.material?.toLowerCase().includes('silver')) {
-            frameColor = '#C0C0C0';
-          } else if (catalogFrame.material?.toLowerCase().includes('black')) {
-            frameColor = '#000000';
-          } else if (catalogFrame.material?.toLowerCase().includes('white')) {
-            frameColor = '#FFFFFF';
-          }
-        }
+        // Determine color based on the frame's material and name
+        let frameColor = catalogFrame.color || determineFrameColor(catalogFrame);
         
         // Add more detailed wholesaler images for Larson-Juhl frames
         if (catalogFrame.manufacturer === 'Larson-Juhl') {
@@ -251,8 +293,8 @@ export class DatabaseStorage implements IStorage {
       // Fallback to static catalog
       const catalogFrame = frameCatalog.find(f => f.id === id);
       if (catalogFrame) {
-        // Add default color and enhanced image
-        let frameColor = '#8B4513'; // Default brown color
+        // Add color based on frame material and name
+        let frameColor = determineFrameColor(catalogFrame);
         let enhancedImage = catalogFrame.catalogImage;
         
         // Add wholesaler images based on manufacturer
@@ -290,17 +332,8 @@ export class DatabaseStorage implements IStorage {
         console.log("Storage: Enhancing existing frames with real wholesaler images");
         // Add additional data to frames from database
         return dbFrames.map(frame => {
-          // Determine color based on material if not present
-          let frameColor = '#8B4513'; // Default brown color
-          if (frame.material?.toLowerCase().includes('gold')) {
-            frameColor = '#D4AF37';
-          } else if (frame.material?.toLowerCase().includes('silver')) {
-            frameColor = '#C0C0C0';
-          } else if (frame.material?.toLowerCase().includes('black')) {
-            frameColor = '#000000';
-          } else if (frame.material?.toLowerCase().includes('white')) {
-            frameColor = '#FFFFFF';
-          }
+          // Determine color based on the frame's material and name
+          let frameColor = determineFrameColor(frame);
           
           // Find a real catalog image based on manufacturer
           let enhancedImage = frame.catalogImage;
@@ -350,7 +383,7 @@ export class DatabaseStorage implements IStorage {
         let enhancedImage = frame.catalogImage;
         let realCornerImage = frame.corner || '';
         let realEdgeImage = frame.edgeTexture || '';
-        let frameColor = frame.color || '#8B4513'; // Use default if not present
+        let frameColor = frame.color || determineFrameColor(frame);
         
         // Add more detailed wholesaler images for Larson-Juhl frames
         if (frame.manufacturer === 'Larson-Juhl') {
