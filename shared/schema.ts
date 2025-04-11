@@ -107,6 +107,20 @@ export const insertOrderGroupSchema = createInsertSchema(orderGroups).omit({ id:
 export type InsertOrderGroup = z.infer<typeof insertOrderGroupSchema>;
 export type OrderGroup = typeof orderGroups.$inferSelect;
 
+// Production status for the Kanban board
+export const productionStatuses = [
+  "order_processed", 
+  "materials_ordered", 
+  "materials_arrived", 
+  "frame_cut", 
+  "mat_cut", 
+  "prepped", 
+  "completed", 
+  "delayed"
+] as const;
+
+export type ProductionStatus = typeof productionStatuses[number];
+
 // Order model
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
@@ -124,10 +138,16 @@ export const orders = pgTable("orders", {
   subtotal: numeric("subtotal").notNull(),
   tax: numeric("tax").notNull(),
   total: numeric("total").notNull(),
-  status: text("status").notNull().default('pending'),
+  status: text("status").notNull().default('pending'), // Order payment status
+  productionStatus: text("production_status").$type<ProductionStatus>().notNull().default('order_processed'), // Production workflow status
   createdAt: timestamp("created_at").defaultNow(),
   dueDate: timestamp("due_date"),
-  artworkImage: text("artwork_image")
+  artworkImage: text("artwork_image"),
+  lastNotificationSent: timestamp("last_notification_sent"),
+  estimatedCompletionDays: integer("estimated_completion_days"),
+  addToWholesaleOrder: boolean("add_to_wholesale_order").default(false),
+  lastStatusChange: timestamp("last_status_change").defaultNow(),
+  notificationsEnabled: boolean("notifications_enabled").default(true)
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
@@ -188,3 +208,44 @@ export const larsonJuhlCatalog = pgTable("larson_juhl_catalog", {
 export const insertLarsonJuhlCatalogSchema = createInsertSchema(larsonJuhlCatalog);
 export type InsertLarsonJuhlCatalog = z.infer<typeof insertLarsonJuhlCatalogSchema>;
 export type LarsonJuhlCatalog = typeof larsonJuhlCatalog.$inferSelect;
+
+// Notification types
+export const notificationTypes = [
+  "status_change",
+  "due_date_update", 
+  "completion_reminder", 
+  "order_complete", 
+  "payment_reminder",
+  "delay_notification"
+] as const;
+
+export type NotificationType = typeof notificationTypes[number];
+
+// Notification channels
+export const notificationChannels = [
+  "email",
+  "sms",
+  "both"
+] as const;
+
+export type NotificationChannel = typeof notificationChannels[number];
+
+// Customer notifications model
+export const customerNotifications = pgTable("customer_notifications", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").references(() => customers.id),
+  orderId: integer("order_id").references(() => orders.id),
+  notificationType: text("notification_type").$type<NotificationType>().notNull(),
+  channel: text("channel").$type<NotificationChannel>().notNull().default('email'),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  sentAt: timestamp("sent_at").defaultNow(),
+  successful: boolean("successful").notNull(),
+  responseData: jsonb("response_data"),
+  previousStatus: text("previous_status"),
+  newStatus: text("new_status")
+});
+
+export const insertCustomerNotificationSchema = createInsertSchema(customerNotifications).omit({ id: true, sentAt: true });
+export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;
+export type CustomerNotification = typeof customerNotifications.$inferSelect;
