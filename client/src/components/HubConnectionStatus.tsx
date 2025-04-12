@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Link } from 'wouter';
 
 interface ConnectionStatusProps {
   refreshTrigger?: number;
@@ -156,6 +157,18 @@ export default function HubConnectionStatus({ refreshTrigger = 0 }: ConnectionSt
                 onCheckedChange={setAutoSync}
               />
               <Label htmlFor="auto-sync">Auto-refresh connection status</Label>
+            </div>
+            
+            <div className="mt-4 p-3 bg-muted rounded-md">
+              <h4 className="font-medium mb-1">System Integration Info</h4>
+              <p className="text-sm text-muted-foreground mb-2">
+                This POS system functions as part of the Hub ecosystem, handling customer orders and inventory management.
+              </p>
+              <div className="flex flex-col space-y-1">
+                <div className="text-sm"><span className="font-medium">POS Role:</span> Primary point of sale and custom framing calculation engine</div>
+                <div className="text-sm"><span className="font-medium">Production Link:</span> <Link to="/production" className="text-primary hover:underline">Production Kanban</Link> connects directly to Hub's production system</div>
+                <div className="text-sm"><span className="font-medium">Materials Link:</span> <Link to="/materials" className="text-primary hover:underline">Materials Page</Link> syncs with Hub's inventory management</div>
+              </div>
             </div>
           </div>
         )}

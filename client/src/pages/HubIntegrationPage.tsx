@@ -153,7 +153,8 @@ export default function HubIntegrationPage() {
         <div>
           <h1 className="text-3xl font-bold">Jays Frames Hub Integration</h1>
           <p className="text-muted-foreground">
-            Manage material orders integration with Jays Frames Hub
+            Manage material orders integration with Jays Frames Hub. This POS system automatically synchronizes
+            orders, inventory, and statuses with the Hub.
           </p>
         </div>
         <div className="flex space-x-2">
