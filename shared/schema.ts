@@ -253,3 +253,53 @@ export const customerNotifications = pgTable("customer_notifications", {
 export const insertCustomerNotificationSchema = createInsertSchema(customerNotifications).omit({ id: true, sentAt: true });
 export type InsertCustomerNotification = z.infer<typeof insertCustomerNotificationSchema>;
 export type CustomerNotification = typeof customerNotifications.$inferSelect;
+
+// Material order types
+export const materialTypes = [
+  "frame",
+  "matboard",
+  "glass",
+  "backing_board",
+  "hardware",
+  "specialty_materials"
+] as const;
+
+export type MaterialType = typeof materialTypes[number];
+
+// Material order status
+export const materialOrderStatuses = [
+  "needed",
+  "pending",
+  "ordered",
+  "shipped",
+  "received",
+  "cancelled",
+  "back_ordered"
+] as const;
+
+export type MaterialOrderStatus = typeof materialOrderStatuses[number];
+
+// Material orders model
+export const materialOrders = pgTable("material_orders", {
+  id: serial("id").primaryKey(),
+  materialType: text("material_type").$type<MaterialType>().notNull(),
+  materialId: text("material_id").notNull(), // frameId, matColorId, etc.
+  materialName: text("material_name").notNull(),
+  quantity: numeric("quantity").notNull(),
+  status: text("status").$type<MaterialOrderStatus>().notNull().default('needed'),
+  sourceOrderId: integer("source_order_id").references(() => orders.id),
+  orderDate: timestamp("order_date"),
+  expectedArrival: timestamp("expected_arrival"),
+  actualArrival: timestamp("actual_arrival"),
+  supplierName: text("supplier_name"),
+  supplierOrderNumber: text("supplier_order_number"),
+  notes: text("notes"),
+  costPerUnit: numeric("cost_per_unit"),
+  totalCost: numeric("total_cost"),
+  priority: text("priority").default("normal"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertMaterialOrderSchema = createInsertSchema(materialOrders).omit({ id: true, createdAt: true });
+export type InsertMaterialOrder = z.infer<typeof insertMaterialOrderSchema>;
+export type MaterialOrder = typeof materialOrders.$inferSelect;

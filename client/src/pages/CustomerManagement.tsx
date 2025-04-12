@@ -292,7 +292,7 @@ export default function CustomerManagement() {
           </h1>
           <div className="flex gap-2">
             {!isNewCustomerRoute && (
-              <Button variant="default" onClick={() => navigate("/customers/new")}>
+              <Button variant="default" onClick={() => navigate("/customers/new")} className="text-white">
                 New Customer
               </Button>
             )}
@@ -378,6 +378,7 @@ export default function CustomerManagement() {
                   <Button 
                     type="submit"
                     disabled={createCustomerMutation.isPending}
+                    className="text-white"
                   >
                     {createCustomerMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -401,7 +402,7 @@ export default function CustomerManagement() {
           <Button variant="default" onClick={() => {
             // Navigate to the new customer route
             navigate("/customers/new");
-          }}>
+          }} className="text-white">
             New Customer
           </Button>
           <Button variant="outline" onClick={() => navigate("/")}>
