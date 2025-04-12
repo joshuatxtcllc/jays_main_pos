@@ -28,9 +28,10 @@ import { apiRequest } from '@/lib/queryClient';
 import { MaterialType, MaterialOrderStatus } from "../types";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { CalendarIcon, AlertCircle, RotateCw, CheckCircle2, Trash2, RefreshCw, Package, Filter, PlusCircle } from "lucide-react";
+import { CalendarIcon, AlertCircle, RotateCw, CheckCircle2, Trash2, RefreshCw, Package, Filter, PlusCircle, TrendingUp, ActivityIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import OrderStatusProgress from "../components/OrderStatusProgress";
 
 // Define material types and order statuses
 const materialTypes: MaterialType[] = [

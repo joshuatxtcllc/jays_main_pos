@@ -7,14 +7,9 @@ export type MaterialType =
   | "hardware" 
   | "specialty_materials";
 
-// Material Order Statuses
-export type MaterialOrderStatus = 
-  | "pending" 
-  | "ordered" 
-  | "back_ordered" 
-  | "shipped" 
-  | "delivered" 
-  | "cancelled";
+// Material Order Statuses - Import from the shared schema
+import { MaterialOrderStatus as SharedMaterialOrderStatus } from "../shared/schema";
+export type MaterialOrderStatus = SharedMaterialOrderStatus;
 
 // Production Status
 export type ProductionStatus = 

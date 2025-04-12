@@ -6,23 +6,19 @@ import { Check, Clock, ArrowRightCircle, Truck, HelpCircle, XCircle, PackageChec
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Import from shared schema
+import { materialOrderStatuses } from "../../shared/schema";
+
 interface OrderStatusProgressProps {
   status: MaterialOrderStatus;
   className?: string;
 }
 
-const statusSteps: MaterialOrderStatus[] = [
-  "needed",
-  "pending",
-  "ordered",
-  "shipped",
-  "received",
-  "cancelled",  // Special case - not on main progress path
-  "back_ordered" // Special case - not on main progress path
-];
+// Use the materialOrderStatuses from schema.ts
+const statusSteps = materialOrderStatuses;
 
 // Description for each status
-const statusDescriptions: Record<MaterialOrderStatus, string> = {
+const statusDescriptions = {
   "needed": "Material identified as needed",
   "pending": "Ready to be ordered",
   "ordered": "Order placed with supplier",
@@ -30,7 +26,7 @@ const statusDescriptions: Record<MaterialOrderStatus, string> = {
   "received": "Received in shop",
   "cancelled": "Order cancelled",
   "back_ordered": "Back-ordered by supplier"
-};
+} as Record<MaterialOrderStatus, string>;
 
 // Icon for each status
 const StatusIcon: React.FC<{ status: MaterialOrderStatus }> = ({ status }) => {
