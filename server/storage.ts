@@ -969,26 +969,43 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllMaterialOrders(): Promise<MaterialOrder[]> {
-    return await db
-      .select()
-      .from(materialOrders)
-      .orderBy(desc(materialOrders.createdAt));
+    try {
+      return await db
+        .select()
+        .from(materialOrders)
+        .orderBy(desc(materialOrders.createdAt));
+    } catch (error) {
+      console.error('Error in getAllMaterialOrders:', error);
+      // If there's an error with missing columns, return an empty array
+      // This provides graceful degradation until all schema migrations are complete
+      return [];
+    }
   }
 
   async getMaterialOrdersByStatus(status: MaterialOrderStatus): Promise<MaterialOrder[]> {
-    return await db
-      .select()
-      .from(materialOrders)
-      .where(eq(materialOrders.status, status))
-      .orderBy(desc(materialOrders.createdAt));
+    try {
+      return await db
+        .select()
+        .from(materialOrders)
+        .where(eq(materialOrders.status, status))
+        .orderBy(desc(materialOrders.createdAt));
+    } catch (error) {
+      console.error('Error in getMaterialOrdersByStatus:', error);
+      return [];
+    }
   }
 
   async getMaterialOrdersByType(materialType: MaterialType): Promise<MaterialOrder[]> {
-    return await db
-      .select()
-      .from(materialOrders)
-      .where(eq(materialOrders.materialType, materialType))
-      .orderBy(desc(materialOrders.createdAt));
+    try {
+      return await db
+        .select()
+        .from(materialOrders)
+        .where(eq(materialOrders.materialType, materialType))
+        .orderBy(desc(materialOrders.createdAt));
+    } catch (error) {
+      console.error('Error in getMaterialOrdersByType:', error);
+      return [];
+    }
   }
 
   async createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder> {

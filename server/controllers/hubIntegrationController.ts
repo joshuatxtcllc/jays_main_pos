@@ -15,8 +15,19 @@ export async function getAllMaterialOrdersWithHubStatus(req: Request, res: Respo
   try {
     const materialOrders = await storage.getAllMaterialOrders();
     
+    // Enhance orders with default hub status if needed
+    const enhancedOrders = materialOrders.map(order => ({
+      ...order,
+      hubOrderId: order.hubOrderId || null,
+      hubSyncStatus: order.hubSyncStatus || 'not_synced',
+      hubLastSyncDate: order.hubLastSyncDate || null,
+      hubTrackingInfo: order.hubTrackingInfo || null,
+      hubEstimatedDelivery: order.hubEstimatedDelivery || null,
+      hubSupplierNotes: order.hubSupplierNotes || null
+    }));
+    
     // Return all orders with their hub status information
-    res.json(materialOrders);
+    res.json(enhancedOrders);
   } catch (error: any) {
     console.error('Error fetching material orders with hub status:', error);
     res.status(500).json({ error: error.message || 'Failed to fetch material orders' });
@@ -179,9 +190,9 @@ export async function getHubOrderStatus(req: Request, res: Response) {
       // Update the material order with the latest status from the Hub
       const updatedOrder = await storage.updateMaterialOrder(orderId, {
         status: statusResult.status,
-        hubLastSyncDate: new Date().toISOString(),
+        hubLastSyncDate: new Date(),
         hubTrackingInfo: statusResult.trackingInfo,
-        hubEstimatedDelivery: statusResult.estimatedDelivery,
+        hubEstimatedDelivery: statusResult.estimatedDelivery ? new Date(statusResult.estimatedDelivery) : undefined,
         hubSupplierNotes: statusResult.supplierNotes
       });
       
