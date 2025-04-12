@@ -25,7 +25,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { apiRequest } from '@/lib/queryClient';
-import { MaterialType, MaterialOrderStatus } from "@/types";
+import { MaterialType, MaterialOrderStatus } from "../types";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { CalendarIcon, AlertCircle, RotateCw, CheckCircle2, Trash2, RefreshCw, Package, Filter, PlusCircle } from "lucide-react";
@@ -223,15 +223,17 @@ const MaterialOrdersPage: React.FC = () => {
   };
 
   // Filter material orders by status and type
-  const filteredOrders = materialOrders?.filter((order: MaterialOrder) => {
-    if (activeTab !== "all" && order.status !== activeTab) {
-      return false;
-    }
-    if (selectedType !== "all" && order.materialType !== selectedType) {
-      return false;
-    }
-    return true;
-  });
+  const filteredOrders = Array.isArray(materialOrders) 
+    ? materialOrders.filter((order: MaterialOrder) => {
+        if (activeTab !== "all" && order.status !== activeTab) {
+          return false;
+        }
+        if (selectedType !== "all" && order.materialType !== selectedType) {
+          return false;
+        }
+        return true;
+      })
+    : [];
 
   // Create a new material order
   const onCreateSubmit = (data: MaterialOrderFormValues) => {

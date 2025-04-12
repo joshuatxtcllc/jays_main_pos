@@ -81,6 +81,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Production
             </span>
           </Link>
+          <Link href="/materials">
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/materials" && "text-primary"
+            )}>
+              Materials
+            </span>
+          </Link>
         </nav>
         
         <div className="flex items-center space-x-4">
@@ -202,6 +210,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               location === "/production" && "text-primary"
             )}>
               Production
+            </span>
+          </Link>
+          <Link href="/materials">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/materials" && "text-primary"
+            )}>
+              Materials
             </span>
           </Link>
           
