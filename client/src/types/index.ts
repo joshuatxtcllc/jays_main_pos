@@ -8,7 +8,7 @@ export type MaterialType =
   | "specialty_materials";
 
 // Material Order Statuses - Import from the shared schema
-import { MaterialOrderStatus as SharedMaterialOrderStatus } from "../shared/schema";
+import { MaterialOrderStatus as SharedMaterialOrderStatus } from "@shared/schema";
 export type MaterialOrderStatus = SharedMaterialOrderStatus;
 
 // Production Status

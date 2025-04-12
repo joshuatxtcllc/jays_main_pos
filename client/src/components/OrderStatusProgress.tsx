@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Import from shared schema
-import { materialOrderStatuses } from "../../shared/schema";
+import { materialOrderStatuses } from "@shared/schema";
 
 interface OrderStatusProgressProps {
   status: MaterialOrderStatus;

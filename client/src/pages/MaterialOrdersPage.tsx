@@ -84,6 +84,7 @@ const MaterialOrdersPage: React.FC = () => {
   const [selectedType, setSelectedType] = useState<MaterialType | "all">("all");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<MaterialOrder | null>(null);
 
   // Get all material orders
@@ -261,6 +262,8 @@ const MaterialOrdersPage: React.FC = () => {
   // Get status badge color
   const getStatusBadgeColor = (status: MaterialOrderStatus) => {
     switch (status) {
+      case "needed":
+        return "bg-slate-500";
       case "pending":
         return "bg-yellow-500";
       case "ordered":
@@ -269,7 +272,7 @@ const MaterialOrdersPage: React.FC = () => {
         return "bg-orange-500";
       case "shipped":
         return "bg-purple-500";
-      case "delivered":
+      case "received":
         return "bg-green-500";
       case "cancelled":
         return "bg-red-500";
