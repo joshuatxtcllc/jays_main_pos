@@ -200,6 +200,13 @@ const MaterialOrdersPage: React.FC = () => {
       setSelectedOrder(null);
     }
   };
+  
+  const handleStatusDialogOpenChange = (open: boolean) => {
+    setIsStatusDialogOpen(open);
+    if (!open) {
+      setSelectedOrder(null);
+    }
+  };
 
   // Edit material order
   const handleEditOrder = (order: MaterialOrder) => {
@@ -222,6 +229,12 @@ const MaterialOrdersPage: React.FC = () => {
     });
     
     setIsEditDialogOpen(true);
+  };
+  
+  // View order status progress
+  const handleViewProgress = (order: MaterialOrder) => {
+    setSelectedOrder(order);
+    setIsStatusDialogOpen(true);
   };
 
   // Filter material orders by status and type
@@ -662,6 +675,13 @@ const MaterialOrdersPage: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleViewProgress(order)}
+                        >
+                          <ActivityIcon className="h-4 w-4 mr-1" /> Progress
+                        </Button>
                         <Button 
                           variant="outline" 
                           size="sm" 
