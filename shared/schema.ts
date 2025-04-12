@@ -268,13 +268,16 @@ export type MaterialType = typeof materialTypes[number];
 
 // Material order status
 export const materialOrderStatuses = [
-  "needed",
   "pending",
+  "processed",
   "ordered",
-  "shipped",
-  "received",
-  "cancelled",
-  "back_ordered"
+  "arrived",
+  "frame_cut",
+  "mat_cut",
+  "prepped",
+  "completed",
+  "delayed",
+  "canceled"
 ] as const;
 
 export type MaterialOrderStatus = typeof materialOrderStatuses[number];

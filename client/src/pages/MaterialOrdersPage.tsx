@@ -39,7 +39,7 @@ const materialTypes: MaterialType[] = [
 ];
 
 const materialOrderStatuses: MaterialOrderStatus[] = [
-  "pending", "ordered", "back_ordered", "shipped", "delivered", "cancelled"
+  "pending", "processed", "ordered", "arrived", "frame_cut", "mat_cut", "prepped", "completed", "delayed", "canceled"
 ];
 
 // Define form schema for creating/editing material orders
@@ -48,7 +48,7 @@ const materialOrderSchema = z.object({
   materialType: z.enum(["frame", "matboard", "glass", "backing_board", "hardware", "specialty_materials"]),
   materialId: z.string().optional(),
   materialName: z.string().min(1, "Material name is required"),
-  status: z.enum(["pending", "ordered", "back_ordered", "shipped", "delivered", "cancelled"]).default("pending"),
+  status: z.enum(["pending", "processed", "ordered", "arrived", "frame_cut", "mat_cut", "prepped", "completed", "delayed", "canceled"]).default("pending"),
   notes: z.string().optional(),
   sourceOrderId: z.number().optional().nullable(),
   vendor: z.string().optional(),
