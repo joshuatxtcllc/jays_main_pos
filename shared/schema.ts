@@ -289,7 +289,7 @@ export const materialOrders = pgTable("material_orders", {
   materialId: text("material_id").notNull(), // frameId, matColorId, etc.
   materialName: text("material_name").notNull(),
   quantity: numeric("quantity").notNull(),
-  status: text("status").$type<MaterialOrderStatus>().notNull().default('needed'),
+  status: text("status").$type<MaterialOrderStatus>().notNull().default('pending'),
   sourceOrderId: integer("source_order_id").references(() => orders.id),
   orderDate: timestamp("order_date"),
   expectedArrival: timestamp("expected_arrival"),
@@ -300,9 +300,27 @@ export const materialOrders = pgTable("material_orders", {
   costPerUnit: numeric("cost_per_unit"),
   totalCost: numeric("total_cost"),
   priority: text("priority").default("normal"),
+  // Hub integration fields
+  hubOrderId: text("hub_order_id"),
+  hubSyncStatus: text("hub_sync_status").default("not_synced"),
+  hubLastSyncDate: timestamp("hub_last_sync_date"),
+  hubTrackingInfo: text("hub_tracking_info"),
+  hubEstimatedDelivery: timestamp("hub_estimated_delivery"),
+  hubSupplierNotes: text("hub_supplier_notes"),
+  orderReference: text("order_reference"), // Reference number for this order
+  unitMeasurement: text("unit_measurement"), // e.g., "inches", "feet", "united_inch"
   createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertMaterialOrderSchema = createInsertSchema(materialOrders).omit({ id: true, createdAt: true });
+export const insertMaterialOrderSchema = createInsertSchema(materialOrders).omit({ 
+  id: true, 
+  createdAt: true,
+  hubOrderId: true,
+  hubSyncStatus: true,
+  hubLastSyncDate: true,
+  hubTrackingInfo: true,
+  hubEstimatedDelivery: true,
+  hubSupplierNotes: true
+});
 export type InsertMaterialOrder = z.infer<typeof insertMaterialOrderSchema>;
 export type MaterialOrder = typeof materialOrders.$inferSelect;
