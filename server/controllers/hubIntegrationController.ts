@@ -50,9 +50,9 @@ export async function syncMaterialOrderWithHub(req: Request, res: Response) {
       const updatedOrder = await storage.updateMaterialOrder(orderId, {
         hubOrderId: result.hubOrderId,
         hubSyncStatus: 'synced',
-        hubLastSyncDate: new Date().toISOString(),
+        hubLastSyncDate: new Date(),
         hubTrackingInfo: result.trackingInfo,
-        hubEstimatedDelivery: result.estimatedDelivery
+        hubEstimatedDelivery: result.estimatedDelivery ? new Date(result.estimatedDelivery) : undefined
       });
       
       res.json({
@@ -90,12 +90,12 @@ export async function syncMaterialOrdersWithHub(req: Request, res: Response) {
         await storage.updateMaterialOrder(result.orderId, {
           hubOrderId: result.hubOrderId,
           hubSyncStatus: 'synced',
-          hubLastSyncDate: new Date().toISOString()
+          hubLastSyncDate: new Date()
         });
       } else {
         await storage.updateMaterialOrder(result.orderId, {
           hubSyncStatus: 'failed',
-          hubLastSyncDate: new Date().toISOString(),
+          hubLastSyncDate: new Date(),
           notes: (result.error ? `Sync failed: ${result.error}` : 'Sync failed with unknown error')
         });
       }

@@ -7,6 +7,14 @@ import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors }
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
 import { 
+  getAllMaterialOrdersWithHubStatus, 
+  syncMaterialOrderWithHub,
+  syncMaterialOrdersWithHub,
+  getHubInventoryLevels,
+  getHubOrderStatus,
+  updateOrderStatus
+} from "./controllers/hubIntegrationController";
+import { 
   insertCustomerSchema, 
   insertOrderSchema,
   insertOrderSpecialServiceSchema,
@@ -1371,6 +1379,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create HTTP server
+  // Jays Frames Hub Integration Routes
+  // Get all material orders with Hub sync status
+  app.get('/api/hub/material-orders', getAllMaterialOrdersWithHubStatus);
+  
+  // Sync a specific material order with the Hub
+  app.post('/api/hub/material-orders/:id/sync', syncMaterialOrderWithHub);
+  
+  // Sync all pending material orders with the Hub
+  app.post('/api/hub/material-orders/sync-all', syncMaterialOrdersWithHub);
+  
+  // Get inventory levels from the Hub
+  app.get('/api/hub/inventory', getHubInventoryLevels);
+  
+  // Get the status of a specific material order from the Hub
+  app.get('/api/hub/material-orders/:id/status', getHubOrderStatus);
+  
+  // Update a material order status in both systems
+  app.patch('/api/hub/material-orders/:id/status', updateOrderStatus);
+
   const httpServer = createServer(app);
   return httpServer;
 }
