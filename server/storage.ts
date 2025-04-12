@@ -8,7 +8,8 @@ import {
   orders, type Order, type InsertOrder, type ProductionStatus,
   orderSpecialServices, type OrderSpecialService, type InsertOrderSpecialService,
   wholesaleOrders, type WholesaleOrder, type InsertWholesaleOrder,
-  customerNotifications, type CustomerNotification, type InsertCustomerNotification
+  customerNotifications, type CustomerNotification, type InsertCustomerNotification,
+  materialOrders, type MaterialOrder, type InsertMaterialOrder, type MaterialType, type MaterialOrderStatus
 } from "@shared/schema";
 import { frameCatalog } from "../client/src/data/frameCatalog";
 import { matColorCatalog } from "../client/src/data/matColors";
@@ -136,10 +137,19 @@ export interface IStorage {
   createCustomerNotification(notification: InsertCustomerNotification): Promise<CustomerNotification>;
   getCustomerNotifications(customerId: number): Promise<CustomerNotification[]>;
   getNotificationsByOrder(orderId: number): Promise<CustomerNotification[]>;
+  
+  // Material order methods
+  getMaterialOrder(id: number): Promise<MaterialOrder | undefined>;
+  getAllMaterialOrders(): Promise<MaterialOrder[]>;
+  getMaterialOrdersByStatus(status: MaterialOrderStatus): Promise<MaterialOrder[]>;
+  getMaterialOrdersByType(materialType: MaterialType): Promise<MaterialOrder[]>;
+  createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder>;
+  updateMaterialOrder(id: number, data: Partial<MaterialOrder>): Promise<MaterialOrder>;
+  deleteMaterialOrder(id: number): Promise<void>;
 }
 
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // Customer methods
@@ -947,6 +957,61 @@ export class DatabaseStorage implements IStorage {
       .from(customerNotifications)
       .where(eq(customerNotifications.orderId, orderId))
       .orderBy(customerNotifications.sentAt, 'desc');
+  }
+
+  // Material order methods
+  async getMaterialOrder(id: number): Promise<MaterialOrder | undefined> {
+    const [materialOrder] = await db
+      .select()
+      .from(materialOrders)
+      .where(eq(materialOrders.id, id));
+    return materialOrder;
+  }
+
+  async getAllMaterialOrders(): Promise<MaterialOrder[]> {
+    return await db
+      .select()
+      .from(materialOrders)
+      .orderBy(desc(materialOrders.createdAt));
+  }
+
+  async getMaterialOrdersByStatus(status: MaterialOrderStatus): Promise<MaterialOrder[]> {
+    return await db
+      .select()
+      .from(materialOrders)
+      .where(eq(materialOrders.status, status))
+      .orderBy(desc(materialOrders.createdAt));
+  }
+
+  async getMaterialOrdersByType(materialType: MaterialType): Promise<MaterialOrder[]> {
+    return await db
+      .select()
+      .from(materialOrders)
+      .where(eq(materialOrders.materialType, materialType))
+      .orderBy(desc(materialOrders.createdAt));
+  }
+
+  async createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder> {
+    const [newMaterialOrder] = await db
+      .insert(materialOrders)
+      .values(materialOrder)
+      .returning();
+    return newMaterialOrder;
+  }
+
+  async updateMaterialOrder(id: number, data: Partial<MaterialOrder>): Promise<MaterialOrder> {
+    const [updatedMaterialOrder] = await db
+      .update(materialOrders)
+      .set(data)
+      .where(eq(materialOrders.id, id))
+      .returning();
+    return updatedMaterialOrder;
+  }
+
+  async deleteMaterialOrder(id: number): Promise<void> {
+    await db
+      .delete(materialOrders)
+      .where(eq(materialOrders.id, id));
   }
 }
 
