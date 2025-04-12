@@ -12,8 +12,14 @@ import {
   insertOrderSpecialServiceSchema,
   insertWholesaleOrderSchema,
   insertOrderGroupSchema,
+  insertMaterialOrderSchema,
   orders,
-  Order
+  Order,
+  materialOrderStatuses,
+  MaterialOrderStatus,
+  materialTypes,
+  MaterialType,
+  InsertMaterialOrder
 } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
@@ -1194,6 +1200,173 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating order notification settings:', error);
       res.status(500).json({ message: "Failed to update notification settings" });
+    }
+  });
+
+  // Material Orders API Routes
+  
+  // Get all material orders
+  app.get('/api/material-orders', async (req, res) => {
+    try {
+      const materialOrders = await storage.getAllMaterialOrders();
+      res.json(materialOrders);
+    } catch (error) {
+      console.error('Error fetching material orders:', error);
+      res.status(500).json({ message: "Failed to fetch material orders" });
+    }
+  });
+
+  // Get material order by ID
+  app.get('/api/material-orders/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const materialOrder = await storage.getMaterialOrder(id);
+      
+      if (!materialOrder) {
+        return res.status(404).json({ message: "Material order not found" });
+      }
+      
+      res.json(materialOrder);
+    } catch (error) {
+      console.error('Error fetching material order:', error);
+      res.status(500).json({ message: "Failed to fetch material order" });
+    }
+  });
+
+  // Get material orders by status
+  app.get('/api/material-orders/status/:status', async (req, res) => {
+    try {
+      const { status } = req.params;
+      // Validate that the status is a valid MaterialOrderStatus
+      if (!materialOrderStatuses.includes(status as MaterialOrderStatus)) {
+        return res.status(400).json({ message: "Invalid material order status" });
+      }
+      
+      const materialOrders = await storage.getMaterialOrdersByStatus(status as MaterialOrderStatus);
+      res.json(materialOrders);
+    } catch (error) {
+      console.error('Error fetching material orders by status:', error);
+      res.status(500).json({ message: "Failed to fetch material orders by status" });
+    }
+  });
+
+  // Get material orders by type
+  app.get('/api/material-orders/type/:type', async (req, res) => {
+    try {
+      const { type } = req.params;
+      // Validate that the type is a valid MaterialType
+      if (!materialTypes.includes(type as MaterialType)) {
+        return res.status(400).json({ message: "Invalid material type" });
+      }
+      
+      const materialOrders = await storage.getMaterialOrdersByType(type as MaterialType);
+      res.json(materialOrders);
+    } catch (error) {
+      console.error('Error fetching material orders by type:', error);
+      res.status(500).json({ message: "Failed to fetch material orders by type" });
+    }
+  });
+
+  // Create a new material order
+  app.post('/api/material-orders', async (req, res) => {
+    try {
+      const materialOrderData = req.body;
+      
+      // Validate material order data using schema
+      try {
+        insertMaterialOrderSchema.parse(materialOrderData);
+      } catch (validationError) {
+        return res.status(400).json({ 
+          message: "Invalid material order data", 
+          errors: validationError.errors 
+        });
+      }
+      
+      const newMaterialOrder = await storage.createMaterialOrder(materialOrderData);
+      res.status(201).json(newMaterialOrder);
+    } catch (error) {
+      console.error('Error creating material order:', error);
+      res.status(500).json({ message: "Failed to create material order" });
+    }
+  });
+
+  // Update a material order
+  app.patch('/api/material-orders/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Check if material order exists
+      const existingOrder = await storage.getMaterialOrder(id);
+      if (!existingOrder) {
+        return res.status(404).json({ message: "Material order not found" });
+      }
+      
+      const updatedMaterialOrder = await storage.updateMaterialOrder(id, updates);
+      res.json(updatedMaterialOrder);
+    } catch (error) {
+      console.error('Error updating material order:', error);
+      res.status(500).json({ message: "Failed to update material order" });
+    }
+  });
+
+  // Delete a material order
+  app.delete('/api/material-orders/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if material order exists
+      const existingOrder = await storage.getMaterialOrder(id);
+      if (!existingOrder) {
+        return res.status(404).json({ message: "Material order not found" });
+      }
+      
+      await storage.deleteMaterialOrder(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error('Error deleting material order:', error);
+      res.status(500).json({ message: "Failed to delete material order" });
+    }
+  });
+
+  // Create AI-assisted material order
+  app.post('/api/material-orders/ai-assist', async (req, res) => {
+    try {
+      const { orderId, materialType } = req.body;
+      
+      if (!orderId) {
+        return res.status(400).json({ message: "Order ID is required" });
+      }
+      
+      // Get the order to extract material information
+      const order = await storage.getOrder(orderId);
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Create material order based on order details and material type
+      // This is a simplified example - actual AI processing would happen here
+      const materialOrderData: InsertMaterialOrder = {
+        quantity: '1',
+        materialType: materialType as MaterialType,
+        materialId: order.frameId || '',
+        materialName: 'Auto-generated from Order #' + order.id,
+        status: 'pending',
+        notes: `Auto-generated material order for Order #${order.id}`,
+        sourceOrderId: order.id,
+        vendor: order.frameId?.split('-')[0] || 'Unknown',
+        unitPrice: '0',
+        totalPrice: '0',
+        expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+        createdAt: new Date(),
+        priority: 'normal'
+      };
+      
+      const newMaterialOrder = await storage.createMaterialOrder(materialOrderData);
+      res.status(201).json(newMaterialOrder);
+    } catch (error) {
+      console.error('Error creating AI-assisted material order:', error);
+      res.status(500).json({ message: "Failed to create AI-assisted material order" });
     }
   });
 
