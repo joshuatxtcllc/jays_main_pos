@@ -10,7 +10,7 @@ export const glassOptionCatalog: GlassOption[] = [
   {
     id: 'uv',
     name: 'Museum Glass',
-    description: 'Anti-glare + UV protection',
+    description: 'Museum non-glare',
     price: '0.45' // per square inch (wholesale)
   },
   {
