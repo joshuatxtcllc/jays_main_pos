@@ -275,19 +275,25 @@ const MaterialOrdersPage: React.FC = () => {
   // Get status badge color
   const getStatusBadgeColor = (status: MaterialOrderStatus) => {
     switch (status) {
-      case "needed":
-        return "bg-slate-500";
       case "pending":
         return "bg-yellow-500";
+      case "processed":
+        return "bg-blue-300";
       case "ordered":
         return "bg-blue-500";
-      case "back_ordered":
-        return "bg-orange-500";
-      case "shipped":
+      case "arrived":
         return "bg-purple-500";
-      case "received":
+      case "frame_cut":
+        return "bg-indigo-500";
+      case "mat_cut":
+        return "bg-teal-500";
+      case "prepped":
+        return "bg-cyan-500";
+      case "completed":
         return "bg-green-500";
-      case "cancelled":
+      case "delayed":
+        return "bg-orange-500";
+      case "canceled":
         return "bg-red-500";
       default:
         return "bg-gray-500";
