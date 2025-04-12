@@ -714,6 +714,60 @@ const MaterialOrdersPage: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Status Progress Dialog */}
+      <Dialog open={isStatusDialogOpen} onOpenChange={handleStatusDialogOpenChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Material Order Progress</DialogTitle>
+            <DialogDescription>
+              Track the status of your material order
+            </DialogDescription>
+          </DialogHeader>
+          {selectedOrder && (
+            <div className="py-4">
+              <div className="mb-4">
+                <h3 className="text-lg font-medium">{selectedOrder.materialName}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedOrder.materialType.replace('_', ' ')} - Quantity: {selectedOrder.quantity}
+                </p>
+                {selectedOrder.vendor && (
+                  <p className="text-sm text-muted-foreground">Vendor: {selectedOrder.vendor}</p>
+                )}
+              </div>
+              <OrderStatusProgress status={selectedOrder.status} className="mt-6" />
+              
+              <div className="mt-6 space-y-2">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Priority</p>
+                    <p className="text-sm">
+                      <Badge className={cn("capitalize", getPriorityBadgeColor(selectedOrder.priority))}>
+                        {selectedOrder.priority}
+                      </Badge>
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground">Expected Delivery</p>
+                    <p className="text-sm">
+                      {selectedOrder.expectedDeliveryDate 
+                        ? format(new Date(selectedOrder.expectedDeliveryDate), "MMM d, yyyy")
+                        : "Not scheduled"
+                      }
+                    </p>
+                  </div>
+                </div>
+                {selectedOrder.notes && (
+                  <div className="space-y-1 mt-4">
+                    <p className="text-sm font-medium text-muted-foreground">Notes</p>
+                    <p className="text-sm whitespace-pre-wrap">{selectedOrder.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
       {/* Edit Material Order Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
