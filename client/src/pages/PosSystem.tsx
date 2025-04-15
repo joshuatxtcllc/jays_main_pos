@@ -89,11 +89,17 @@ const PosSystem = () => {
       // Search filter
       if (frameSearch.trim() !== '') {
         const searchLower = frameSearch.trim().toLowerCase();
+        
+        // Get item number from frame.id (e.g., "larson-4512" -> "4512")
+        const frameItemNumber = frame.id.split('-')[1] || '';
+        
+        // Check if search matches any of the following:
         const idMatch = frame.id.toLowerCase().includes(searchLower);
+        const itemNumberMatch = frameItemNumber.toLowerCase() === searchLower;
         const nameMatch = frame.name.toLowerCase().includes(searchLower);
         const manufacturerMatch = frame.manufacturer.toLowerCase().includes(searchLower);
         
-        if (!(idMatch || nameMatch || manufacturerMatch)) {
+        if (!(idMatch || itemNumberMatch || nameMatch || manufacturerMatch)) {
           return false;
         }
       }
@@ -838,13 +844,13 @@ const PosSystem = () => {
           {/* Frame Search */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
-              Search Frame by Item Number
+              Search Frame by Item # or Name
             </label>
             <div className="relative">
               <input
                 type="text"
                 className="w-full p-2 pl-8 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
-                placeholder="Enter frame item number or name..."
+                placeholder="Enter frame item # (e.g. '4512') or name..."
                 value={frameSearch}
                 onChange={(e) => setFrameSearch(e.target.value)}
               />
