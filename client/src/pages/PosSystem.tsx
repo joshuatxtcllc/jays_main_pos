@@ -18,6 +18,7 @@ import FrameVisualizer3D from '@/components/FrameVisualizer3D';
 import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
 import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
+import VendorFrameSearch from '@/components/VendorFrameSearch';
 import { useMatboards } from '@/hooks/use-matboards';
 import { useFrames } from '@/hooks/use-frames';
 
