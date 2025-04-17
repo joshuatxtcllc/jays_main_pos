@@ -52,7 +52,9 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
   useEffect(() => {
     if (vendorSearchResults) {
       setSearchResults(vendorSearchResults);
-      setIsSearching(false);
+      if (isSearching) {
+        setIsSearching(false);
+      }
     }
   }, [vendorSearchResults]);
   
@@ -64,9 +66,11 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
         description: "Failed to search vendor catalogs. Please try again.",
         variant: "destructive"
       });
-      setIsSearching(false);
+      if (isSearching) {
+        setIsSearching(false);
+      }
     }
-  }, [searchError, toast]);
+  }, [searchError, toast, isSearching]);
   
   const handleSearch = () => {
     if (!itemNumber.trim()) {
