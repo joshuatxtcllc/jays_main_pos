@@ -17,7 +17,7 @@ export async function getAllFrames(req: Request, res: Response) {
       const defaultColors = {
         "Gold": "#D4AF37",
         "Silver": "#C0C0C0",
-        "Black": "#2D2D2D",
+        "Black": "#000000",
         "White": "#F5F5F5",
         "Brown": "#8B4513",
         "Walnut": "#5C4033",
