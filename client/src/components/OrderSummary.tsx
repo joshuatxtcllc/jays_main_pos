@@ -161,15 +161,20 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <>
             <button 
               className={`w-full py-3 ${!frame || !matColor || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
-              onClick={() => {
+              onClick={async () => {
                 console.log('Create Order button clicked in OrderSummary');
                 console.log('Button disabled state:', (!frame || !matColor || !glassOption));
                 console.log('Add to wholesale order:', addToWholesaleOrder);
+                
+                // First create the actual customer order
                 onCreateOrder();
                 
-                // If checked, also create a wholesale order automatically
+                // Only create wholesale order if requested - this will now handle its own validation
                 if (addToWholesaleOrder) {
-                  onCreateWholesaleOrder();
+                  // Small delay to make sure the order creation completes first
+                  setTimeout(() => {
+                    onCreateWholesaleOrder();
+                  }, 500);
                 }
               }}
               disabled={!frame || !matColor || !glassOption}

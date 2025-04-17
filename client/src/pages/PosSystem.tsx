@@ -566,11 +566,68 @@ const PosSystem = () => {
     }
     
     try {
-      // For demo purposes, we'll just simulate creating a wholesale order
+      // This should only run AFTER the actual order has been created
+      // So we'll check if we have completed the actual order creation
+      if (!customer.name) {
+        toast({
+          title: "Customer Information Required",
+          description: "Please enter customer name and create the order first before adding to wholesale order.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create a real wholesale order
+      const materialOrderData = {
+        materialType: 'frame',
+        materialId: selectedFrame.id,
+        materialName: selectedFrame.name,
+        quantity: Math.ceil((2 * (artworkWidth + artworkHeight) / 12) + 1).toString(), // Frame length in feet
+        status: 'pending',
+        notes: `Wholesale order for ${customer.name}`,
+        vendor: selectedFrame.manufacturer,
+        priority: 'normal'
+      };
+      
+      const response = await apiRequest('POST', '/api/material-orders', materialOrderData);
+      const wholesaleOrder = await response.json();
+      
       toast({
         title: "Wholesale Order Created",
         description: `A wholesale order for ${selectedFrame.manufacturer} has been created.`,
       });
+      
+      // Also add wholesale orders for mat and glass if selected
+      if (selectedMatColor) {
+        const matOrderData = {
+          materialType: 'mat',
+          materialId: selectedMatColor.id,
+          materialName: selectedMatColor.name,
+          quantity: '1', // One sheet
+          status: 'pending',
+          notes: `Mat for ${customer.name}`,
+          vendor: selectedMatColor.manufacturer || 'Crescent',
+          priority: 'normal'
+        };
+        
+        await apiRequest('POST', '/api/material-orders', matOrderData);
+      }
+      
+      if (selectedGlassOption) {
+        const glassOrderData = {
+          materialType: 'glass',
+          materialId: selectedGlassOption.id,
+          materialName: selectedGlassOption.name,
+          quantity: '1', // One piece
+          status: 'pending',
+          notes: `Glass for ${customer.name}`,
+          vendor: 'TruVue',
+          priority: 'normal'
+        };
+        
+        await apiRequest('POST', '/api/material-orders', glassOrderData);
+      }
+      
     } catch (error) {
       console.error('Error creating wholesale order:', error);
       toast({
