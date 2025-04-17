@@ -69,8 +69,8 @@ const PosSystem = () => {
   const [matWidth, setMatWidth] = useState<number>(2);
   const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
   
-  // Glass Options
-  const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[0]);
+  // Glass Options - Set Museum glass as default (index 1)
+  const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[1]);
   
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
