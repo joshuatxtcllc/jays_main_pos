@@ -1390,8 +1390,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notes: `Auto-generated material order for Order #${order.id}`,
         sourceOrderId: order.id,
         vendor: vendorMap[frameVendor] || frameVendor,
-        unitPrice: '0',
-        totalPrice: '0',
+        costPerUnit: '0',
+        totalCost: '0',
         expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
         priority: 'normal'
       };

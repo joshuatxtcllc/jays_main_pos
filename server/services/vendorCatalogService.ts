@@ -46,14 +46,14 @@ export class VendorCatalogService {
     const larsonFrames: Frame[] = [
       {
         id: "larson-210286",
-        name: "Larson Academie Gold",
+        name: "Larson Academie White",
         manufacturer: "Larson-Juhl",
-        material: "Wood with Gold Leaf",
+        material: "Wood with White Finish",
         width: "2.25",
         depth: "1.25",
         price: "16.75",
         catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_fab.jpg",
-        color: "#D4AF37",
+        color: "#F5F5F5",
         edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_edge.jpg",
         corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_corner.jpg"
       },
