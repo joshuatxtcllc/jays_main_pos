@@ -13,13 +13,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { Loader2, Search, RefreshCw } from 'lucide-react';
 
 interface VendorFrameSearchProps {
@@ -29,34 +22,27 @@ interface VendorFrameSearchProps {
 const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) => {
   const { toast } = useToast();
   const [itemNumber, setItemNumber] = useState<string>('');
-  const [vendor, setVendor] = useState<string>('all');
-  const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [searchResults, setSearchResults] = useState<Frame[]>([]);
+  const [localSearchResults, setLocalSearchResults] = useState<Frame[]>([]);
   
   const { 
     searchByItemNumber, 
-    searchResults: vendorSearchResults, 
-    isSearching: isVendorSearching,
+    searchResults, 
+    isSearching,
     searchError,
-    
-    larsonFrames,
-    nielsenFrames,
-    romaFrames,
-    vendorFrames,
-    
     syncFrames,
-    isSyncing
+    isSyncing,
+    larsonFrames,  // Include but don't use to prevent hook dependency issues
+    nielsenFrames, // Include but don't use to prevent hook dependency issues
+    romaFrames,    // Include but don't use to prevent hook dependency issues
+    vendorFrames   // Include but don't use to prevent hook dependency issues
   } = useVendorFrames();
   
   // When search results from the hook change, update our local state
   useEffect(() => {
-    if (vendorSearchResults) {
-      setSearchResults(vendorSearchResults);
-      if (isSearching) {
-        setIsSearching(false);
-      }
+    if (searchResults) {
+      setLocalSearchResults(searchResults);
     }
-  }, [vendorSearchResults]);
+  }, [searchResults]);
   
   // Handle search errors
   useEffect(() => {
@@ -66,11 +52,8 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
         description: "Failed to search vendor catalogs. Please try again.",
         variant: "destructive"
       });
-      if (isSearching) {
-        setIsSearching(false);
-      }
     }
-  }, [searchError, toast, isSearching]);
+  }, [searchError, toast]);
   
   const handleSearch = () => {
     if (!itemNumber.trim()) {
@@ -81,8 +64,6 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
       });
       return;
     }
-    
-    setIsSearching(true);
     
     // Use the searchByItemNumber mutation
     searchByItemNumber(itemNumber.trim());
@@ -128,10 +109,10 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
             </div>
             <Button 
               onClick={handleSearch} 
-              disabled={isSearching || isVendorSearching}
+              disabled={isSearching}
               className="mb-px"
             >
-              {(isSearching || isVendorSearching) ? (
+              {isSearching ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Search className="h-4 w-4 mr-2" />
@@ -154,11 +135,11 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
             Sync Frames with Database
           </Button>
           
-          {searchResults.length > 0 ? (
+          {localSearchResults.length > 0 ? (
             <div className="mt-4">
               <h3 className="text-sm font-medium mb-2">Search Results:</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {searchResults.map((frame) => (
+                {localSearchResults.map((frame) => (
                   <Card key={frame.id} className="overflow-hidden">
                     <div className="relative h-40 overflow-hidden">
                       {frame.catalogImage ? (
@@ -188,7 +169,7 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
                       </div>
                       <div className="flex justify-between items-center text-xs mt-1">
                         <span>Width: {frame.width}"</span>
-                        <span className="font-medium">${parseFloat(frame.price).toFixed(2)}/ft</span>
+                        <span className="font-medium">${parseFloat(String(frame.price)).toFixed(2)}/ft</span>
                       </div>
                     </CardContent>
                     <CardFooter className="p-3 pt-0">
@@ -204,7 +185,7 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
                 ))}
               </div>
             </div>
-          ) : searchResults.length === 0 && !isSearching && !isVendorSearching && itemNumber.trim() !== '' ? (
+          ) : (localSearchResults.length === 0 && !isSearching && itemNumber.trim() !== '') ? (
             <div className="p-4 text-center text-muted-foreground">
               No frames found with item number "{itemNumber}". Try searching for a different item number.
             </div>

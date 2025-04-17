@@ -39,10 +39,8 @@ export async function getAllFrames(req: Request, res: Response) {
           }
         }
         
-        // Update the frame in the database with the assigned color
-        await db.update(frames)
-          .set({ color: frameColor })
-          .where(eq(frames.id, frame.id));
+        // Update the frame in the database - can't set color directly as it's not in schema
+        // The color will be programmatically added when frames are retrieved
       }
       
       // Fetch updated frames

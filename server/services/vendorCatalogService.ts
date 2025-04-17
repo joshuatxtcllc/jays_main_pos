@@ -45,43 +45,43 @@ export class VendorCatalogService {
   private async getEnhancedLarsonFrames(): Promise<Frame[]> {
     const larsonFrames: Frame[] = [
       {
-        id: "larson-4512",
-        name: "Larson Gold Leaf",
+        id: "larson-210286",
+        name: "Larson Academie Gold",
         manufacturer: "Larson-Juhl",
         material: "Wood with Gold Leaf",
-        width: "1.5",
-        depth: "0.75",
-        price: "12.50",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/4512_fab.jpg",
+        width: "2.25",
+        depth: "1.25",
+        price: "16.75",
+        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_fab.jpg",
         color: "#D4AF37",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/4512_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/4512_corner.jpg"
+        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_edge.jpg",
+        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_corner.jpg"
       },
       {
-        id: "larson-4236",
-        name: "Larson Black Ornate",
+        id: "larson-567103",
+        name: "Larson Paloma Black",
         manufacturer: "Larson-Juhl",
         material: "Wood",
-        width: "2",
+        width: "1.75",
         depth: "1",
-        price: "18.75",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/4236_fab.jpg",
+        price: "14.50",
+        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/567103_fab.jpg",
         color: "#000000",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/4236_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/4236_corner.jpg"
+        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/567103_edge.jpg",
+        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/567103_corner.jpg"
       },
       {
-        id: "larson-6278",
-        name: "Larson Walnut Classic",
+        id: "larson-350715",
+        name: "Larson Biltmore Walnut",
         manufacturer: "Larson-Juhl",
         material: "Walnut",
-        width: "1.25",
-        depth: "0.75",
-        price: "14.50",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/6278_fab.jpg",
+        width: "2.5",
+        depth: "1.25",
+        price: "22.75",
+        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/350715_fab.jpg",
         color: "#5C4033",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/6278_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/6278_corner.jpg"
+        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/350715_edge.jpg",
+        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/350715_corner.jpg"
       }
     ];
     
