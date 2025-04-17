@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useVendorFrames } from '@/hooks/use-vendor-frames';
 import { Frame } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,8 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
   const { toast } = useToast();
   const [itemNumber, setItemNumber] = useState<string>('');
   const [localSearchResults, setLocalSearchResults] = useState<Frame[]>([]);
+  const [localIsSearching, setLocalIsSearching] = useState<boolean>(false);
+  const prevSearchResultsRef = useRef<Frame[] | null>(null);
   
   const { 
     searchByItemNumber, 
@@ -30,19 +32,22 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
     isSearching,
     searchError,
     syncFrames,
-    isSyncing,
-    larsonFrames,  // Include but don't use to prevent hook dependency issues
-    nielsenFrames, // Include but don't use to prevent hook dependency issues
-    romaFrames,    // Include but don't use to prevent hook dependency issues
-    vendorFrames   // Include but don't use to prevent hook dependency issues
+    isSyncing
   } = useVendorFrames();
   
   // When search results from the hook change, update our local state
   useEffect(() => {
-    if (searchResults) {
+    // Only update if searchResults has actually changed
+    if (searchResults && 
+        JSON.stringify(searchResults) !== JSON.stringify(prevSearchResultsRef.current)) {
+      prevSearchResultsRef.current = searchResults;
       setLocalSearchResults(searchResults);
+      
+      if (localIsSearching) {
+        setLocalIsSearching(false);
+      }
     }
-  }, [searchResults]);
+  }, [searchResults, localIsSearching]);
   
   // Handle search errors
   useEffect(() => {
@@ -52,8 +57,12 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
         description: "Failed to search vendor catalogs. Please try again.",
         variant: "destructive"
       });
+      
+      if (localIsSearching) {
+        setLocalIsSearching(false);
+      }
     }
-  }, [searchError, toast]);
+  }, [searchError, toast, localIsSearching]);
   
   const handleSearch = () => {
     if (!itemNumber.trim()) {
@@ -65,6 +74,7 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
       return;
     }
     
+    setLocalIsSearching(true);
     // Use the searchByItemNumber mutation
     searchByItemNumber(itemNumber.trim());
   };
@@ -103,16 +113,16 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
                 id="item-number"
                 value={itemNumber}
                 onChange={(e) => setItemNumber(e.target.value)}
-                placeholder="Enter frame item number (e.g., 4512)"
+                placeholder="Enter frame item number (e.g., 210286)"
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
             <Button 
               onClick={handleSearch} 
-              disabled={isSearching}
+              disabled={isSearching || localIsSearching}
               className="mb-px"
             >
-              {isSearching ? (
+              {(isSearching || localIsSearching) ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <Search className="h-4 w-4 mr-2" />
@@ -185,7 +195,7 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
                 ))}
               </div>
             </div>
-          ) : (localSearchResults.length === 0 && !isSearching && itemNumber.trim() !== '') ? (
+          ) : (localSearchResults.length === 0 && !isSearching && !localIsSearching && itemNumber.trim() !== '') ? (
             <div className="p-4 text-center text-muted-foreground">
               No frames found with item number "{itemNumber}". Try searching for a different item number.
             </div>

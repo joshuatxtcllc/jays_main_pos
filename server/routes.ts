@@ -1370,6 +1370,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create material order based on order details and material type
       // This is a simplified example - actual AI processing would happen here
+      // Extract vendor from frame ID (e.g., "larson-210286" -> "larson")
+      const frameVendor = order.frameId?.split('-')[0] || 'Unknown';
+      
+      // Map vendor code to proper name
+      const vendorMap: {[key: string]: string} = {
+        'larson': 'Larson-Juhl',
+        'nielsen': 'Nielsen Bainbridge',
+        'roma': 'Roma Moulding',
+        'crescent': 'Crescent'
+      };
+      
       const materialOrderData: InsertMaterialOrder = {
         quantity: '1',
         materialType: materialType as MaterialType,
@@ -1378,11 +1389,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending',
         notes: `Auto-generated material order for Order #${order.id}`,
         sourceOrderId: order.id,
-        vendor: order.frameId?.split('-')[0] || 'Unknown',
+        vendor: vendorMap[frameVendor] || frameVendor,
         unitPrice: '0',
         totalPrice: '0',
         expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-        createdAt: new Date(),
         priority: 'normal'
       };
       
