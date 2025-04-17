@@ -7,6 +7,14 @@ import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors }
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
 import { 
+  getLarsonJuhlFrames, 
+  getNielsenFrames, 
+  getRomaFrames, 
+  getAllVendorFrames,
+  searchFramesByItemNumber,
+  syncFramesWithDatabase
+} from "./controllers/vendorCatalogController";
+import { 
   getAllMaterialOrdersWithHubStatus, 
   syncMaterialOrderWithHub,
   syncMaterialOrdersWithHub,
@@ -583,6 +591,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/frames', getAllFrames);
   app.get('/api/frames/:id', getFrameById);
   app.get('/api/frames/manufacturer/:manufacturer', getFramesByManufacturer);
+  
+  // Vendor Catalog API Routes
+  app.get('/api/vendor-catalog/larson', getLarsonJuhlFrames);
+  app.get('/api/vendor-catalog/nielsen', getNielsenFrames);
+  app.get('/api/vendor-catalog/roma', getRomaFrames);
+  app.get('/api/vendor-catalog/all', getAllVendorFrames);
+  app.get('/api/vendor-catalog/search/:itemNumber', searchFramesByItemNumber);
+  app.post('/api/vendor-catalog/sync', syncFramesWithDatabase);
 
   // Order Groups
   app.get('/api/order-groups', async (req, res) => {

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Frame, InsertFrame } from '@shared/schema';
 import { db } from '../db';
 import { frames } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 /**
  * Service for connecting to vendor catalog APIs to fetch frame data
@@ -301,7 +302,7 @@ export class VendorCatalogService {
               edgeTexture: frame.edgeTexture,
               corner: frame.corner
             })
-            .where(db.eq(frames.id, frame.id));
+            .where(eq(frames.id, frame.id));
         }
       }
       
