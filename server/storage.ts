@@ -40,7 +40,7 @@ function determineFrameColor(frame: Frame): string {
   // Black frames
   if (materialLower.includes('black') || nameLower.includes('black') || 
       nameLower.includes('ebony') || nameLower.includes('onyx')) {
-    return '#2D2D2D'; // Black
+    return '#000000'; // True black for better contrast and visibility
   }
   
   // White frames

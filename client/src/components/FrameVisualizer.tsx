@@ -102,24 +102,26 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
             // Create a wood-like texture pattern based on the frame material
             let defaultFrameColor = '#8B4513'; // Medium brown wood color
             
-            // Choose appropriate default color based on material
-            if (frame.material) {
-              if (frame.material.toLowerCase().includes('gold')) {
-                defaultFrameColor = '#D4AF37'; // Gold
-              } else if (frame.material.toLowerCase().includes('silver') || 
-                         frame.material.toLowerCase().includes('metal')) {
-                defaultFrameColor = '#C0C0C0'; // Silver
-              } else if (frame.material.toLowerCase().includes('black')) {
-                defaultFrameColor = '#2D2D2D'; // Black
-              } else if (frame.material.toLowerCase().includes('white')) {
-                defaultFrameColor = '#F5F5F5'; // White
-              } else if (frame.material.toLowerCase().includes('walnut')) {
-                defaultFrameColor = '#5C4033'; // Walnut
-              } else if (frame.material.toLowerCase().includes('cherry')) {
-                defaultFrameColor = '#722F37'; // Cherry
-              } else if (frame.material.toLowerCase().includes('oak')) {
-                defaultFrameColor = '#D8BE75'; // Oak
-              }
+            // Check if frame name contains color information
+            const nameLower = frame.name.toLowerCase();
+            const materialLower = frame.material ? frame.material.toLowerCase() : '';
+            
+            // Choose appropriate default color based on material AND name
+            if (nameLower.includes('black') || materialLower.includes('black')) {
+              defaultFrameColor = '#000000'; // True black
+            } else if (nameLower.includes('gold') || materialLower.includes('gold')) {
+              defaultFrameColor = '#D4AF37'; // Gold
+            } else if (nameLower.includes('silver') || nameLower.includes('metal') || 
+                     materialLower.includes('silver') || materialLower.includes('metal')) {
+              defaultFrameColor = '#C0C0C0'; // Silver
+            } else if (nameLower.includes('white') || materialLower.includes('white')) {
+              defaultFrameColor = '#F5F5F5'; // White
+            } else if (nameLower.includes('walnut') || materialLower.includes('walnut')) {
+              defaultFrameColor = '#5C4033'; // Walnut
+            } else if (nameLower.includes('cherry') || materialLower.includes('cherry')) {
+              defaultFrameColor = '#722F37'; // Cherry
+            } else if (nameLower.includes('oak') || materialLower.includes('oak')) {
+              defaultFrameColor = '#D8BE75'; // Oak
             }
             
             const frameColor = frame.color || defaultFrameColor;
