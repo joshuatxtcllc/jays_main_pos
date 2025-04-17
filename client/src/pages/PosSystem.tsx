@@ -93,9 +93,14 @@ const PosSystem = () => {
         // Get item number from frame.id (e.g., "larson-4512" -> "4512")
         const frameItemNumber = frame.id.split('-')[1] || '';
         
+        // Prioritize exact item number match
+        if (frameItemNumber === searchLower) {
+          return true;
+        }
+        
         // Check if search matches any of the following:
         const idMatch = frame.id.toLowerCase().includes(searchLower);
-        const itemNumberMatch = frameItemNumber.toLowerCase() === searchLower;
+        const itemNumberMatch = frameItemNumber.toLowerCase().includes(searchLower);
         const nameMatch = frame.name.toLowerCase().includes(searchLower);
         const manufacturerMatch = frame.manufacturer.toLowerCase().includes(searchLower);
         
@@ -1033,19 +1038,13 @@ const PosSystem = () => {
                   className={`px-3 py-1 text-sm ${matManufacturerFilter === 'all' ? 'font-medium border-b-2 border-primary' : ''}`}
                   onClick={() => setMatManufacturerFilter('all')}
                 >
-                  All
+                  All Matboards
                 </button>
                 <button 
                   className={`px-3 py-1 text-sm ${matManufacturerFilter === 'Crescent' ? 'font-medium border-b-2 border-primary' : ''}`}
                   onClick={() => setMatManufacturerFilter('Crescent')}
                 >
-                  Crescent
-                </button>
-                <button 
-                  className={`px-3 py-1 text-sm ${matManufacturerFilter === 'Basic' ? 'font-medium border-b-2 border-primary' : ''}`}
-                  onClick={() => setMatManufacturerFilter('Basic')}
-                >
-                  Basic
+                  By Category
                 </button>
               </div>
               
@@ -1087,8 +1086,8 @@ const PosSystem = () => {
                 </div>
               )}
               
-              {/* Simple grid for Basic matboards or All view */}
-              {(matManufacturerFilter === 'Basic' || matManufacturerFilter === 'all') && (
+              {/* Simple grid for All matboards view */}
+              {matManufacturerFilter === 'all' && (
                 <div className="grid grid-cols-4 gap-2">
                   {matboardsLoading ? (
                     <div className="flex justify-center items-center py-6 col-span-4">
