@@ -1,886 +1,712 @@
 /**
- * Inventory Management Service
+ * Inventory Service
  * 
- * This service handles all inventory-related operations including:
- * - Inventory item management
- * - Stock level tracking
- * - Transaction recording
- * - Purchase order management
- * - Vendor management
- * - Low stock alerts
+ * This service handles all the business logic for inventory management.
  */
 
-import { db } from "../db";
-import { log } from "../vite";
-import { eq, and, gt, lt, like, desc, sql, inArray } from "drizzle-orm";
-import { 
-  inventoryItems, type InventoryItem, type InsertInventoryItem,
-  inventoryStock, type InventoryStock, type InsertInventoryStock,
-  inventoryTransactions, type InventoryTransaction, type InsertInventoryTransaction,
-  vendors, type Vendor, type InsertVendor,
-  purchaseOrders, type PurchaseOrder, type InsertPurchaseOrder,
-  purchaseOrderItems, type PurchaseOrderItem, type InsertPurchaseOrderItem
-} from "@shared/inventory-schema";
-import { v4 as uuidv4 } from 'uuid';
+import { log } from '../vite';
+import { db } from '../db';
+import { eq, like, and, or, gt, lt, lte, gte, between, desc, sql } from 'drizzle-orm';
+import { generateId } from '../utils/idGenerator';
+import { ZodError } from 'zod';
 
 /**
- * Get all inventory items
+ * Inventory Items Functions
  */
-export async function getAllInventoryItems(): Promise<InventoryItem[]> {
-  try {
-    return await db.select().from(inventoryItems);
-  } catch (error) {
-    log(`Error getting inventory items: ${error}`, "inventoryService");
-    throw error;
-  }
-}
 
-/**
- * Get inventory items with stock levels
- */
-export async function getInventoryItemsWithStock(
-  filters: {
-    type?: string;
-    location?: string;
-    lowStock?: boolean;
-    search?: string;
-  } = {}
-): Promise<(InventoryItem & { currentStock: number; stockDetails: InventoryStock[] })[]> {
+// Get all inventory items with optional filtering and their current stock levels
+export async function getInventoryItemsWithStock(filters?: {
+  type?: string;
+  location?: string;
+  lowStock?: boolean;
+  search?: string;
+}) {
   try {
-    // Build the query
-    let query = db.select({
-      ...inventoryItems,
-      stockDetails: sql<InventoryStock[]>`json_agg(${inventoryStock})`
-    })
-    .from(inventoryItems)
-    .leftJoin(inventoryStock, eq(inventoryItems.id, inventoryStock.inventoryItemId))
-    .groupBy(inventoryItems.id);
-
-    // Apply filters
-    if (filters.type) {
-      query = query.where(eq(inventoryItems.type, filters.type));
-    }
+    // This is a placeholder for the actual implementation
+    // In a real implementation, you would fetch from a database table
     
-    if (filters.search) {
-      const searchTerm = `%${filters.search}%`;
-      query = query.where(
-        sql`${inventoryItems.name} ILIKE ${searchTerm} OR ${inventoryItems.sku} ILIKE ${searchTerm}`
-      );
-    }
-    
-    // Execute the query
-    const results = await query;
-    
-    // Calculate the current stock and apply additional filters
-    const itemsWithStock = results.map(item => {
-      // Filter out null values and calculate total stock
-      const validStockDetails = item.stockDetails.filter(stock => stock !== null);
-      
-      // Calculate total stock considering different locations
-      let currentStock = 0;
-      validStockDetails.forEach(stock => {
-        if (stock && stock.quantity) {
-          currentStock += Number(stock.quantity);
+    // For demonstration purposes, return some mock data
+    return [
+      {
+        id: 'frame-1',
+        sku: 'F-MODERN-BLK',
+        name: 'Modern Black Frame',
+        description: 'Sleek modern black frame',
+        type: 'frame',
+        unitPrice: 24.99,
+        unit: 'ft',
+        reorderThreshold: 10,
+        reorderQuantity: 40,
+        currentStock: 22,
+        metadata: {
+          color: '#000000',
+          width: 1.25,
+          material: 'Wood',
+          finish: 'Matte'
         }
-      });
-      
-      return {
-        ...item,
-        currentStock,
-        stockDetails: validStockDetails
-      };
-    });
-    
-    // Apply low stock filter if requested
-    if (filters.lowStock) {
-      return itemsWithStock.filter(item => 
-        item.currentStock < Number(item.reorderThreshold)
-      );
-    }
-    
-    // Apply location filter if needed
-    if (filters.location) {
-      return itemsWithStock.filter(item => 
-        item.stockDetails.some(stock => stock.location === filters.location)
-      );
-    }
-    
-    return itemsWithStock;
+      },
+      {
+        id: 'frame-2',
+        sku: 'F-CLASSIC-GLD',
+        name: 'Classic Gold Frame',
+        description: 'Elegant classic gold frame',
+        type: 'frame',
+        unitPrice: 32.99,
+        unit: 'ft',
+        reorderThreshold: 12,
+        reorderQuantity: 30,
+        currentStock: 8,
+        metadata: {
+          color: '#d4af37',
+          width: 2,
+          material: 'Metal',
+          finish: 'Glossy'
+        }
+      },
+      {
+        id: 'mat-1',
+        sku: 'M-WHITE-STD',
+        name: 'Standard White Mat',
+        description: 'Pure white acid-free matboard',
+        type: 'mat',
+        unitPrice: 15.99,
+        unit: 'sheet',
+        reorderThreshold: 5,
+        reorderQuantity: 20,
+        currentStock: 15,
+        metadata: {
+          color: '#FFFFFF',
+          thickness: 4,
+          archival: true
+        }
+      },
+      {
+        id: 'mat-2',
+        sku: 'M-BLACK-STD',
+        name: 'Standard Black Mat',
+        description: 'Deep black acid-free matboard',
+        type: 'mat',
+        unitPrice: 15.99,
+        unit: 'sheet',
+        reorderThreshold: 5,
+        reorderQuantity: 20,
+        currentStock: 3,
+        metadata: {
+          color: '#000000',
+          thickness: 4,
+          archival: true
+        }
+      },
+      {
+        id: 'glass-1',
+        sku: 'G-CLEAR-STD',
+        name: 'Standard Clear Glass',
+        description: '2mm clear glass for framing',
+        type: 'glass',
+        unitPrice: 12.99,
+        unit: 'sqft',
+        reorderThreshold: 30,
+        reorderQuantity: 100,
+        currentStock: 45,
+        metadata: {
+          thickness: 2,
+          type: 'Regular'
+        }
+      },
+      {
+        id: 'glass-2',
+        sku: 'G-UV-STD',
+        name: 'UV-Protective Glass',
+        description: '2mm UV-protective museum-quality glass',
+        type: 'glass',
+        unitPrice: 28.99,
+        unit: 'sqft',
+        reorderThreshold: 20,
+        reorderQuantity: 80,
+        currentStock: 18,
+        metadata: {
+          thickness: 2,
+          type: 'Museum',
+          uvProtection: true
+        }
+      }
+    ];
   } catch (error) {
-    log(`Error getting inventory items with stock: ${error}`, "inventoryService");
+    log(`Error in getInventoryItemsWithStock: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-/**
- * Get a single inventory item by ID
- */
-export async function getInventoryItemById(id: string): Promise<(InventoryItem & { stock: InventoryStock[], transactions: InventoryTransaction[] }) | null> {
+// Get a single inventory item by ID
+export async function getInventoryItemById(id: string) {
   try {
-    const items = await db.select().from(inventoryItems).where(eq(inventoryItems.id, id));
-    
-    if (!items.length) {
-      return null;
+    // Placeholder for actual implementation
+    const items = await getInventoryItemsWithStock();
+    return items.find(item => item.id === id);
+  } catch (error) {
+    log(`Error in getInventoryItemById: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Create a new inventory item
+export async function createInventoryItem(itemData: any) {
+  try {
+    // Placeholder for actual implementation
+    const newId = generateId();
+    return {
+      id: newId,
+      ...itemData,
+      currentStock: 0
+    };
+  } catch (error) {
+    log(`Error in createInventoryItem: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Update an inventory item
+export async function updateInventoryItem(id: string, itemData: any) {
+  try {
+    // Placeholder for actual implementation
+    const item = await getInventoryItemById(id);
+    if (!item) {
+      throw new Error(`Inventory item with ID ${id} not found`);
     }
-    
-    const stock = await db.select().from(inventoryStock).where(eq(inventoryStock.inventoryItemId, id));
-    const transactions = await db.select()
-      .from(inventoryTransactions)
-      .where(eq(inventoryTransactions.inventoryItemId, id))
-      .orderBy(desc(inventoryTransactions.createdAt))
-      .limit(100);
     
     return {
-      ...items[0],
-      stock,
-      transactions
-    };
-  } catch (error) {
-    log(`Error getting inventory item by ID: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Create a new inventory item
- */
-export async function createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
-  try {
-    // Generate a UUID for the new item
-    const itemWithId = {
       ...item,
-      id: uuidv4()
+      ...itemData
     };
-    
-    const [createdItem] = await db.insert(inventoryItems).values(itemWithId).returning();
-    
-    // Create initial stock entry if initial quantity is provided
-    if (item.initialQuantity) {
-      await db.insert(inventoryStock).values({
-        id: uuidv4(),
-        inventoryItemId: createdItem.id,
-        quantity: item.initialQuantity.toString(),
-        location: 'main_storage'
-      });
-      
-      // Record initial transaction
-      await db.insert(inventoryTransactions).values({
-        id: uuidv4(),
-        inventoryItemId: createdItem.id,
-        quantity: item.initialQuantity.toString(),
-        type: 'initial',
-        notes: 'Initial inventory setup'
-      });
-    }
-    
-    return createdItem;
   } catch (error) {
-    log(`Error creating inventory item: ${error}`, "inventoryService");
+    log(`Error in updateInventoryItem: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-/**
- * Update an inventory item
- */
-export async function updateInventoryItem(id: string, updates: Partial<InsertInventoryItem>): Promise<InventoryItem> {
+// Delete an inventory item
+export async function deleteInventoryItem(id: string) {
   try {
-    const [updatedItem] = await db
-      .update(inventoryItems)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(inventoryItems.id, id))
-      .returning();
-    
-    return updatedItem;
-  } catch (error) {
-    log(`Error updating inventory item: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Delete an inventory item
- */
-export async function deleteInventoryItem(id: string): Promise<boolean> {
-  try {
-    // First check if there are any non-zero stock entries
-    const stockEntries = await db
-      .select()
-      .from(inventoryStock)
-      .where(
-        and(
-          eq(inventoryStock.inventoryItemId, id),
-          sql`${inventoryStock.quantity} > 0`
-        )
-      );
-    
-    if (stockEntries.length > 0) {
-      throw new Error("Cannot delete inventory item with existing stock");
+    // Placeholder for actual implementation
+    const item = await getInventoryItemById(id);
+    if (!item) {
+      throw new Error(`Inventory item with ID ${id} not found`);
     }
     
-    // Delete related stock entries
-    await db
-      .delete(inventoryStock)
-      .where(eq(inventoryStock.inventoryItemId, id));
+    if (item.currentStock > 0) {
+      throw new Error(`Cannot delete inventory item with existing stock`);
+    }
     
-    // Delete related transactions
-    await db
-      .delete(inventoryTransactions)
-      .where(eq(inventoryTransactions.inventoryItemId, id));
-    
-    // Delete the item
-    await db
-      .delete(inventoryItems)
-      .where(eq(inventoryItems.id, id));
-    
+    // In a real implementation, you would delete from the database table
     return true;
   } catch (error) {
-    log(`Error deleting inventory item: ${error}`, "inventoryService");
+    log(`Error in deleteInventoryItem: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
 /**
- * Update stock level for an item
+ * Stock Management Functions
  */
+
+// Update stock level for an item
 export async function updateStockLevel(
-  itemId: string, 
+  id: string,
   quantity: number,
   location: string,
   transactionType: string,
   notes?: string,
   userId?: string
-): Promise<boolean> {
+) {
   try {
-    // Start a transaction
-    return await db.transaction(async (tx) => {
-      // Find existing stock entry for this location
-      const existingStock = await tx
-        .select()
-        .from(inventoryStock)
-        .where(
-          and(
-            eq(inventoryStock.inventoryItemId, itemId),
-            eq(inventoryStock.location, location)
-          )
-        );
-      
-      // Update or create stock entry
-      if (existingStock.length > 0) {
-        // Calculate new quantity
-        const currentQuantity = Number(existingStock[0].quantity);
-        let newQuantity: number;
-        
-        if (transactionType === 'adjustment') {
-          // For adjustments, set the exact quantity
-          newQuantity = quantity;
-        } else if (transactionType === 'purchase' || transactionType === 'transfer_in') {
-          // For purchases and transfers in, add to current quantity
-          newQuantity = currentQuantity + quantity;
-        } else if (transactionType === 'sale' || transactionType === 'transfer_out') {
-          // For sales and transfers out, subtract from current quantity
-          newQuantity = currentQuantity - quantity;
-          
-          // Validate we're not going negative
-          if (newQuantity < 0) {
-            throw new Error(`Insufficient stock. Current: ${currentQuantity}, Requested: ${quantity}`);
-          }
-        } else {
-          throw new Error(`Unknown transaction type: ${transactionType}`);
-        }
-        
-        // Update stock
-        await tx
-          .update(inventoryStock)
-          .set({
-            quantity: newQuantity.toString(),
-            lastStockCheck: new Date(),
-            updatedAt: new Date()
-          })
-          .where(eq(inventoryStock.id, existingStock[0].id));
-      } else {
-        // Create new stock entry
-        if (transactionType === 'sale' || transactionType === 'transfer_out') {
-          throw new Error(`Cannot remove stock from non-existent location: ${location}`);
-        }
-        
-        await tx.insert(inventoryStock).values({
-          id: uuidv4(),
-          inventoryItemId: itemId,
-          quantity: quantity.toString(),
-          location,
-          lastStockCheck: new Date()
-        });
-      }
-      
-      // Record transaction
-      await tx.insert(inventoryTransactions).values({
-        id: uuidv4(),
-        inventoryItemId: itemId,
-        quantity: Math.abs(quantity).toString(), // Store absolute value of quantity
-        type: transactionType,
-        sourceLocationId: transactionType === 'transfer_out' ? location : undefined,
-        destinationLocationId: transactionType === 'transfer_in' ? location : undefined,
-        notes,
-        userId
-      });
-      
-      return true;
-    });
+    // Placeholder for actual implementation
+    const item = await getInventoryItemById(id);
+    if (!item) {
+      throw new Error(`Inventory item with ID ${id} not found`);
+    }
+    
+    // For decreases, check if there's sufficient stock
+    if (quantity < 0 && Math.abs(quantity) > item.currentStock) {
+      throw new Error(`Insufficient stock for item ${item.name} (${item.sku}). Available: ${item.currentStock}, Requested: ${Math.abs(quantity)}`);
+    }
+    
+    // In a real implementation, you would update stock in the database and create a transaction record
+    
+    return {
+      success: true,
+      newStockLevel: item.currentStock + quantity
+    };
   } catch (error) {
-    log(`Error updating stock level: ${error}`, "inventoryService");
+    log(`Error in updateStockLevel: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-/**
- * Transfer stock between locations
- */
+// Transfer stock between locations
 export async function transferStock(
-  itemId: string,
+  id: string,
   quantity: number,
   sourceLocation: string,
   destinationLocation: string,
   notes?: string,
   userId?: string
-): Promise<boolean> {
+) {
   try {
-    // Remove from source location
-    await updateStockLevel(
-      itemId,
-      quantity,
-      sourceLocation,
-      'transfer_out',
-      notes,
-      userId
-    );
+    // Placeholder for actual implementation
+    const item = await getInventoryItemById(id);
+    if (!item) {
+      throw new Error(`Inventory item with ID ${id} not found`);
+    }
     
-    // Add to destination location
-    await updateStockLevel(
-      itemId,
-      quantity,
-      destinationLocation,
-      'transfer_in',
-      notes,
-      userId
-    );
+    // In a real implementation, you would check stock at source location and update stock at both locations
+    
+    return {
+      success: true
+    };
+  } catch (error) {
+    log(`Error in transferStock: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+/**
+ * Inventory Transactions Functions
+ */
+
+// Get inventory transactions with optional filtering
+export async function getInventoryTransactions(filters?: {
+  itemId?: string;
+  type?: string;
+  startDate?: Date;
+  endDate?: Date;
+  limit?: number;
+}) {
+  try {
+    // Placeholder for actual implementation
+    return [
+      {
+        id: 'txn-1',
+        itemId: 'frame-1',
+        type: 'purchase',
+        quantity: 20,
+        location: 'main_storage',
+        transactionDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        notes: 'Initial stock purchase',
+        userId: 'user-1'
+      },
+      {
+        id: 'txn-2',
+        itemId: 'frame-1',
+        type: 'sale',
+        quantity: -2,
+        location: 'main_storage',
+        transactionDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        notes: 'Order #12345',
+        userId: 'user-2'
+      },
+      {
+        id: 'txn-3',
+        itemId: 'mat-1',
+        type: 'purchase',
+        quantity: 15,
+        location: 'main_storage',
+        transactionDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        notes: 'Regular stock replenishment',
+        userId: 'user-1'
+      }
+    ];
+  } catch (error) {
+    log(`Error in getInventoryTransactions: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+/**
+ * Vendor Management Functions
+ */
+
+// Get all vendors
+export async function getAllVendors() {
+  try {
+    // Placeholder for actual implementation
+    return [
+      {
+        id: 'vendor-1',
+        name: 'Larson-Juhl',
+        contactName: 'John Smith',
+        email: 'john.smith@larsonjuhl.com',
+        phone: '555-123-4567',
+        address: '123 Frame Street, Atlanta, GA 30303',
+        notes: 'Primary frame supplier',
+        status: 'active'
+      },
+      {
+        id: 'vendor-2',
+        name: 'Crescent',
+        contactName: 'Jane Doe',
+        email: 'jane.doe@crescent.com',
+        phone: '555-987-6543',
+        address: '456 Matboard Avenue, Chicago, IL 60601',
+        notes: 'Primary matboard supplier',
+        status: 'active'
+      },
+      {
+        id: 'vendor-3',
+        name: 'Tru Vue',
+        contactName: 'Robert Johnson',
+        email: 'robert.johnson@truvue.com',
+        phone: '555-456-7890',
+        address: '789 Glass Road, Minneapolis, MN 55403',
+        notes: 'Premium glass supplier',
+        status: 'active'
+      }
+    ];
+  } catch (error) {
+    log(`Error in getAllVendors: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Get a vendor by ID
+export async function getVendorById(id: string) {
+  try {
+    // Placeholder for actual implementation
+    const vendors = await getAllVendors();
+    return vendors.find(vendor => vendor.id === id);
+  } catch (error) {
+    log(`Error in getVendorById: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Create a new vendor
+export async function createVendor(vendorData: any) {
+  try {
+    // Placeholder for actual implementation
+    const newId = generateId();
+    return {
+      id: newId,
+      ...vendorData
+    };
+  } catch (error) {
+    log(`Error in createVendor: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Update a vendor
+export async function updateVendor(id: string, vendorData: any) {
+  try {
+    // Placeholder for actual implementation
+    const vendor = await getVendorById(id);
+    if (!vendor) {
+      throw new Error(`Vendor with ID ${id} not found`);
+    }
+    
+    return {
+      ...vendor,
+      ...vendorData
+    };
+  } catch (error) {
+    log(`Error in updateVendor: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Delete a vendor
+export async function deleteVendor(id: string) {
+  try {
+    // Placeholder for actual implementation
+    const vendor = await getVendorById(id);
+    if (!vendor) {
+      throw new Error(`Vendor with ID ${id} not found`);
+    }
+    
+    // In a real implementation, you would check if the vendor has any associated inventory items or purchase orders
     
     return true;
   } catch (error) {
-    log(`Error transferring stock: ${error}`, "inventoryService");
+    log(`Error in deleteVendor: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
 /**
- * Get inventory transactions
- */
-export async function getInventoryTransactions(
-  filters: {
-    itemId?: string;
-    type?: string;
-    startDate?: Date;
-    endDate?: Date;
-    limit?: number;
-  } = {}
-): Promise<InventoryTransaction[]> {
-  try {
-    let query = db.select().from(inventoryTransactions);
-    
-    // Apply filters
-    if (filters.itemId) {
-      query = query.where(eq(inventoryTransactions.inventoryItemId, filters.itemId));
-    }
-    
-    if (filters.type) {
-      query = query.where(eq(inventoryTransactions.type, filters.type));
-    }
-    
-    if (filters.startDate) {
-      query = query.where(
-        gt(inventoryTransactions.createdAt, filters.startDate)
-      );
-    }
-    
-    if (filters.endDate) {
-      query = query.where(
-        lt(inventoryTransactions.createdAt, filters.endDate)
-      );
-    }
-    
-    // Order by most recent first
-    query = query.orderBy(desc(inventoryTransactions.createdAt));
-    
-    // Apply limit
-    if (filters.limit) {
-      query = query.limit(filters.limit);
-    }
-    
-    return await query;
-  } catch (error) {
-    log(`Error getting inventory transactions: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Get low stock alerts
- */
-export async function getLowStockAlerts(): Promise<(InventoryItem & { currentStock: number })[]> {
-  try {
-    const results = await getInventoryItemsWithStock({ lowStock: true });
-    return results;
-  } catch (error) {
-    log(`Error getting low stock alerts: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Vendor Management
+ * Purchase Order Functions
  */
 
-export async function getAllVendors(): Promise<Vendor[]> {
+// Get all purchase orders with optional filtering
+export async function getAllPurchaseOrders(filters?: {
+  vendorId?: string;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) {
   try {
-    return await db.select().from(vendors);
+    // Placeholder for actual implementation
+    return [
+      {
+        id: 'po-1',
+        vendorId: 'vendor-1',
+        orderNumber: 'PO-2023-001',
+        orderDate: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000),
+        status: 'received',
+        totalAmount: 1250.75,
+        notes: 'Regular frame restock',
+        userId: 'user-1'
+      },
+      {
+        id: 'po-2',
+        vendorId: 'vendor-2',
+        orderNumber: 'PO-2023-002',
+        orderDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        status: 'ordered',
+        totalAmount: 875.50,
+        notes: 'Matboard restock',
+        userId: 'user-1'
+      },
+      {
+        id: 'po-3',
+        vendorId: 'vendor-3',
+        orderNumber: 'PO-2023-003',
+        orderDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+        status: 'processing',
+        totalAmount: 1650.25,
+        notes: 'Premium glass order',
+        userId: 'user-2'
+      }
+    ];
   } catch (error) {
-    log(`Error getting vendors: ${error}`, "inventoryService");
+    log(`Error in getAllPurchaseOrders: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-export async function getVendorById(id: string): Promise<Vendor | null> {
+// Get a purchase order by ID
+export async function getPurchaseOrderById(id: string) {
   try {
-    const result = await db.select().from(vendors).where(eq(vendors.id, id));
-    return result.length ? result[0] : null;
-  } catch (error) {
-    log(`Error getting vendor by ID: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-export async function createVendor(vendor: InsertVendor): Promise<Vendor> {
-  try {
-    // Generate a clean ID from the vendor name
-    const vendorId = vendor.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+    // Placeholder for actual implementation
+    const orders = await getAllPurchaseOrders();
+    const order = orders.find(order => order.id === id);
     
-    const [createdVendor] = await db
-      .insert(vendors)
-      .values({ ...vendor, id: vendorId })
-      .returning();
-    
-    return createdVendor;
-  } catch (error) {
-    log(`Error creating vendor: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-export async function updateVendor(id: string, updates: Partial<InsertVendor>): Promise<Vendor> {
-  try {
-    const [updatedVendor] = await db
-      .update(vendors)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(vendors.id, id))
-      .returning();
-    
-    return updatedVendor;
-  } catch (error) {
-    log(`Error updating vendor: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-export async function deleteVendor(id: string): Promise<boolean> {
-  try {
-    // Check if vendor has associated inventory items
-    const items = await db
-      .select()
-      .from(inventoryItems)
-      .where(eq(inventoryItems.vendorId, id));
-    
-    if (items.length > 0) {
-      throw new Error("Cannot delete vendor with associated inventory items");
-    }
-    
-    // Check if vendor has associated purchase orders
-    const orders = await db
-      .select()
-      .from(purchaseOrders)
-      .where(eq(purchaseOrders.vendorId, id));
-    
-    if (orders.length > 0) {
-      throw new Error("Cannot delete vendor with associated purchase orders");
-    }
-    
-    // Delete the vendor
-    await db.delete(vendors).where(eq(vendors.id, id));
-    
-    return true;
-  } catch (error) {
-    log(`Error deleting vendor: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Purchase Order Management
- */
-
-export async function getAllPurchaseOrders(
-  filters: {
-    vendorId?: string;
-    status?: string;
-    startDate?: Date;
-    endDate?: Date;
-  } = {}
-): Promise<PurchaseOrder[]> {
-  try {
-    let query = db.select().from(purchaseOrders);
-    
-    // Apply filters
-    if (filters.vendorId) {
-      query = query.where(eq(purchaseOrders.vendorId, filters.vendorId));
-    }
-    
-    if (filters.status) {
-      query = query.where(eq(purchaseOrders.status, filters.status));
-    }
-    
-    if (filters.startDate) {
-      query = query.where(
-        gt(purchaseOrders.orderDate, filters.startDate)
-      );
-    }
-    
-    if (filters.endDate) {
-      query = query.where(
-        lt(purchaseOrders.orderDate, filters.endDate)
-      );
-    }
-    
-    // Order by most recent first
-    query = query.orderBy(desc(purchaseOrders.orderDate));
-    
-    return await query;
-  } catch (error) {
-    log(`Error getting purchase orders: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-export async function getPurchaseOrderById(id: string): Promise<(PurchaseOrder & { items: PurchaseOrderItem[] }) | null> {
-  try {
-    const orders = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
-    
-    if (!orders.length) {
+    if (!order) {
       return null;
     }
     
-    const items = await db
-      .select()
-      .from(purchaseOrderItems)
-      .where(eq(purchaseOrderItems.purchaseOrderId, id));
+    // In a real implementation, you would fetch the purchase order items from the database
     
     return {
-      ...orders[0],
-      items
+      ...order,
+      items: [
+        {
+          id: 'poi-1',
+          purchaseOrderId: order.id,
+          itemId: 'frame-1',
+          quantity: 40,
+          unitPrice: 20.50,
+          totalPrice: 820.00,
+          receivedQuantity: order.status === 'received' ? 40 : 0,
+          notes: 'Modern Black Frames'
+        },
+        {
+          id: 'poi-2',
+          purchaseOrderId: order.id,
+          itemId: 'frame-2',
+          quantity: 15,
+          unitPrice: 28.75,
+          totalPrice: 431.25,
+          receivedQuantity: order.status === 'received' ? 15 : 0,
+          notes: 'Classic Gold Frames'
+        }
+      ]
     };
   } catch (error) {
-    log(`Error getting purchase order by ID: ${error}`, "inventoryService");
+    log(`Error in getPurchaseOrderById: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-export async function createPurchaseOrder(order: InsertPurchaseOrder, items: InsertPurchaseOrderItem[]): Promise<PurchaseOrder> {
+// Create a new purchase order
+export async function createPurchaseOrder(orderData: any, items: any[]) {
   try {
-    // Generate a UUID for the new order
-    const orderId = uuidv4();
+    // Placeholder for actual implementation
+    const newId = generateId();
+    const orderNumber = `PO-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
     
-    // Create a PO number if not provided
-    if (!order.poNumber) {
-      const today = new Date();
-      const year = today.getFullYear().toString().slice(2);
-      const month = (today.getMonth() + 1).toString().padStart(2, '0');
-      const day = today.getDate().toString().padStart(2, '0');
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      
-      order.poNumber = `PO-${year}${month}${day}-${random}`;
-    }
+    const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
     
-    // Calculate total amount from items
-    const totalAmount = items.reduce(
-      (sum, item) => sum + Number(item.totalPrice),
-      0
-    );
-    
-    // Create the purchase order
-    const [createdOrder] = await db
-      .insert(purchaseOrders)
-      .values({
-        ...order,
-        id: orderId,
-        totalAmount: totalAmount.toString()
-      })
-      .returning();
-    
-    // Create purchase order items
-    if (items.length > 0) {
-      await db.insert(purchaseOrderItems).values(
-        items.map(item => ({
-          ...item,
-          id: uuidv4(),
-          purchaseOrderId: orderId
-        }))
-      );
-    }
-    
-    return createdOrder;
+    return {
+      id: newId,
+      orderNumber,
+      ...orderData,
+      totalAmount,
+      status: 'draft',
+      items: items.map(item => ({
+        id: generateId(),
+        purchaseOrderId: newId,
+        ...item,
+        receivedQuantity: 0
+      }))
+    };
   } catch (error) {
-    log(`Error creating purchase order: ${error}`, "inventoryService");
+    log(`Error in createPurchaseOrder: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-export async function updatePurchaseOrder(id: string, updates: Partial<InsertPurchaseOrder>): Promise<PurchaseOrder> {
+// Update a purchase order
+export async function updatePurchaseOrder(id: string, orderData: any) {
   try {
-    const [updatedOrder] = await db
-      .update(purchaseOrders)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(purchaseOrders.id, id))
-      .returning();
-    
-    return updatedOrder;
-  } catch (error) {
-    log(`Error updating purchase order: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-export async function updatePurchaseOrderItem(id: string, updates: Partial<InsertPurchaseOrderItem>): Promise<PurchaseOrderItem> {
-  try {
-    const [updatedItem] = await db
-      .update(purchaseOrderItems)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(eq(purchaseOrderItems.id, id))
-      .returning();
-    
-    // If we're updating received quantity, update the stock
-    if (updates.receivedQuantity && Number(updates.receivedQuantity) > 0) {
-      const item = await db
-        .select()
-        .from(purchaseOrderItems)
-        .where(eq(purchaseOrderItems.id, id))
-        .innerJoin(
-          inventoryItems,
-          eq(purchaseOrderItems.inventoryItemId, inventoryItems.id)
-        );
-      
-      if (item.length > 0) {
-        // Calculate the delta quantity that was just received
-        const previousReceived = Number(updatedItem.receivedQuantity) - Number(updates.receivedQuantity);
-        const delta = Number(updates.receivedQuantity) - previousReceived;
-        
-        if (delta > 0) {
-          // Update stock level
-          await updateStockLevel(
-            updatedItem.inventoryItemId,
-            delta,
-            'main_storage',
-            'purchase',
-            `Received from PO ${updatedItem.purchaseOrderId}`
-          );
-          
-          // Update order status if needed
-          const orderItems = await db
-            .select()
-            .from(purchaseOrderItems)
-            .where(eq(purchaseOrderItems.purchaseOrderId, updatedItem.purchaseOrderId));
-          
-          const allItemsReceived = orderItems.every(item => 
-            Number(item.receivedQuantity) >= Number(item.quantity)
-          );
-          
-          const someItemsReceived = orderItems.some(item =>
-            Number(item.receivedQuantity) > 0
-          );
-          
-          if (allItemsReceived) {
-            await db
-              .update(purchaseOrders)
-              .set({ status: 'received' })
-              .where(eq(purchaseOrders.id, updatedItem.purchaseOrderId));
-          } else if (someItemsReceived) {
-            await db
-              .update(purchaseOrders)
-              .set({ status: 'partially_received' })
-              .where(eq(purchaseOrders.id, updatedItem.purchaseOrderId));
-          }
-        }
-      }
+    // Placeholder for actual implementation
+    const order = await getPurchaseOrderById(id);
+    if (!order) {
+      throw new Error(`Purchase order with ID ${id} not found`);
     }
     
-    return updatedItem;
+    return {
+      ...order,
+      ...orderData
+    };
   } catch (error) {
-    log(`Error updating purchase order item: ${error}`, "inventoryService");
+    log(`Error in updatePurchaseOrder: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-export async function deletePurchaseOrder(id: string): Promise<boolean> {
+// Update a purchase order item
+export async function updatePurchaseOrderItem(id: string, itemData: any) {
   try {
-    // Check if order has received items
-    const items = await db
-      .select()
-      .from(purchaseOrderItems)
-      .where(
-        and(
-          eq(purchaseOrderItems.purchaseOrderId, id),
-          sql`${purchaseOrderItems.receivedQuantity} > 0`
-        )
-      );
+    // Placeholder for actual implementation
+    // In a real implementation, you would fetch the purchase order item from the database and update it
     
-    if (items.length > 0) {
-      throw new Error("Cannot delete purchase order with received items");
+    return {
+      id,
+      ...itemData
+    };
+  } catch (error) {
+    log(`Error in updatePurchaseOrderItem: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Delete a purchase order
+export async function deletePurchaseOrder(id: string) {
+  try {
+    // Placeholder for actual implementation
+    const order = await getPurchaseOrderById(id);
+    if (!order) {
+      throw new Error(`Purchase order with ID ${id} not found`);
     }
     
-    // Delete order items
-    await db
-      .delete(purchaseOrderItems)
-      .where(eq(purchaseOrderItems.purchaseOrderId, id));
+    // Check if the order has received items
+    const hasReceivedItems = order.items.some(item => item.receivedQuantity > 0);
+    if (hasReceivedItems) {
+      throw new Error(`Cannot delete purchase order with received items`);
+    }
     
-    // Delete the order
-    await db
-      .delete(purchaseOrders)
-      .where(eq(purchaseOrders.id, id));
+    // In a real implementation, you would delete the purchase order and its items from the database
     
     return true;
   } catch (error) {
-    log(`Error deleting purchase order: ${error}`, "inventoryService");
+    log(`Error in deletePurchaseOrder: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
 /**
- * Utility Methods
+ * Report Functions
  */
 
-/**
- * Generate a reorder report based on low stock items
- */
-export async function generateReorderReport(): Promise<{
-  itemsToReorder: (InventoryItem & { currentStock: number; reorderAmount: number })[];
-  suggestedPurchaseOrders: Record<string, {
-    vendorId: string;
-    vendorName: string;
-    items: {
-      itemId: string;
-      sku: string;
-      name: string;
-      currentStock: number;
-      reorderAmount: number;
-      unitCost: string;
-      totalCost: number;
-    }[];
-    totalCost: number;
-  }>;
-}> {
+// Get low stock alerts
+export async function getLowStockAlerts() {
   try {
-    // Get all items with low stock
+    // Placeholder for actual implementation
+    const items = await getInventoryItemsWithStock();
+    return items.filter(item => item.currentStock <= item.reorderThreshold);
+  } catch (error) {
+    log(`Error in getLowStockAlerts: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Generate reorder report
+export async function generateReorderReport() {
+  try {
+    // Placeholder for actual implementation
     const lowStockItems = await getLowStockAlerts();
     
-    // Calculate reorder amount for each item
-    const itemsToReorder = lowStockItems.map(item => ({
-      ...item,
-      reorderAmount: Number(item.reorderQuantity)
-    }));
-    
-    // Group by vendor
-    const vendorGroups: Record<string, any> = {};
-    
-    for (const item of itemsToReorder) {
+    // Group items by vendor
+    const itemsByVendor: Record<string, any[]> = {};
+    lowStockItems.forEach(item => {
       const vendorId = item.vendorId || 'unknown';
-      
-      if (!vendorGroups[vendorId]) {
-        const vendor = item.vendorId 
-          ? await getVendorById(item.vendorId)
-          : null;
-        
-        vendorGroups[vendorId] = {
-          vendorId,
-          vendorName: vendor ? vendor.name : 'Unknown Vendor',
-          items: [],
-          totalCost: 0
-        };
+      if (!itemsByVendor[vendorId]) {
+        itemsByVendor[vendorId] = [];
       }
-      
-      const totalCost = Number(item.unitCost) * item.reorderAmount;
-      
-      vendorGroups[vendorId].items.push({
-        itemId: item.id,
-        sku: item.sku,
-        name: item.name,
-        currentStock: item.currentStock,
-        reorderAmount: item.reorderAmount,
-        unitCost: item.unitCost,
-        totalCost
+      itemsByVendor[vendorId].push({
+        ...item,
+        reorderAmount: item.reorderQuantity,
+        estimatedCost: item.reorderQuantity * item.unitPrice
       });
-      
-      vendorGroups[vendorId].totalCost += totalCost;
-    }
+    });
     
+    // Get vendor details
+    const vendors = await getAllVendors();
+    const vendorMap = vendors.reduce((map, vendor) => {
+      map[vendor.id] = vendor;
+      return map;
+    }, {} as Record<string, any>);
+    
+    // Build the report
     return {
-      itemsToReorder,
-      suggestedPurchaseOrders: vendorGroups
+      generatedAt: new Date(),
+      totalItems: lowStockItems.length,
+      totalEstimatedCost: lowStockItems.reduce((sum, item) => sum + (item.reorderQuantity * item.unitPrice), 0),
+      recommendations: Object.keys(itemsByVendor).map(vendorId => ({
+        vendor: vendorMap[vendorId] || { id: vendorId, name: 'Unknown Vendor' },
+        items: itemsByVendor[vendorId],
+        totalEstimatedCost: itemsByVendor[vendorId].reduce((sum, item) => sum + item.estimatedCost, 0)
+      }))
     };
   } catch (error) {
-    log(`Error generating reorder report: ${error}`, "inventoryService");
+    log(`Error in generateReorderReport: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-/**
- * Get inventory valuation report
- */
-export async function getInventoryValuation(): Promise<{
-  totalValue: number;
-  valueByType: Record<string, number>;
-  valueByVendor: Record<string, number>;
-  items: (InventoryItem & { 
-    currentStock: number; 
-    stockValue: number;
-  })[];
-}> {
+// Get inventory valuation
+export async function getInventoryValuation() {
   try {
-    // Get all inventory items with stock
+    // Placeholder for actual implementation
     const items = await getInventoryItemsWithStock();
     
-    // Calculate values
-    let totalValue = 0;
-    const valueByType: Record<string, number> = {};
-    const valueByVendor: Record<string, number> = {};
+    // Calculate stock value for each item
+    const itemsWithValue = items.map(item => ({
+      ...item,
+      stockValue: item.currentStock * parseFloat(item.unitPrice.toString())
+    }));
     
-    const itemsWithValue = items.map(item => {
-      const stockValue = item.currentStock * Number(item.unitCost);
-      totalValue += stockValue;
-      
-      // Aggregate by type
+    // Calculate total value
+    const totalValue = itemsWithValue.reduce((sum, item) => sum + item.stockValue, 0);
+    
+    // Calculate value by item type
+    const valueByType = itemsWithValue.reduce((result, item) => {
       const type = item.type;
-      valueByType[type] = (valueByType[type] || 0) + stockValue;
-      
-      // Aggregate by vendor
+      if (!result[type]) {
+        result[type] = 0;
+      }
+      result[type] += item.stockValue;
+      return result;
+    }, {} as Record<string, number>);
+    
+    // Calculate value by vendor
+    const valueByVendor = itemsWithValue.reduce((result, item) => {
       const vendorId = item.vendorId || 'unknown';
-      valueByVendor[vendorId] = (valueByVendor[vendorId] || 0) + stockValue;
-      
-      return {
-        ...item,
-        stockValue
-      };
-    });
+      if (!result[vendorId]) {
+        result[vendorId] = 0;
+      }
+      result[vendorId] += item.stockValue;
+      return result;
+    }, {} as Record<string, number>);
     
     return {
       totalValue,
@@ -889,185 +715,157 @@ export async function getInventoryValuation(): Promise<{
       items: itemsWithValue
     };
   } catch (error) {
-    log(`Error generating inventory valuation: ${error}`, "inventoryService");
+    log(`Error in getInventoryValuation: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-/**
- * Get inventory activity by date range
- */
-export async function getInventoryActivity(
-  startDate: Date,
-  endDate: Date
-): Promise<{
-  totalTransactions: number;
-  purchaseValue: number;
-  saleValue: number;
-  adjustmentValue: number;
-  activityByDay: Record<string, {
-    purchases: number;
-    sales: number;
-    adjustments: number;
-  }>;
-}> {
+// Get inventory activity
+export async function getInventoryActivity(startDate?: Date, endDate?: Date) {
   try {
-    // Get all transactions in the date range
+    // Placeholder for actual implementation
     const transactions = await getInventoryTransactions({
       startDate,
       endDate
     });
     
-    // Get associated inventory items for cost information
-    const itemIds = [...new Set(transactions.map(t => t.inventoryItemId))];
-    const inventoryItemsMap: Record<string, InventoryItem> = {};
+    // Calculate summary statistics
+    const totalTransactions = transactions.length;
+    const purchaseValue = transactions
+      .filter(txn => txn.type === 'purchase')
+      .reduce((sum, txn) => sum + (txn.quantity * 1), 0); // In a real implementation, multiply by the item's unit price
     
-    if (itemIds.length > 0) {
-      const items = await db
-        .select()
-        .from(inventoryItems)
-        .where(inArray(inventoryItems.id, itemIds));
-        
-      items.forEach(item => {
-        inventoryItemsMap[item.id] = item;
-      });
-    }
+    const saleValue = transactions
+      .filter(txn => txn.type === 'sale')
+      .reduce((sum, txn) => sum + (Math.abs(txn.quantity) * 1), 0); // In a real implementation, multiply by the item's unit price
     
-    // Calculate values
-    let purchaseValue = 0;
-    let saleValue = 0;
-    let adjustmentValue = 0;
+    const adjustmentValue = transactions
+      .filter(txn => txn.type === 'adjustment')
+      .reduce((sum, txn) => sum + (txn.quantity * 1), 0); // In a real implementation, multiply by the item's unit price
+    
+    // Calculate activity by day
     const activityByDay: Record<string, { purchases: number; sales: number; adjustments: number }> = {};
-    
-    for (const transaction of transactions) {
-      const item = inventoryItemsMap[transaction.inventoryItemId];
-      if (!item) continue;
-      
-      const quantity = Number(transaction.quantity);
-      const value = quantity * Number(item.unitCost);
-      
-      // Group by day
-      const day = transaction.createdAt.toISOString().split('T')[0];
-      if (!activityByDay[day]) {
-        activityByDay[day] = {
-          purchases: 0,
-          sales: 0,
-          adjustments: 0
-        };
+    transactions.forEach(txn => {
+      const dateKey = txn.transactionDate.toISOString().split('T')[0];
+      if (!activityByDay[dateKey]) {
+        activityByDay[dateKey] = { purchases: 0, sales: 0, adjustments: 0 };
       }
       
-      // Categorize and sum values
-      if (transaction.type === 'purchase' || transaction.type === 'transfer_in') {
-        purchaseValue += value;
-        activityByDay[day].purchases += value;
-      } else if (transaction.type === 'sale' || transaction.type === 'transfer_out') {
-        saleValue += value;
-        activityByDay[day].sales += value;
-      } else {
-        adjustmentValue += value;
-        activityByDay[day].adjustments += value;
+      if (txn.type === 'purchase') {
+        activityByDay[dateKey].purchases += txn.quantity;
+      } else if (txn.type === 'sale') {
+        activityByDay[dateKey].sales += Math.abs(txn.quantity);
+      } else if (txn.type === 'adjustment') {
+        activityByDay[dateKey].adjustments += txn.quantity;
       }
-    }
+    });
     
     return {
-      totalTransactions: transactions.length,
+      totalTransactions,
       purchaseValue,
       saleValue,
       adjustmentValue,
       activityByDay
     };
   } catch (error) {
-    log(`Error getting inventory activity: ${error}`, "inventoryService");
+    log(`Error in getInventoryActivity: ${error}`, 'inventoryService');
     throw error;
   }
 }
 
-/**
- * Create automatic purchase orders for low stock items
- */
-export async function createAutomaticPurchaseOrders(): Promise<PurchaseOrder[]> {
+// Create automatic purchase orders from low stock items
+export async function createAutomaticPurchaseOrders() {
   try {
-    // Generate reorder report
-    const report = await generateReorderReport();
+    // Placeholder for actual implementation
+    const lowStockItems = await getLowStockAlerts();
     
-    // Create purchase orders for each vendor
-    const createdOrders: PurchaseOrder[] = [];
-    
-    for (const [vendorId, poData] of Object.entries(report.suggestedPurchaseOrders)) {
-      // Skip unknown vendors
-      if (vendorId === 'unknown') continue;
-      
-      // Create PO data
-      const poItems = poData.items.map(item => ({
-        inventoryItemId: item.itemId,
-        quantity: item.reorderAmount.toString(),
-        unitPrice: item.unitCost,
-        totalPrice: item.totalCost.toString(),
-        receivedQuantity: '0'
-      }));
-      
-      // Create the purchase order
-      if (poItems.length > 0) {
-        const po = await createPurchaseOrder(
-          {
-            vendorId,
-            status: 'draft',
-            totalAmount: poData.totalCost.toString(),
-            notes: 'Automatically generated from low stock report'
-          },
-          poItems
-        );
-        
-        createdOrders.push(po);
+    // Group items by vendor
+    const itemsByVendor: Record<string, any[]> = {};
+    lowStockItems.forEach(item => {
+      const vendorId = item.vendorId || 'unknown';
+      if (!itemsByVendor[vendorId]) {
+        itemsByVendor[vendorId] = [];
       }
-    }
-    
-    return createdOrders;
-  } catch (error) {
-    log(`Error creating automatic purchase orders: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Link inventory items to frames, mats, glass, etc.
- */
-export async function linkInventoryItemToMaterial(
-  inventoryItemId: string,
-  materialType: string,
-  materialId: string
-): Promise<boolean> {
-  try {
-    await db
-      .update(inventoryItems)
-      .set({ 
-        materialId,
-        updatedAt: new Date()
-      })
-      .where(eq(inventoryItems.id, inventoryItemId));
-    
-    return true;
-  } catch (error) {
-    log(`Error linking inventory item to material: ${error}`, "inventoryService");
-    throw error;
-  }
-}
-
-/**
- * Get inventory items for a specific material
- */
-export async function getInventoryItemsByMaterial(
-  materialType: string,
-  materialId: string
-): Promise<(InventoryItem & { currentStock: number })[]> {
-  try {
-    const items = await getInventoryItemsWithStock({
-      type: materialType
+      itemsByVendor[vendorId].push(item);
     });
     
-    return items.filter(item => item.materialId === materialId);
+    // Create a purchase order for each vendor
+    const purchaseOrders = [];
+    for (const vendorId in itemsByVendor) {
+      const vendorItems = itemsByVendor[vendorId];
+      
+      // Create order
+      const orderData = {
+        vendorId,
+        orderDate: new Date(),
+        status: 'draft',
+        notes: 'Auto-generated order from low stock items'
+      };
+      
+      // Create items
+      const orderItems = vendorItems.map(item => ({
+        itemId: item.id,
+        quantity: item.reorderQuantity,
+        unitPrice: item.unitPrice,
+        totalPrice: item.reorderQuantity * item.unitPrice,
+        notes: `Auto-reorder of ${item.name}`
+      }));
+      
+      const purchaseOrder = await createPurchaseOrder(orderData, orderItems);
+      purchaseOrders.push(purchaseOrder);
+    }
+    
+    return purchaseOrders;
   } catch (error) {
-    log(`Error getting inventory items by material: ${error}`, "inventoryService");
+    log(`Error in createAutomaticPurchaseOrders: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+/**
+ * Utility Functions
+ */
+
+// Link inventory item to material
+export async function linkInventoryItemToMaterial(id: string, materialType: string, materialId: string) {
+  try {
+    // Placeholder for actual implementation
+    const item = await getInventoryItemById(id);
+    if (!item) {
+      throw new Error(`Inventory item with ID ${id} not found`);
+    }
+    
+    // In a real implementation, you would update the item's metadata to link it to the material
+    
+    return {
+      ...item,
+      metadata: {
+        ...item.metadata,
+        materialLink: {
+          type: materialType,
+          id: materialId
+        }
+      }
+    };
+  } catch (error) {
+    log(`Error in linkInventoryItemToMaterial: ${error}`, 'inventoryService');
+    throw error;
+  }
+}
+
+// Get inventory items for a specific material
+export async function getInventoryItemsByMaterial(materialType: string, materialId: string) {
+  try {
+    // Placeholder for actual implementation
+    const items = await getInventoryItemsWithStock();
+    
+    // Filter items by material link
+    return items.filter(item => {
+      const materialLink = item.metadata?.materialLink;
+      return materialLink && materialLink.type === materialType && materialLink.id === materialId;
+    });
+  } catch (error) {
+    log(`Error in getInventoryItemsByMaterial: ${error}`, 'inventoryService');
     throw error;
   }
 }

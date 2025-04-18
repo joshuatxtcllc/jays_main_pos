@@ -1,15 +1,21 @@
-import { pgTable, text, integer, numeric, uuid, timestamp, boolean, pgEnum } from 'drizzle-orm/pg-core';
+/**
+ * Inventory Schema
+ * 
+ * This file defines the schema for inventory-related tables using Drizzle ORM.
+ */
+
+import { pgTable, text, timestamp, pgEnum, uuid, numeric, boolean, integer, foreignKey, json } from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
-// Enums for inventory types and statuses
-export const inventoryTypeEnum = pgEnum('inventory_type', [
+// Enum definitions
+export const inventoryItemTypeEnum = pgEnum('inventory_item_type', [
   'frame',
-  'mat',
   'glass',
-  'backing',
   'hardware',
   'tool',
+  'mat',
+  'backing',
   'other'
 ]);
 
@@ -31,142 +37,186 @@ export const inventoryLocationEnum = pgEnum('inventory_location', [
   'supplier'
 ]);
 
-// Inventory items table
+export const inventoryTransactionTypeEnum = pgEnum('inventory_transaction_type', [
+  'purchase',
+  'sale',
+  'adjustment',
+  'return',
+  'damage',
+  'transfer'
+]);
+
+export const purchaseOrderStatusEnum = pgEnum('purchase_order_status', [
+  'draft',
+  'pending',
+  'ordered',
+  'processing',
+  'partial',
+  'received',
+  'cancelled'
+]);
+
+// Table definitions
 export const inventoryItems = pgTable('inventory_items', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  sku: text('sku').notNull().unique(),
+  id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  type: inventoryItemTypeEnum('type').notNull(),
   description: text('description'),
-  type: inventoryTypeEnum('type').notNull(),
-  vendorId: text('vendor_id').references(() => vendors.id),
-  materialId: text('material_id'), // Can be frameId, matColorId, etc.
-  reorderThreshold: integer('reorder_threshold').notNull().default(5),
-  reorderQuantity: integer('reorder_quantity').notNull().default(10),
+  notes: text('notes'),
+  taxExempt: boolean('tax_exempt').default(false).notNull(),
+  sku: text('sku').notNull().unique(),
+  barcode: text('barcode'),
+  reorderThreshold: integer('reorder_threshold').notNull(),
+  reorderQuantity: integer('reorder_quantity').notNull(),
   unit: inventoryUnitEnum('unit').notNull(),
   unitPrice: numeric('unit_price').notNull(),
   unitCost: numeric('unit_cost').notNull(),
-  taxExempt: boolean('tax_exempt').notNull().default(false),
-  notes: text('notes'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  metadata: json('metadata'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  vendorId: uuid('vendor_id').references(() => vendors.id)
 });
 
-// Inventory stock levels table
 export const inventoryStock = pgTable('inventory_stock', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  inventoryItemId: uuid('inventory_item_id').references(() => inventoryItems.id).notNull(),
-  quantity: numeric('quantity').notNull().default('0'),
-  location: inventoryLocationEnum('location').notNull().default('main_storage'),
-  lotNumber: text('lot_number'),
-  expiryDate: timestamp('expiry_date'),
-  lastStockCheck: timestamp('last_stock_check'),
+  id: uuid('id').primaryKey().defaultRandom(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+  inventoryItemId: uuid('inventory_item_id').notNull().references(() => inventoryItems.id),
+  location: inventoryLocationEnum('location').notNull(),
+  quantity: numeric('quantity').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-// Inventory transactions table
 export const inventoryTransactions = pgTable('inventory_transactions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  inventoryItemId: uuid('inventory_item_id').references(() => inventoryItems.id).notNull(),
-  quantity: numeric('quantity').notNull(),
-  type: text('type').notNull(), // purchase, sale, adjustment, transfer
-  sourceLocationId: text('source_location_id'), // For transfers
-  destinationLocationId: text('destination_location_id'), // For transfers
-  orderId: integer('order_id'), // For sales
-  materialOrderId: integer('material_order_id'), // For purchases
-  notes: text('notes'),
+  id: uuid('id').primaryKey().defaultRandom(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  userId: text('user_id') // Who performed the transaction
+  inventoryItemId: uuid('inventory_item_id').notNull().references(() => inventoryItems.id),
+  type: inventoryTransactionTypeEnum('type').notNull(),
+  quantity: numeric('quantity').notNull(),
+  location: inventoryLocationEnum('location').notNull(),
+  notes: text('notes'),
+  reference: text('reference'),
+  userId: uuid('user_id'),
+  purchaseOrderId: uuid('purchase_order_id').references(() => purchaseOrders.id),
+  sourceLocation: inventoryLocationEnum('source_location'),
+  destinationLocation: inventoryLocationEnum('destination_location')
 });
 
-// Vendors table
 export const vendors = pgTable('vendors', {
-  id: text('id').primaryKey(),
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
   name: text('name').notNull(),
-  contactPerson: text('contact_person'),
+  contactName: text('contact_name'),
   email: text('email'),
   phone: text('phone'),
   address: text('address'),
   website: text('website'),
+  notes: text('notes'),
+  status: text('status').default('active').notNull(),
+  primaryType: inventoryItemTypeEnum('primary_type'),
   accountNumber: text('account_number'),
-  paymentTerms: text('payment_terms'),
-  preferredSupplier: boolean('preferred_supplier').default(false),
-  active: boolean('active').notNull().default(true),
-  notes: text('notes'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  metadata: json('metadata'),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-// Purchase orders table
 export const purchaseOrders = pgTable('purchase_orders', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  poNumber: text('po_number').notNull().unique(),
-  vendorId: text('vendor_id').references(() => vendors.id).notNull(),
-  orderDate: timestamp('order_date').defaultNow().notNull(),
-  expectedDeliveryDate: timestamp('expected_delivery_date'),
-  status: text('status').notNull().default('draft'), // draft, submitted, partially_received, received, cancelled
-  totalAmount: numeric('total_amount').notNull().default('0'),
-  notes: text('notes'),
+  id: uuid('id').primaryKey().defaultRandom(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  vendorId: uuid('vendor_id').notNull().references(() => vendors.id),
+  orderNumber: text('order_number').notNull().unique(),
+  orderDate: timestamp('order_date').notNull(),
+  expectedDeliveryDate: timestamp('expected_delivery_date'),
+  status: purchaseOrderStatusEnum('status').default('draft').notNull(),
+  notes: text('notes'),
+  totalAmount: numeric('total_amount').notNull(),
+  shippingCost: numeric('shipping_cost').default('0'),
+  taxAmount: numeric('tax_amount').default('0'),
+  discountAmount: numeric('discount_amount').default('0'),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  userId: uuid('user_id'),
+  receivedDate: timestamp('received_date'),
+  cancelledDate: timestamp('cancelled_date'),
+  paymentTerms: text('payment_terms'),
+  shippingMethod: text('shipping_method'),
+  trackingNumber: text('tracking_number')
 });
 
-// Purchase order items table
 export const purchaseOrderItems = pgTable('purchase_order_items', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  purchaseOrderId: uuid('purchase_order_id').references(() => purchaseOrders.id).notNull(),
-  inventoryItemId: uuid('inventory_item_id').references(() => inventoryItems.id).notNull(),
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  purchaseOrderId: uuid('purchase_order_id').notNull().references(() => purchaseOrders.id, { onDelete: 'cascade' }),
+  inventoryItemId: uuid('inventory_item_id').notNull().references(() => inventoryItems.id),
   quantity: numeric('quantity').notNull(),
   unitPrice: numeric('unit_price').notNull(),
   totalPrice: numeric('total_price').notNull(),
-  receivedQuantity: numeric('received_quantity').notNull().default('0'),
+  receivedQuantity: numeric('received_quantity').default('0').notNull(),
+  receivedDate: timestamp('received_date'),
   notes: text('notes'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expectedDeliveryDate: timestamp('expected_delivery_date'),
+  status: text('status').default('pending').notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
 
-// Define schemas for Zod validation and TypeScript types
-export const insertInventoryItemSchema = createInsertSchema(inventoryItems, {
-  unitPrice: z.string(),
-  unitCost: z.string(),
-  name: z.string().min(1, "Name is required"),
-  sku: z.string().min(1, "SKU is required"),
-  type: z.enum(['frame', 'mat', 'glass', 'backing', 'hardware', 'tool', 'other']),
-  unit: z.enum(['feet', 'sheets', 'pieces', 'boxes', 'rolls', 'other']),
-  reorderThreshold: z.number().min(0),
-  reorderQuantity: z.number().min(1)
+export const inventoryMaterialLinks = pgTable('inventory_material_links', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  inventoryItemId: uuid('inventory_item_id').notNull().references(() => inventoryItems.id, { onDelete: 'cascade' }),
+  materialType: text('material_type').notNull(),
+  materialId: text('material_id').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
 });
+
+// Zod schemas for validation and type inference
+export const insertInventoryItemSchema = createInsertSchema(inventoryItems, {
+  type: z.enum(['frame', 'glass', 'hardware', 'tool', 'mat', 'backing', 'other']),
+  unit: z.enum(['feet', 'sheets', 'pieces', 'boxes', 'rolls', 'other']),
+  reorderThreshold: z.number().positive(),
+  reorderQuantity: z.number().positive(),
+  unitPrice: z.string().or(z.number()).transform(val => String(val)),
+  unitCost: z.string().or(z.number()).transform(val => String(val)),
+  metadata: z.record(z.any()).optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertInventoryStockSchema = createInsertSchema(inventoryStock, {
-  quantity: z.string(),
-  location: z.enum(['main_storage', 'workshop', 'display_area', 'offsite_storage', 'in_transit', 'supplier'])
-});
+  location: z.enum(['main_storage', 'workshop', 'display_area', 'offsite_storage', 'in_transit', 'supplier']),
+  quantity: z.string().or(z.number()).transform(val => String(val)),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertInventoryTransactionSchema = createInsertSchema(inventoryTransactions, {
-  quantity: z.string(),
-  type: z.string().min(1, "Transaction type is required")
-});
+  type: z.enum(['purchase', 'sale', 'adjustment', 'return', 'damage', 'transfer']),
+  location: z.enum(['main_storage', 'workshop', 'display_area', 'offsite_storage', 'in_transit', 'supplier']),
+  quantity: z.string().or(z.number()).transform(val => String(val)),
+  sourceLocation: z.enum(['main_storage', 'workshop', 'display_area', 'offsite_storage', 'in_transit', 'supplier']).optional(),
+  destinationLocation: z.enum(['main_storage', 'workshop', 'display_area', 'offsite_storage', 'in_transit', 'supplier']).optional(),
+}).omit({ id: true, createdAt: true });
 
 export const insertVendorSchema = createInsertSchema(vendors, {
-  name: z.string().min(1, "Vendor name is required"),
-  email: z.string().email().optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal(''))
-});
+  status: z.string().default('active'),
+  primaryType: z.enum(['frame', 'glass', 'hardware', 'tool', 'mat', 'backing', 'other']).optional(),
+  metadata: z.record(z.any()).optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders, {
-  poNumber: z.string().min(1, "PO number is required"),
-  totalAmount: z.string(),
-  status: z.string()
-});
+  status: z.enum(['draft', 'pending', 'ordered', 'processing', 'partial', 'received', 'cancelled']).default('draft'),
+  totalAmount: z.string().or(z.number()).transform(val => String(val)),
+  shippingCost: z.string().or(z.number()).transform(val => String(val)).optional(),
+  taxAmount: z.string().or(z.number()).transform(val => String(val)).optional(),
+  discountAmount: z.string().or(z.number()).transform(val => String(val)).optional(),
+}).omit({ id: true, createdAt: true, updatedAt: true, orderNumber: true });
 
 export const insertPurchaseOrderItemSchema = createInsertSchema(purchaseOrderItems, {
-  quantity: z.string(),
-  unitPrice: z.string(),
-  totalPrice: z.string(),
-  receivedQuantity: z.string()
-});
+  quantity: z.string().or(z.number()).transform(val => String(val)),
+  unitPrice: z.string().or(z.number()).transform(val => String(val)),
+  totalPrice: z.string().or(z.number()).transform(val => String(val)),
+  receivedQuantity: z.string().or(z.number()).transform(val => String(val)).optional(),
+  status: z.string().default('pending'),
+}).omit({ id: true, createdAt: true, updatedAt: true });
 
-// TypeScript types
+export const insertInventoryMaterialLinkSchema = createInsertSchema(inventoryMaterialLinks, {
+  materialType: z.string(),
+  materialId: z.string(),
+}).omit({ id: true, createdAt: true, updatedAt: true });
+
+// TypeScript types inferred from the schema
 export type InventoryItem = typeof inventoryItems.$inferSelect;
 export type InsertInventoryItem = z.infer<typeof insertInventoryItemSchema>;
 
@@ -184,3 +234,6 @@ export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
 
 export type PurchaseOrderItem = typeof purchaseOrderItems.$inferSelect;
 export type InsertPurchaseOrderItem = z.infer<typeof insertPurchaseOrderItemSchema>;
+
+export type InventoryMaterialLink = typeof inventoryMaterialLinks.$inferSelect;
+export type InsertInventoryMaterialLink = z.infer<typeof insertInventoryMaterialLinkSchema>;
