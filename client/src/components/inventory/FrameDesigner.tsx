@@ -5,14 +5,13 @@ import {
   RefreshCw, 
   ShoppingCart, 
   Maximize2,
-  ArrowsExpand,
   Image as ImageIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import './FrameDesigner.css';
 
-// Import potential inventory-related hooks
-// import { useFrameInventory } from '@/hooks/use-inventory';
+// Import catalog related hooks
+import { useFramesForDesigner, useMatboardsForDesigner } from '@/hooks/use-frame-designer';
 
 interface FrameOption {
   id: string;
@@ -31,21 +30,9 @@ interface MatOption {
   inStock: boolean;
 }
 
-// Sample frame options - will be replaced with actual data from inventory
-const defaultFrameOptions: FrameOption[] = [
-  { id: 'f1', name: 'Modern Black', color: '#000000', width: 1.25, price: 24.99, inStock: true },
-  { id: 'f2', name: 'Classic Gold', color: '#d4af37', width: 2, price: 32.99, inStock: true },
-  { id: 'f3', name: 'Rustic Wood', color: '#8B4513', width: 2.5, price: 28.99, inStock: true },
-  { id: 'f4', name: 'Sleek Silver', color: '#C0C0C0', width: 1, price: 22.99, inStock: true },
-];
-
-// Sample mat options - will be replaced with actual data from inventory
-const defaultMatOptions: MatOption[] = [
-  { id: 'm1', name: 'Off White', color: '#FFFBF0', price: 15.99, inStock: true },
-  { id: 'm2', name: 'Black', color: '#000000', price: 15.99, inStock: true },
-  { id: 'm3', name: 'Navy', color: '#000080', price: 16.99, inStock: true },
-  { id: 'm4', name: 'Forest Green', color: '#228B22', price: 16.99, inStock: true },
-];
+// Use empty arrays as fallback until real data is loaded
+const defaultFrameOptions: FrameOption[] = [];
+const defaultMatOptions: MatOption[] = [];
 
 interface FrameDesignerProps {
   onAddToCart?: (designData: {
