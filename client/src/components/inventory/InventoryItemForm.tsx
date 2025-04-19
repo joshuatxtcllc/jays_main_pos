@@ -214,8 +214,8 @@ export function InventoryItemForm({
                   <FormItem>
                     <FormLabel>Category</FormLabel>
                     <Select
-                      onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : null)}
-                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => field.onChange(value === "none" ? null : value ? parseInt(value, 10) : null)}
+                      value={field.value?.toString() || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -223,7 +223,7 @@ export function InventoryItemForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id.toString()}>
                             {category.name}
@@ -277,8 +277,8 @@ export function InventoryItemForm({
                   <FormItem>
                     <FormLabel>Supplier</FormLabel>
                     <Select 
-                      onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : null)}
-                      value={field.value?.toString() || ""}
+                      onValueChange={(value) => field.onChange(value === "none" ? null : value ? parseInt(value, 10) : null)}
+                      value={field.value?.toString() || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -286,7 +286,7 @@ export function InventoryItemForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {suppliers.map((supplier) => (
                           <SelectItem key={supplier.id} value={supplier.id.toString()}>
                             {supplier.name}
@@ -434,8 +434,8 @@ export function InventoryItemForm({
                 <FormItem>
                   <FormLabel>Storage Location</FormLabel>
                   <Select 
-                    onValueChange={(value) => field.onChange(value ? parseInt(value, 10) : null)}
-                    value={field.value?.toString() || ""}
+                    onValueChange={(value) => field.onChange(value === "none" ? null : value ? parseInt(value, 10) : null)}
+                    value={field.value?.toString() || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -443,7 +443,7 @@ export function InventoryItemForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {locations.map((location) => (
                         <SelectItem key={location.id} value={location.id.toString()}>
                           {location.name}
@@ -484,14 +484,14 @@ export function InventoryItemForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Material Type</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <Select onValueChange={(value) => field.onChange(value === "none" ? null : value)} value={field.value || "none"}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Select material type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">None</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
                           <SelectItem value="frame">Frame</SelectItem>
                           <SelectItem value="matboard">Matboard</SelectItem>
                           <SelectItem value="glass">Glass</SelectItem>
