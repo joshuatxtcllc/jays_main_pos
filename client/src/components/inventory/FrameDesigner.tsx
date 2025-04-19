@@ -13,6 +13,7 @@ import './FrameDesigner.css';
 
 // Import catalog related hooks
 import { useFramesForDesigner, useMatboardsForDesigner } from '@/hooks/use-frame-designer';
+import BottomMatOption from './BottomMatOption';
 
 interface FrameOption {
   id: string;
@@ -340,60 +341,16 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
               />
             </div>
             
-            <div className="mt-4 bottom-mat-section">
-              <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="showBottomMat" 
-                  checked={showBottomMat}
-                  onChange={handleBottomMatToggle}
-                  className="mr-2"
-                />
-                <label htmlFor="showBottomMat" className="flex items-center cursor-pointer">
-                  <Layers className="h-4 w-4 mr-1" />
-                  Add Bottom Mat
-                </label>
-              </div>
-              
-              {showBottomMat && (
-                <div className="mt-2">
-                  <div className="mb-2">
-                    <label htmlFor="bottomMatWidth">Bottom Mat Width (inches)</label>
-                    <input 
-                      type="number" 
-                      id="bottomMatWidth" 
-                      value={bottomMatWidth} 
-                      onChange={handleBottomMatWidthChange} 
-                      step="0.125"
-                      min="0.125"
-                      max="0.5"
-                      className="input w-full"
-                    />
-                    <p className="text-xs mt-1 text-secondary">
-                      Recommended: between 0.125" and 0.5"
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label>Bottom Mat Color</label>
-                    <div className="mat-options mt-2">
-                      {availableMats.map(mat => (
-                        <div 
-                          key={`bottom-${mat.id}`} 
-                          className={`mat-option ${selectedBottomMat?.id === mat.id ? 'selected' : ''}`}
-                          onClick={() => setSelectedBottomMat(mat)}
-                        >
-                          <div className="mat-color-preview" style={{ backgroundColor: mat.color }}></div>
-                          <div>
-                            <div>{mat.name}</div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <BottomMatOption 
+              showBottomMat={showBottomMat}
+              bottomMatWidth={bottomMatWidth}
+              selectedBottomMat={selectedBottomMat}
+              availableMats={availableMats}
+              onToggleBottomMat={handleBottomMatToggle}
+              onBottomMatWidthChange={handleBottomMatWidthChange}
+              onBottomMatSelect={setSelectedBottomMat}
+            />
+            
           </div>
         </div>
         

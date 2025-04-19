@@ -252,19 +252,35 @@
 }
 
 .bottom-mat-section {
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 2px solid var(--primary, #3b82f6);
   padding: 1rem;
-  border-radius: 0.25rem;
-  background-color: rgba(0, 0, 0, 0.03);
+  border-radius: 0.5rem;
+  background-color: rgba(59, 130, 246, 0.05);
+  margin-top: 1.5rem;
+  position: relative;
+}
+
+.bottom-mat-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .bottom-mat-section label {
   font-weight: 500;
+  display: flex;
+  align-items: center;
 }
 
 input[type="checkbox"] {
   width: 1.2rem;
   height: 1.2rem;
+  cursor: pointer;
+}
+
+.mat-options-small {
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .summary-details {
