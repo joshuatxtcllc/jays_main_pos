@@ -158,7 +158,7 @@ export interface IStorage {
 }
 
 import { db } from "./db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, asc } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // Customer methods
