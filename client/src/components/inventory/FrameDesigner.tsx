@@ -342,7 +342,7 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
             </div>
           </div>
           
-          {/* Bottom Mat Section - Separated as its own group for better visibility */}
+          {/* Bottom Mat Section - Using the design from the test page that works correctly */}
           <div className="frame-option-group" style={{ 
             borderTop: '2px solid var(--primary, #3b82f6)', 
             marginTop: '1.5rem', 
@@ -350,62 +350,91 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
           }}>
             <h4>Additional Mat Options</h4>
             <div style={{ 
-              padding: '10px', 
-              border: '1px solid #ddd', 
-              borderRadius: '4px',
-              backgroundColor: '#f9f9f9',
-              marginBottom: '10px' 
+              backgroundColor: '#f0f4ff', 
+              padding: '20px', 
+              borderRadius: '8px',
+              border: '2px solid #3b82f6',
+              marginBottom: '20px'
             }}>
-              <div className="flex items-center">
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'white',
+                padding: '15px',
+                borderRadius: '6px',
+                border: '1px solid #ddd'
+              }}>
                 <input 
                   type="checkbox" 
-                  id="showBottomMat" 
+                  id="bottomMatToggle" 
                   checked={showBottomMat}
                   onChange={handleBottomMatToggle}
-                  style={{ width: '20px', height: '20px', marginRight: '10px' }}
+                  style={{ 
+                    width: '24px', 
+                    height: '24px', 
+                    marginRight: '12px',
+                    cursor: 'pointer'
+                  }}
                 />
-                <label htmlFor="showBottomMat" style={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                <label 
+                  htmlFor="bottomMatToggle" 
+                  style={{ 
+                    fontWeight: 'bold', 
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <Layers style={{ marginRight: '8px' }} />
                   Add Bottom Mat (Double Matting)
                 </label>
               </div>
-            </div>
-            
-            {showBottomMat && (
-              <div>
-                <label htmlFor="bottomMatWidth">Bottom Mat Width (inches)</label>
-                <input 
-                  type="number" 
-                  id="bottomMatWidth" 
-                  value={bottomMatWidth} 
-                  onChange={handleBottomMatWidthChange} 
-                  step="0.125"
-                  min="0.125"
-                  max="0.5"
-                  className="input w-full"
-                />
-                <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
-                  Recommended: between 0.125" and 0.5"
-                </p>
-                
-                <div className="mt-3">
-                  <label>Bottom Mat Color</label>
-                  <div className="mat-options mat-options-small mt-2">
-                    {availableMats.map(mat => (
-                      <div 
-                        key={`bottom-${mat.id}`} 
-                        className={`mat-option ${selectedBottomMat?.id === mat.id ? 'selected' : ''}`}
-                        onClick={() => setSelectedBottomMat(mat)}
-                      >
-                        <div className="mat-color-preview" style={{ backgroundColor: mat.color }}></div>
-                        <div>
-                          <div>{mat.name}</div>
+              
+              {showBottomMat && (
+                <div style={{ marginTop: '15px', padding: '15px', backgroundColor: 'white', borderRadius: '6px' }}>
+                  <div className="mb-3">
+                    <label htmlFor="bottomMatWidth" style={{ fontWeight: '500', display: 'block', marginBottom: '5px' }}>
+                      Bottom Mat Width (inches)
+                    </label>
+                    <input 
+                      type="number" 
+                      id="bottomMatWidth" 
+                      value={bottomMatWidth} 
+                      onChange={handleBottomMatWidthChange} 
+                      step="0.125"
+                      min="0.125"
+                      max="0.5"
+                      className="input w-full"
+                      style={{ border: '1px solid #ddd', padding: '8px', borderRadius: '4px' }}
+                    />
+                    <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                      Recommended: between 0.125" and 0.5"
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label style={{ fontWeight: '500', display: 'block', marginBottom: '10px' }}>
+                      Bottom Mat Color
+                    </label>
+                    <div className="mat-options mat-options-small mt-2">
+                      {availableMats.map(mat => (
+                        <div 
+                          key={`bottom-${mat.id}`} 
+                          className={`mat-option ${selectedBottomMat?.id === mat.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedBottomMat(mat)}
+                        >
+                          <div className="mat-color-preview" style={{ backgroundColor: mat.color }}></div>
+                          <div>
+                            <div>{mat.name}</div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
           </div>
         </div>
