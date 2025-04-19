@@ -1091,24 +1091,27 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createInventoryItem(inventoryItem: InsertInventoryItem): Promise<InventoryItem> {
+  async createInventoryItem(inventoryItem: InsertInventoryItem & { initialQuantity?: string }): Promise<InventoryItem> {
     try {
       // Generate SKU if not provided
       if (!inventoryItem.sku) {
         inventoryItem.sku = `INV-${Date.now().toString(36).toUpperCase()}`;
       }
+      
+      // Extract initialQuantity before inserting since it's not part of the schema
+      const { initialQuantity, ...itemToInsert } = inventoryItem;
 
       const [newItem] = await db
         .insert(inventoryItems)
-        .values(inventoryItem)
+        .values(itemToInsert)
         .returning();
       
-      // Create an initial inventory transaction
-      if (inventoryItem.initialQuantity) {
+      // Create an initial inventory transaction if initialQuantity was provided
+      if (initialQuantity) {
         await this.createInventoryTransaction({
           itemId: newItem.id,
           type: 'initial',
-          quantity: inventoryItem.initialQuantity,
+          quantity: initialQuantity,
           unitCost: inventoryItem.costPerUnit,
           notes: 'Initial inventory setup'
         });
@@ -1156,15 +1159,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Low stock items
-  async getLowStockItems(): Promise<InventoryItem[]> {
+  async getLowStockItems(): Promise<(InventoryItem & { currentStock: number })[]> {
     try {
       // Get all items where current stock is at or below reorder level
       const items = await db.select().from(inventoryItems);
-      const lowStockItems: InventoryItem[] = [];
+      const lowStockItems: (InventoryItem & { currentStock: number })[] = [];
       
       for (const item of items) {
         const currentStock = await this.getItemCurrentStock(item.id);
         if (currentStock <= Number(item.reorderLevel)) {
+          // Use type assertion to add the currentStock property
           lowStockItems.push({
             ...item,
             currentStock
