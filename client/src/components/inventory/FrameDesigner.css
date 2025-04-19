@@ -251,6 +251,22 @@
   pointer-events: none;
 }
 
+.bottom-mat-section {
+  border: 1px solid var(--border-color, #e2e8f0);
+  padding: 1rem;
+  border-radius: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.bottom-mat-section label {
+  font-weight: 500;
+}
+
+input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
 .summary-details {
   width: 100%;
   display: flex;
