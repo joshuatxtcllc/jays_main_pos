@@ -15,6 +15,7 @@ import OrderProgressPage from "./pages/OrderProgressPage";
 import MaterialOrdersPage from "./pages/MaterialOrdersPage";
 import HubIntegrationPage from "./pages/HubIntegrationPage";
 import MatOptionPage from "./pages/MatOptionPage";
+import InventoryPage from "./pages/InventoryPage";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -87,6 +88,7 @@ function App() {
                   <Route path="/dashboard" component={Dashboard} />
                   <Route path="/production" component={ProductionPage} />
                   <Route path="/materials" component={MaterialOrdersPage} />
+                  <Route path="/inventory" component={InventoryPage} />
                   <Route path="/hub" component={HubIntegrationPage} />
                   <Route path="/mat-test" component={MatOptionPage} />
                   <Route path="/checkout/:orderGroupId" component={Checkout} />

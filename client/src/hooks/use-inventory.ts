@@ -1,284 +1,381 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiRequest } from '@/lib/queryClient';
-import { InventoryItem, Vendor, PurchaseOrder } from '@shared/inventory-schema';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import * as inventoryService from "@/services/inventoryService";
+import { toast } from "@/hooks/use-toast";
+import type { 
+  InventoryItem, 
+  InsertInventoryItem, 
+  Supplier, 
+  InsertSupplier,
+  InventoryLocation,
+  InsertInventoryLocation,
+  PurchaseOrder
+} from "@shared/schema";
 
-/**
- * Hook for working with inventory items
- */
-export function useInventoryItems(filters?: {
-  type?: string;
-  location?: string;
-  lowStock?: boolean;
-  search?: string;
-}) {
-  const queryParams = new URLSearchParams();
-  
-  if (filters?.type) queryParams.append('type', filters.type);
-  if (filters?.location) queryParams.append('location', filters.location);
-  if (filters?.lowStock) queryParams.append('lowStock', 'true');
-  if (filters?.search) queryParams.append('search', filters.search);
-  
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-  
+// Query key constants
+const INVENTORY_ITEMS_KEY = "/api/inventory/items";
+const SUPPLIERS_KEY = "/api/inventory/suppliers";
+const LOCATIONS_KEY = "/api/inventory/locations";
+const PURCHASE_ORDERS_KEY = "/api/inventory/purchase-orders";
+const LOW_STOCK_KEY = "/api/inventory/items/low-stock";
+const VALUATION_KEY = "/api/inventory/valuation";
+const RECOMMENDED_ORDERS_KEY = "/api/inventory/recommended-purchase-orders";
+
+// Inventory Items hooks
+export const useInventoryItems = () => {
   return useQuery({
-    queryKey: ['/api/inventory/items', filters],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/inventory/items${queryString}`);
-      const data = await response.json();
-      return data as (InventoryItem & { currentStock: number; stockDetails: any[] })[];
-    }
+    queryKey: [INVENTORY_ITEMS_KEY],
+    queryFn: inventoryService.getInventoryItems
   });
-}
+};
 
-/**
- * Hook for frame inventory items
- */
-export function useFrameInventory() {
-  return useInventoryItems({ type: 'frame' });
-}
-
-/**
- * Hook for mat inventory items
- */
-export function useMatInventory() {
-  return useInventoryItems({ type: 'mat' });
-}
-
-/**
- * Hook for glass inventory items
- */
-export function useGlassInventory() {
-  return useInventoryItems({ type: 'glass' });
-}
-
-/**
- * Hook for working with a single inventory item
- */
-export function useInventoryItem(id: string) {
+export const useInventoryItem = (id: number) => {
   return useQuery({
-    queryKey: ['/api/inventory/items', id],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/inventory/items/${id}`);
-      const data = await response.json();
-      return data as (InventoryItem & { stock: any[]; transactions: any[] });
-    },
-    enabled: !!id,
+    queryKey: [INVENTORY_ITEMS_KEY, id],
+    queryFn: () => inventoryService.getInventoryItem(id),
+    // Only fetch when ID is available and valid
+    enabled: !!id
   });
-}
+};
 
-/**
- * Hook for inventory item mutations (create, update, delete)
- */
-export function useInventoryItemMutations() {
-  const queryClient = useQueryClient();
-  
-  const createMutation = useMutation({
-    mutationFn: async (item: any) => {
-      const response = await apiRequest('POST', '/api/inventory/items', item);
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/items'] });
-    }
-  });
-  
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
-      const response = await apiRequest('PATCH', `/api/inventory/items/${id}`, data);
-      return response.json();
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/items', variables.id] });
-    }
-  });
-  
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest('DELETE', `/api/inventory/items/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/items'] });
-    }
-  });
-  
-  return {
-    createMutation,
-    updateMutation,
-    deleteMutation
-  };
-}
-
-/**
- * Hook for updating stock levels
- */
-export function useStockLevelMutation() {
+export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ 
-      id, 
-      quantity, 
-      location, 
-      transactionType, 
-      notes 
-    }: { 
-      id: string; 
-      quantity: number; 
-      location: string; 
-      transactionType: string; 
-      notes?: string 
-    }) => {
-      const response = await apiRequest('POST', `/api/inventory/stock/${id}`, {
-        quantity,
-        location,
-        transactionType,
-        notes
+    mutationFn: (item: InsertInventoryItem) => inventoryService.createInventoryItem(item),
+    onSuccess: () => {
+      // Invalidate and refetch inventory items
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Item created",
+        description: "Inventory item has been successfully created.",
       });
-      return response.json();
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/items'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/items', variables.id] });
-    }
-  });
-}
-
-/**
- * Hook for working with vendors
- */
-export function useVendors() {
-  return useQuery({
-    queryKey: ['/api/inventory/vendors'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/inventory/vendors');
-      return response.json() as Vendor[];
-    }
-  });
-}
-
-/**
- * Hook for working with low stock alerts
- */
-export function useLowStockAlerts() {
-  return useQuery({
-    queryKey: ['/api/inventory/low-stock'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/inventory/low-stock');
-      return response.json() as (InventoryItem & { currentStock: number })[];
-    }
-  });
-}
-
-/**
- * Hook for working with purchase orders
- */
-export function usePurchaseOrders(filters?: {
-  vendorId?: string;
-  status?: string;
-  startDate?: Date;
-  endDate?: Date;
-}) {
-  const queryParams = new URLSearchParams();
-  
-  if (filters?.vendorId) queryParams.append('vendorId', filters.vendorId);
-  if (filters?.status) queryParams.append('status', filters.status);
-  if (filters?.startDate) queryParams.append('startDate', filters.startDate.toISOString());
-  if (filters?.endDate) queryParams.append('endDate', filters.endDate.toISOString());
-  
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-  
-  return useQuery({
-    queryKey: ['/api/inventory/purchase-orders', filters],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/inventory/purchase-orders${queryString}`);
-      return response.json() as PurchaseOrder[];
-    }
-  });
-}
-
-/**
- * Hook for creating purchase orders
- */
-export function useCreatePurchaseOrder() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ order, items }: { order: any; items: any[] }) => {
-      const response = await apiRequest('POST', '/api/inventory/purchase-orders', {
-        order,
-        items
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating item",
+        description: error.message,
+        variant: "destructive",
       });
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/purchase-orders'] });
     }
   });
-}
+};
 
-/**
- * Hook for generating automatic purchase orders from low stock
- */
-export function useGenerateAutomaticPurchaseOrders() {
+export const useUpdateInventoryItem = (id: number) => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('POST', '/api/inventory/purchase-orders/auto-generate');
-      return response.json() as PurchaseOrder[];
-    },
+    mutationFn: (item: Partial<InventoryItem>) => inventoryService.updateInventoryItem(id, item),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/purchase-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/inventory/low-stock'] });
+      // Invalidate specific item and all items
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY, id] });
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Item updated",
+        description: "Inventory item has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating item",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
-}
+};
 
-/**
- * Hook for inventory valuation
- */
-export function useInventoryValuation() {
-  return useQuery({
-    queryKey: ['/api/inventory/valuation'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/inventory/valuation');
-      return response.json() as {
-        totalValue: number;
-        valueByType: Record<string, number>;
-        valueByVendor: Record<string, number>;
-        items: (InventoryItem & { currentStock: number; stockValue: number })[];
-      };
+export const useDeleteInventoryItem = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: number) => inventoryService.deleteInventoryItem(id),
+    onSuccess: () => {
+      // Invalidate and refetch inventory items
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Item deleted",
+        description: "Inventory item has been successfully deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error deleting item",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
-}
+};
 
-/**
- * Hook for inventory activity
- */
-export function useInventoryActivity(startDate?: Date, endDate?: Date) {
-  const queryParams = new URLSearchParams();
-  
-  if (startDate) queryParams.append('startDate', startDate.toISOString());
-  if (endDate) queryParams.append('endDate', endDate.toISOString());
-  
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-  
+export const useLowStockItems = () => {
   return useQuery({
-    queryKey: ['/api/inventory/activity', startDate, endDate],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/inventory/activity${queryString}`);
-      return response.json() as {
-        totalTransactions: number;
-        purchaseValue: number;
-        saleValue: number;
-        adjustmentValue: number;
-        activityByDay: Record<string, {
-          purchases: number;
-          sales: number;
-          adjustments: number;
-        }>;
-      };
+    queryKey: [LOW_STOCK_KEY],
+    queryFn: inventoryService.getLowStockItems
+  });
+};
+
+export const useItemByBarcode = (barcode: string) => {
+  return useQuery({
+    queryKey: [`${INVENTORY_ITEMS_KEY}/barcode`, barcode],
+    queryFn: () => inventoryService.getItemByBarcode(barcode),
+    // Only fetch when barcode is available and valid
+    enabled: !!barcode && barcode.length > 0
+  });
+};
+
+// Suppliers hooks
+export const useSuppliers = () => {
+  return useQuery({
+    queryKey: [SUPPLIERS_KEY],
+    queryFn: inventoryService.getSuppliers
+  });
+};
+
+export const useSupplier = (id: number) => {
+  return useQuery({
+    queryKey: [SUPPLIERS_KEY, id],
+    queryFn: () => inventoryService.getSupplier(id),
+    // Only fetch when ID is available and valid
+    enabled: !!id
+  });
+};
+
+export const useCreateSupplier = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (supplier: InsertSupplier) => inventoryService.createSupplier(supplier),
+    onSuccess: () => {
+      // Invalidate and refetch suppliers
+      queryClient.invalidateQueries({ queryKey: [SUPPLIERS_KEY] });
+      toast({
+        title: "Supplier created",
+        description: "Supplier has been successfully created.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating supplier",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   });
-}
+};
+
+export const useUpdateSupplier = (id: number) => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (supplier: Partial<Supplier>) => inventoryService.updateSupplier(id, supplier),
+    onSuccess: () => {
+      // Invalidate specific supplier and all suppliers
+      queryClient.invalidateQueries({ queryKey: [SUPPLIERS_KEY, id] });
+      queryClient.invalidateQueries({ queryKey: [SUPPLIERS_KEY] });
+      toast({
+        title: "Supplier updated",
+        description: "Supplier has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error updating supplier",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+export const useDeleteSupplier = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: number) => inventoryService.deleteSupplier(id),
+    onSuccess: () => {
+      // Invalidate and refetch suppliers
+      queryClient.invalidateQueries({ queryKey: [SUPPLIERS_KEY] });
+      toast({
+        title: "Supplier deleted",
+        description: "Supplier has been successfully deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error deleting supplier",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+// Inventory Locations hooks
+export const useInventoryLocations = () => {
+  return useQuery({
+    queryKey: [LOCATIONS_KEY],
+    queryFn: inventoryService.getInventoryLocations
+  });
+};
+
+export const useInventoryLocation = (id: number) => {
+  return useQuery({
+    queryKey: [LOCATIONS_KEY, id],
+    queryFn: () => inventoryService.getInventoryLocation(id),
+    enabled: !!id
+  });
+};
+
+export const useCreateInventoryLocation = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (location: InsertInventoryLocation) => 
+      inventoryService.createInventoryLocation(location),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [LOCATIONS_KEY] });
+      toast({
+        title: "Location created",
+        description: "Inventory location has been successfully created.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating location",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+// Purchase Orders hooks
+export const usePurchaseOrders = () => {
+  return useQuery({
+    queryKey: [PURCHASE_ORDERS_KEY],
+    queryFn: inventoryService.getPurchaseOrders
+  });
+};
+
+export const usePurchaseOrder = (id: number) => {
+  return useQuery({
+    queryKey: [PURCHASE_ORDERS_KEY, id],
+    queryFn: () => inventoryService.getPurchaseOrder(id),
+    enabled: !!id
+  });
+};
+
+export const useCreatePurchaseOrder = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ purchaseOrder, lines }: { 
+      purchaseOrder: any, 
+      lines: any[] 
+    }) => inventoryService.createPurchaseOrder(purchaseOrder, lines),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [PURCHASE_ORDERS_KEY] });
+      toast({
+        title: "Purchase order created",
+        description: "Purchase order has been successfully created.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating purchase order",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+// Inventory Transactions hooks
+export const useCreateInventoryTransaction = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: inventoryService.createInventoryTransaction,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Transaction recorded",
+        description: "Inventory transaction has been successfully recorded.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error recording transaction",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+// Inventory Valuation hooks
+export const useInventoryValuation = () => {
+  return useQuery({
+    queryKey: [VALUATION_KEY],
+    queryFn: inventoryService.getInventoryValuation
+  });
+};
+
+// Recommended Purchase Orders hooks
+export const useRecommendedPurchaseOrders = () => {
+  return useQuery({
+    queryKey: [RECOMMENDED_ORDERS_KEY],
+    queryFn: inventoryService.getRecommendedPurchaseOrders
+  });
+};
+
+// Import/Export hooks
+export const useImportInventory = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (file: File) => inventoryService.importInventoryFromCSV(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Import successful",
+        description: "Inventory items have been successfully imported.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+export const useExportInventory = () => {
+  return useMutation({
+    mutationFn: inventoryService.exportInventoryToCSV,
+    onSuccess: (blob) => {
+      // Create a download link for the CSV file
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'inventory-export.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast({
+        title: "Export successful",
+        description: "Inventory items have been successfully exported to CSV.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Export failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};

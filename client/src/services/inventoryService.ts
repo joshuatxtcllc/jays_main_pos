@@ -1,165 +1,152 @@
-import { InventoryItem, InsertInventoryItem, Supplier, InsertSupplier, InventoryLocation, PurchaseOrder } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+import type { 
+  InventoryItem, 
+  InsertInventoryItem, 
+  Supplier, 
+  InsertSupplier,
+  InventoryLocation,
+  InsertInventoryLocation,
+  PurchaseOrder,
+  InsertPurchaseOrder,
+  InventoryTransaction,
+  InsertInventoryTransaction,
+  InventoryCategory
+} from "@shared/schema";
 
-// Function to fetch all inventory items
-export async function getAllInventoryItems(): Promise<InventoryItem[]> {
-  const response = await apiRequest("GET", "/api/inventory/items");
-  return await response.json();
-}
+const API_BASE = "/api/inventory";
 
-// Function to fetch an inventory item by ID
-export async function getInventoryItemById(id: number): Promise<InventoryItem> {
-  const response = await apiRequest("GET", `/api/inventory/items/${id}`);
-  return await response.json();
-}
+// Inventory Items
+export const getInventoryItems = async (): Promise<InventoryItem[]> => {
+  const res = await apiRequest("GET", `${API_BASE}/items`);
+  return res.json();
+};
 
-// Function to create a new inventory item
-export async function createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
-  const response = await apiRequest("POST", "/api/inventory/items", item);
-  // Invalidate the inventory items cache
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/items"] });
-  return await response.json();
-}
+export const getInventoryItem = async (id: number): Promise<InventoryItem> => {
+  const res = await apiRequest("GET", `${API_BASE}/items/${id}`);
+  return res.json();
+};
 
-// Function to update an inventory item
-export async function updateInventoryItem(id: number, item: Partial<InventoryItem>): Promise<InventoryItem> {
-  const response = await apiRequest("PATCH", `/api/inventory/items/${id}`, item);
-  // Invalidate specific item and all items caches
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/items", id] });
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/items"] });
-  return await response.json();
-}
+export const createInventoryItem = async (item: InsertInventoryItem): Promise<InventoryItem> => {
+  const res = await apiRequest("POST", `${API_BASE}/items`, item);
+  return res.json();
+};
 
-// Function to delete an inventory item
-export async function deleteInventoryItem(id: number): Promise<void> {
-  await apiRequest("DELETE", `/api/inventory/items/${id}`);
-  // Invalidate the inventory items cache
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/items"] });
-}
+export const updateInventoryItem = async (id: number, item: Partial<InventoryItem>): Promise<InventoryItem> => {
+  const res = await apiRequest("PATCH", `${API_BASE}/items/${id}`, item);
+  return res.json();
+};
 
-// Function to fetch low stock items
-export async function getLowStockItems(): Promise<InventoryItem[]> {
-  const response = await apiRequest("GET", "/api/inventory/items/low-stock");
-  return await response.json();
-}
+export const deleteInventoryItem = async (id: number): Promise<void> => {
+  await apiRequest("DELETE", `${API_BASE}/items/${id}`);
+};
 
-// Function to fetch all suppliers
-export async function getAllSuppliers(): Promise<Supplier[]> {
-  const response = await apiRequest("GET", "/api/inventory/suppliers");
-  return await response.json();
-}
+export const getLowStockItems = async (): Promise<InventoryItem[]> => {
+  const res = await apiRequest("GET", `${API_BASE}/items/low-stock`);
+  return res.json();
+};
 
-// Function to fetch a supplier by ID
-export async function getSupplierById(id: number): Promise<Supplier> {
-  const response = await apiRequest("GET", `/api/inventory/suppliers/${id}`);
-  return await response.json();
-}
+export const getItemByBarcode = async (barcode: string): Promise<InventoryItem> => {
+  const res = await apiRequest("GET", `${API_BASE}/items/barcode/${barcode}`);
+  return res.json();
+};
 
-// Function to create a new supplier
-export async function createSupplier(supplier: InsertSupplier): Promise<Supplier> {
-  const response = await apiRequest("POST", "/api/inventory/suppliers", supplier);
-  // Invalidate the suppliers cache
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/suppliers"] });
-  return await response.json();
-}
+// Suppliers
+export const getSuppliers = async (): Promise<Supplier[]> => {
+  const res = await apiRequest("GET", `${API_BASE}/suppliers`);
+  return res.json();
+};
 
-// Function to update a supplier
-export async function updateSupplier(id: number, supplier: Partial<Supplier>): Promise<Supplier> {
-  const response = await apiRequest("PATCH", `/api/inventory/suppliers/${id}`, supplier);
-  // Invalidate specific supplier and all suppliers caches
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/suppliers", id] });
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/suppliers"] });
-  return await response.json();
-}
+export const getSupplier = async (id: number): Promise<Supplier> => {
+  const res = await apiRequest("GET", `${API_BASE}/suppliers/${id}`);
+  return res.json();
+};
 
-// Function to delete a supplier
-export async function deleteSupplier(id: number): Promise<void> {
-  await apiRequest("DELETE", `/api/inventory/suppliers/${id}`);
-  // Invalidate the suppliers cache
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/suppliers"] });
-}
+export const createSupplier = async (supplier: InsertSupplier): Promise<Supplier> => {
+  const res = await apiRequest("POST", `${API_BASE}/suppliers`, supplier);
+  return res.json();
+};
 
-// Function to fetch all inventory locations
-export async function getAllLocations(): Promise<InventoryLocation[]> {
-  const response = await apiRequest("GET", "/api/inventory/locations");
-  return await response.json();
-}
+export const updateSupplier = async (id: number, supplier: Partial<Supplier>): Promise<Supplier> => {
+  const res = await apiRequest("PATCH", `${API_BASE}/suppliers/${id}`, supplier);
+  return res.json();
+};
 
-// Purchase order related functions
-export async function getAllPurchaseOrders(): Promise<PurchaseOrder[]> {
-  const response = await apiRequest("GET", "/api/inventory/purchase-orders");
-  return await response.json();
-}
+export const deleteSupplier = async (id: number): Promise<void> => {
+  await apiRequest("DELETE", `${API_BASE}/suppliers/${id}`);
+};
 
-export async function getPurchaseOrderById(id: number): Promise<PurchaseOrder> {
-  const response = await apiRequest("GET", `/api/inventory/purchase-orders/${id}`);
-  return await response.json();
-}
+// Inventory Locations
+export const getInventoryLocations = async (): Promise<InventoryLocation[]> => {
+  const res = await apiRequest("GET", `${API_BASE}/locations`);
+  return res.json();
+};
 
-export async function createPurchaseOrder(poData: any): Promise<PurchaseOrder> {
-  const response = await apiRequest("POST", "/api/inventory/purchase-orders", poData);
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/purchase-orders"] });
-  return await response.json();
-}
+export const getInventoryLocation = async (id: number): Promise<InventoryLocation> => {
+  const res = await apiRequest("GET", `${API_BASE}/locations/${id}`);
+  return res.json();
+};
 
-// Inventory transaction functions
-export async function createInventoryTransaction(transactionData: any): Promise<any> {
-  const response = await apiRequest("POST", "/api/inventory/transactions", transactionData);
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/items"] });
-  return await response.json();
-}
+export const createInventoryLocation = async (location: InsertInventoryLocation): Promise<InventoryLocation> => {
+  const res = await apiRequest("POST", `${API_BASE}/locations`, location);
+  return res.json();
+};
 
-// Barcode scanning function - for future integration with barcode scanner
-export async function lookupItemByBarcode(barcode: string): Promise<InventoryItem | null> {
-  try {
-    const response = await apiRequest("GET", `/api/inventory/barcode/${barcode}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error looking up barcode:", error);
-    return null;
-  }
-}
+// Purchase Orders
+export const getPurchaseOrders = async (): Promise<PurchaseOrder[]> => {
+  const res = await apiRequest("GET", `${API_BASE}/purchase-orders`);
+  return res.json();
+};
 
-// Function to get current inventory valuation
-export async function getInventoryValuation(): Promise<{
-  totalValue: number;
-  itemCount: number;
-  valuationByCategory: { category: string; value: number }[];
-}> {
-  const response = await apiRequest("GET", "/api/inventory/valuation");
-  return await response.json();
-}
+export const getPurchaseOrder = async (id: number): Promise<PurchaseOrder> => {
+  const res = await apiRequest("GET", `${API_BASE}/purchase-orders/${id}`);
+  return res.json();
+};
 
-// Function to generate recommended purchase orders based on reorder levels
-export async function generateRecommendedPurchaseOrders(): Promise<any> {
-  const response = await apiRequest("GET", "/api/inventory/recommended-orders");
-  return await response.json();
-}
+export const createPurchaseOrder = async (
+  purchaseOrder: InsertPurchaseOrder, 
+  lines: any[]
+): Promise<PurchaseOrder> => {
+  const res = await apiRequest("POST", `${API_BASE}/purchase-orders`, {
+    ...purchaseOrder,
+    lines
+  });
+  return res.json();
+};
 
-// Function to import inventory items from CSV
-export async function importInventoryFromCSV(file: File): Promise<{ 
-  success: boolean; 
-  importedCount: number;
-  errors: string[] 
-}> {
+// Inventory Transactions
+export const createInventoryTransaction = async (
+  transaction: InsertInventoryTransaction
+): Promise<InventoryTransaction> => {
+  const res = await apiRequest("POST", `${API_BASE}/transactions`, transaction);
+  return res.json();
+};
+
+// Inventory Valuation
+export const getInventoryValuation = async (): Promise<any> => {
+  const res = await apiRequest("GET", `${API_BASE}/valuation`);
+  return res.json();
+};
+
+// Recommended Purchase Orders
+export const getRecommendedPurchaseOrders = async (): Promise<any> => {
+  const res = await apiRequest("GET", `${API_BASE}/recommended-purchase-orders`);
+  return res.json();
+};
+
+// Import/Export
+export const importInventoryFromCSV = async (file: File): Promise<any> => {
   const formData = new FormData();
   formData.append("csvFile", file);
   
-  const response = await fetch("/api/inventory/import", {
+  const res = await fetch(`${API_BASE}/import-csv`, {
     method: "POST",
     body: formData,
   });
   
-  queryClient.invalidateQueries({ queryKey: ["/api/inventory/items"] });
-  return await response.json();
-}
+  return res.json();
+};
 
-// Function to export inventory items to CSV
-export async function exportInventoryToCSV(): Promise<string> {
-  const response = await apiRequest("GET", "/api/inventory/export", null, {
-    responseType: "blob"
-  });
-  
-  const blob = await response.blob();
-  return URL.createObjectURL(blob);
-}
+export const exportInventoryToCSV = async (): Promise<Blob> => {
+  const res = await apiRequest("GET", `${API_BASE}/export-csv`);
+  return res.blob();
+};
