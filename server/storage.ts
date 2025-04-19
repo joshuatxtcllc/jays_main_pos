@@ -149,7 +149,7 @@ export interface IStorage {
 }
 
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   // Customer methods
@@ -970,10 +970,19 @@ export class DatabaseStorage implements IStorage {
 
   async getAllMaterialOrders(): Promise<MaterialOrder[]> {
     try {
-      return await db
-        .select()
-        .from(materialOrders)
-        .orderBy(desc(materialOrders.createdAt));
+      // Use SQL directly to avoid column mismatch issues
+      const result = await db.execute<MaterialOrder[]>(sql`
+        SELECT id, material_type, material_id, material_name, 
+        quantity, status, source_order_id, order_date, expected_arrival, 
+        actual_arrival, supplier_name, supplier_order_number, notes, 
+        cost_per_unit, total_cost, priority, hub_order_id, 
+        hub_sync_status, hub_last_sync_date, hub_tracking_info, 
+        hub_estimated_delivery, hub_supplier_notes, order_reference, 
+        unit_measurement, created_at 
+        FROM material_orders
+        ORDER BY created_at DESC
+      `);
+      return result;
     } catch (error) {
       console.error('Error in getAllMaterialOrders:', error);
       // If there's an error with missing columns, return an empty array
