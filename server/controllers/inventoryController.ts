@@ -7,7 +7,7 @@ import {
   insertPurchaseOrderSchema,
   insertInventoryTransactionSchema
 } from "@shared/schema";
-import { validateRequest } from "../middleware/validation";
+import { validateBody, validateParams, validateQuery } from "../middleware/validation";
 
 // Inventory Items controllers
 export const getAllInventoryItems = async (req: Request, res: Response) => {
@@ -35,7 +35,7 @@ export const getInventoryItemById = async (req: Request, res: Response) => {
 };
 
 export const createInventoryItem = [
-  validateRequest(insertInventoryItemSchema),
+  validateBody(insertInventoryItemSchema),
   async (req: Request, res: Response) => {
     try {
       const newItem = await storage.createInventoryItem(req.body);
@@ -108,7 +108,7 @@ export const getSupplierById = async (req: Request, res: Response) => {
 };
 
 export const createSupplier = [
-  validateRequest(insertSupplierSchema),
+  validateBody(insertSupplierSchema),
   async (req: Request, res: Response) => {
     try {
       const newSupplier = await storage.createSupplier(req.body);
@@ -171,7 +171,7 @@ export const getLocationById = async (req: Request, res: Response) => {
 };
 
 export const createLocation = [
-  validateRequest(insertInventoryLocationSchema),
+  validateBody(insertInventoryLocationSchema),
   async (req: Request, res: Response) => {
     try {
       const newLocation = await storage.createInventoryLocation(req.body);
@@ -209,7 +209,7 @@ export const getPurchaseOrderById = async (req: Request, res: Response) => {
 };
 
 export const createPurchaseOrder = [
-  validateRequest(insertPurchaseOrderSchema),
+  validateBody(insertPurchaseOrderSchema),
   async (req: Request, res: Response) => {
     try {
       // Extract purchase order and lines from request
@@ -227,7 +227,7 @@ export const createPurchaseOrder = [
 
 // Inventory Transactions controller
 export const createInventoryTransaction = [
-  validateRequest(insertInventoryTransactionSchema),
+  validateBody(insertInventoryTransactionSchema),
   async (req: Request, res: Response) => {
     try {
       const newTransaction = await storage.createInventoryTransaction(req.body);

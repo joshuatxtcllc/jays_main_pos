@@ -44,6 +44,7 @@ import {
   calculateMatPrice, 
   calculateGlassPrice 
 } from "./services/pricingService";
+import inventoryRoutes from "./routes/inventoryRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
@@ -1423,6 +1424,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Update a material order status in both systems
   app.patch('/api/hub/material-orders/:id/status', updateOrderStatus);
+
+  // Register inventory management routes
+  app.use('/api/inventory', inventoryRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

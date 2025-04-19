@@ -1030,6 +1030,536 @@ export class DatabaseStorage implements IStorage {
       .delete(materialOrders)
       .where(eq(materialOrders.id, id));
   }
+
+  // Inventory Management System Methods
+
+  // Inventory Items
+  async getAllInventoryItems(): Promise<InventoryItem[]> {
+    try {
+      return await db
+        .select()
+        .from(inventoryItems)
+        .orderBy(asc(inventoryItems.name));
+    } catch (error) {
+      console.error('Error in getAllInventoryItems:', error);
+      return [];
+    }
+  }
+
+  async getInventoryItem(id: number): Promise<InventoryItem | undefined> {
+    try {
+      const [item] = await db
+        .select()
+        .from(inventoryItems)
+        .where(eq(inventoryItems.id, id));
+      return item;
+    } catch (error) {
+      console.error('Error in getInventoryItem:', error);
+      return undefined;
+    }
+  }
+
+  async getInventoryItemByBarcode(barcode: string): Promise<InventoryItem | undefined> {
+    try {
+      const [item] = await db
+        .select()
+        .from(inventoryItems)
+        .where(eq(inventoryItems.barcode, barcode));
+      return item;
+    } catch (error) {
+      console.error('Error in getInventoryItemByBarcode:', error);
+      return undefined;
+    }
+  }
+
+  async createInventoryItem(inventoryItem: InsertInventoryItem): Promise<InventoryItem> {
+    try {
+      // Generate SKU if not provided
+      if (!inventoryItem.sku) {
+        inventoryItem.sku = `INV-${Date.now().toString(36).toUpperCase()}`;
+      }
+
+      const [newItem] = await db
+        .insert(inventoryItems)
+        .values(inventoryItem)
+        .returning();
+      
+      // Create an initial inventory transaction
+      if (inventoryItem.initialQuantity) {
+        await this.createInventoryTransaction({
+          itemId: newItem.id,
+          type: 'initial',
+          quantity: inventoryItem.initialQuantity,
+          unitCost: inventoryItem.costPerUnit,
+          notes: 'Initial inventory setup'
+        });
+      }
+      
+      return newItem;
+    } catch (error) {
+      console.error('Error in createInventoryItem:', error);
+      throw error;
+    }
+  }
+
+  async updateInventoryItem(id: number, item: Partial<InventoryItem>): Promise<InventoryItem> {
+    try {
+      const [updatedItem] = await db
+        .update(inventoryItems)
+        .set({
+          ...item,
+          updatedAt: new Date()
+        })
+        .where(eq(inventoryItems.id, id))
+        .returning();
+      return updatedItem;
+    } catch (error) {
+      console.error('Error in updateInventoryItem:', error);
+      throw error;
+    }
+  }
+
+  async deleteInventoryItem(id: number): Promise<void> {
+    try {
+      // First delete all transactions related to this item
+      await db
+        .delete(inventoryTransactions)
+        .where(eq(inventoryTransactions.itemId, id));
+      
+      // Then delete the item itself
+      await db
+        .delete(inventoryItems)
+        .where(eq(inventoryItems.id, id));
+    } catch (error) {
+      console.error('Error in deleteInventoryItem:', error);
+      throw error;
+    }
+  }
+
+  // Low stock items
+  async getLowStockItems(): Promise<InventoryItem[]> {
+    try {
+      // Get all items where current stock is at or below reorder level
+      const items = await db.select().from(inventoryItems);
+      const lowStockItems: InventoryItem[] = [];
+      
+      for (const item of items) {
+        const currentStock = await this.getItemCurrentStock(item.id);
+        if (currentStock <= Number(item.reorderLevel)) {
+          lowStockItems.push({
+            ...item,
+            currentStock
+          });
+        }
+      }
+      
+      return lowStockItems;
+    } catch (error) {
+      console.error('Error in getLowStockItems:', error);
+      return [];
+    }
+  }
+
+  // Get current stock level for an item based on transactions
+  async getItemCurrentStock(itemId: number): Promise<number> {
+    try {
+      const transactions = await db
+        .select()
+        .from(inventoryTransactions)
+        .where(eq(inventoryTransactions.itemId, itemId));
+      
+      let currentStock = 0;
+      for (const transaction of transactions) {
+        const quantity = Number(transaction.quantity);
+        switch (transaction.type) {
+          case 'purchase':
+          case 'initial':
+          case 'adjustment':
+            currentStock += quantity;
+            break;
+          case 'sale':
+          case 'scrap':
+            currentStock -= quantity;
+            break;
+          // For transfers, we'd need to track from/to locations
+          // but we're keeping it simple for now
+        }
+      }
+      
+      return currentStock;
+    } catch (error) {
+      console.error('Error in getItemCurrentStock:', error);
+      return 0;
+    }
+  }
+
+  // Inventory Transactions
+  async createInventoryTransaction(transaction: InsertInventoryTransaction): Promise<InventoryTransaction> {
+    try {
+      const [newTransaction] = await db
+        .insert(inventoryTransactions)
+        .values(transaction)
+        .returning();
+      
+      // Update last count date if this is a count transaction
+      if (transaction.type === 'count') {
+        await db
+          .update(inventoryItems)
+          .set({ 
+            lastCountDate: new Date(),
+            updatedAt: new Date()
+          })
+          .where(eq(inventoryItems.id, transaction.itemId));
+      }
+      
+      return newTransaction;
+    } catch (error) {
+      console.error('Error in createInventoryTransaction:', error);
+      throw error;
+    }
+  }
+
+  // Suppliers
+  async getAllSuppliers(): Promise<Supplier[]> {
+    try {
+      return await db
+        .select()
+        .from(suppliers)
+        .orderBy(asc(suppliers.name));
+    } catch (error) {
+      console.error('Error in getAllSuppliers:', error);
+      return [];
+    }
+  }
+
+  async getSupplier(id: number): Promise<Supplier | undefined> {
+    try {
+      const [supplier] = await db
+        .select()
+        .from(suppliers)
+        .where(eq(suppliers.id, id));
+      return supplier;
+    } catch (error) {
+      console.error('Error in getSupplier:', error);
+      return undefined;
+    }
+  }
+
+  async createSupplier(supplier: InsertSupplier): Promise<Supplier> {
+    try {
+      const [newSupplier] = await db
+        .insert(suppliers)
+        .values(supplier)
+        .returning();
+      return newSupplier;
+    } catch (error) {
+      console.error('Error in createSupplier:', error);
+      throw error;
+    }
+  }
+
+  async updateSupplier(id: number, supplier: Partial<Supplier>): Promise<Supplier> {
+    try {
+      const [updatedSupplier] = await db
+        .update(suppliers)
+        .set(supplier)
+        .where(eq(suppliers.id, id))
+        .returning();
+      return updatedSupplier;
+    } catch (error) {
+      console.error('Error in updateSupplier:', error);
+      throw error;
+    }
+  }
+
+  async deleteSupplier(id: number): Promise<void> {
+    try {
+      await db
+        .delete(suppliers)
+        .where(eq(suppliers.id, id));
+    } catch (error) {
+      console.error('Error in deleteSupplier:', error);
+      throw error;
+    }
+  }
+
+  // Inventory Locations
+  async getAllInventoryLocations(): Promise<InventoryLocation[]> {
+    try {
+      return await db
+        .select()
+        .from(inventoryLocations)
+        .orderBy(asc(inventoryLocations.name));
+    } catch (error) {
+      console.error('Error in getAllInventoryLocations:', error);
+      return [];
+    }
+  }
+
+  async getInventoryLocation(id: number): Promise<InventoryLocation | undefined> {
+    try {
+      const [location] = await db
+        .select()
+        .from(inventoryLocations)
+        .where(eq(inventoryLocations.id, id));
+      return location;
+    } catch (error) {
+      console.error('Error in getInventoryLocation:', error);
+      return undefined;
+    }
+  }
+
+  async createInventoryLocation(location: InsertInventoryLocation): Promise<InventoryLocation> {
+    try {
+      const [newLocation] = await db
+        .insert(inventoryLocations)
+        .values(location)
+        .returning();
+      return newLocation;
+    } catch (error) {
+      console.error('Error in createInventoryLocation:', error);
+      throw error;
+    }
+  }
+
+  // Purchase Orders and Lines
+  async getAllPurchaseOrders(): Promise<PurchaseOrder[]> {
+    try {
+      return await db
+        .select()
+        .from(purchaseOrders)
+        .orderBy(desc(purchaseOrders.createdAt));
+    } catch (error) {
+      console.error('Error in getAllPurchaseOrders:', error);
+      return [];
+    }
+  }
+
+  async getPurchaseOrder(id: number): Promise<PurchaseOrder | undefined> {
+    try {
+      const [order] = await db
+        .select()
+        .from(purchaseOrders)
+        .where(eq(purchaseOrders.id, id));
+      return order;
+    } catch (error) {
+      console.error('Error in getPurchaseOrder:', error);
+      return undefined;
+    }
+  }
+
+  async createPurchaseOrderWithLines(
+    orderData: Omit<InsertPurchaseOrder, 'poNumber'>, 
+    lines: InsertPurchaseOrderLine[]
+  ): Promise<PurchaseOrder> {
+    try {
+      // Generate a PO number
+      const poNumber = `PO-${Date.now().toString(36).toUpperCase()}`;
+      
+      // Calculate totals
+      let subtotal = 0;
+      for (const line of lines) {
+        const lineTotal = Number(line.quantity) * Number(line.unitCost);
+        subtotal += lineTotal;
+      }
+      
+      // Calculate tax and total
+      const tax = subtotal * 0.08; // 8% tax
+      const total = subtotal + tax + Number(orderData.shipping || 0);
+      
+      // Create the purchase order
+      const [purchaseOrder] = await db
+        .insert(purchaseOrders)
+        .values({
+          ...orderData,
+          poNumber,
+          subtotal: subtotal.toString(),
+          tax: tax.toString(),
+          total: total.toString()
+        })
+        .returning();
+      
+      // Create each line item
+      for (const line of lines) {
+        const lineTotal = Number(line.quantity) * Number(line.unitCost);
+        await db
+          .insert(purchaseOrderLines)
+          .values({
+            ...line,
+            purchaseOrderId: purchaseOrder.id,
+            lineTotal: lineTotal.toString()
+          });
+      }
+      
+      return purchaseOrder;
+    } catch (error) {
+      console.error('Error in createPurchaseOrderWithLines:', error);
+      throw error;
+    }
+  }
+
+  // Valuation
+  async getInventoryValuation(): Promise<{
+    totalValue: number;
+    itemCount: number;
+    valuationByCategory: { category: string; value: number }[];
+  }> {
+    try {
+      const items = await this.getAllInventoryItems();
+      let totalValue = 0;
+      const valueByCategory: Record<string, number> = {};
+      
+      for (const item of items) {
+        const currentStock = await this.getItemCurrentStock(item.id);
+        const itemValue = currentStock * Number(item.costPerUnit);
+        totalValue += itemValue;
+        
+        // Add to category valuation
+        if (item.categoryId) {
+          const category = await this.getInventoryCategory(item.categoryId);
+          const categoryName = category?.name || 'Uncategorized';
+          
+          if (!valueByCategory[categoryName]) {
+            valueByCategory[categoryName] = 0;
+          }
+          
+          valueByCategory[categoryName] += itemValue;
+        } else {
+          if (!valueByCategory['Uncategorized']) {
+            valueByCategory['Uncategorized'] = 0;
+          }
+          valueByCategory['Uncategorized'] += itemValue;
+        }
+      }
+      
+      const valuationByCategory = Object.entries(valueByCategory).map(([category, value]) => ({
+        category,
+        value
+      }));
+      
+      return {
+        totalValue,
+        itemCount: items.length,
+        valuationByCategory
+      };
+    } catch (error) {
+      console.error('Error in getInventoryValuation:', error);
+      return {
+        totalValue: 0,
+        itemCount: 0,
+        valuationByCategory: []
+      };
+    }
+  }
+
+  // Get inventory category by ID
+  async getInventoryCategory(id: number): Promise<InventoryCategory | undefined> {
+    try {
+      const [category] = await db
+        .select()
+        .from(inventoryCategories)
+        .where(eq(inventoryCategories.id, id));
+      return category;
+    } catch (error) {
+      console.error('Error in getInventoryCategory:', error);
+      return undefined;
+    }
+  }
+
+  // Generate recommended purchase orders
+  async generateRecommendedPurchaseOrders(): Promise<{
+    supplierId: number;
+    supplierName: string;
+    items: {
+      itemId: number;
+      name: string;
+      sku: string;
+      currentStock: number;
+      reorderLevel: number;
+      reorderQuantity: number;
+    }[];
+  }[]> {
+    try {
+      const lowStockItems = await this.getLowStockItems();
+      const supplierMap: Record<number, {
+        supplierId: number;
+        supplierName: string;
+        items: {
+          itemId: number;
+          name: string;
+          sku: string;
+          currentStock: number;
+          reorderLevel: number;
+          reorderQuantity: number;
+        }[];
+      }> = {};
+      
+      for (const item of lowStockItems) {
+        if (item.supplierId) {
+          const supplier = await this.getSupplier(item.supplierId);
+          
+          if (supplier) {
+            if (!supplierMap[supplier.id]) {
+              supplierMap[supplier.id] = {
+                supplierId: supplier.id,
+                supplierName: supplier.name,
+                items: []
+              };
+            }
+            
+            supplierMap[supplier.id].items.push({
+              itemId: item.id,
+              name: item.name,
+              sku: item.sku,
+              currentStock: await this.getItemCurrentStock(item.id),
+              reorderLevel: Number(item.reorderLevel),
+              reorderQuantity: Number(item.reorderQuantity || item.reorderLevel)
+            });
+          }
+        }
+      }
+      
+      return Object.values(supplierMap);
+    } catch (error) {
+      console.error('Error in generateRecommendedPurchaseOrders:', error);
+      return [];
+    }
+  }
+
+  // CSV Import/Export
+  async importInventoryFromCSV(filePath: string): Promise<{ 
+    success: boolean; 
+    importedCount: number;
+    errors: string[] 
+  }> {
+    try {
+      // This would normally be implemented with a CSV parsing library
+      // For now we'll just return a placeholder
+      return {
+        success: true,
+        importedCount: 0,
+        errors: []
+      };
+    } catch (error) {
+      console.error('Error in importInventoryFromCSV:', error);
+      return {
+        success: false,
+        importedCount: 0,
+        errors: ['Failed to import CSV data']
+      };
+    }
+  }
+
+  async exportInventoryToCSV(): Promise<string> {
+    try {
+      // This would normally generate a CSV file from inventory data
+      // For now we'll just return a placeholder
+      return 'id,sku,name,description,quantity\n';
+    } catch (error) {
+      console.error('Error in exportInventoryToCSV:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
