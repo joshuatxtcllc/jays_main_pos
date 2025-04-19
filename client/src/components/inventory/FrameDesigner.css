@@ -246,6 +246,11 @@
   object-fit: contain;
 }
 
+.bottom-mat {
+  box-sizing: border-box;
+  pointer-events: none;
+}
+
 .summary-details {
   width: 100%;
   display: flex;
