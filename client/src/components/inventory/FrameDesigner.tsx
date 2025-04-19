@@ -5,7 +5,8 @@ import {
   RefreshCw, 
   ShoppingCart, 
   Maximize2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Layers
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import './FrameDesigner.css';
@@ -39,10 +40,13 @@ interface FrameDesignerProps {
     image: string | null;
     frame: FrameOption | null;
     mat: MatOption | null;
+    bottomMat?: MatOption | null;
     dimensions: {
       width: number;
       height: number;
       matWidth: number;
+      bottomMatWidth?: number;
+      useBottomMat?: boolean;
     }
   }) => void;
   frameOptions?: FrameOption[];
@@ -65,11 +69,14 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
   // State for selected options
   const [selectedFrame, setSelectedFrame] = useState<FrameOption | null>(null);
   const [selectedMat, setSelectedMat] = useState<MatOption | null>(matOptions[0]);
+  const [selectedBottomMat, setSelectedBottomMat] = useState<MatOption | null>(null);
+  const [showBottomMat, setShowBottomMat] = useState<boolean>(false);
   
   // State for dimensions
   const [artworkWidth, setArtworkWidth] = useState<number>(16);
   const [artworkHeight, setArtworkHeight] = useState<number>(20);
   const [matWidth, setMatWidth] = useState<number>(2);
+  const [bottomMatWidth, setBottomMatWidth] = useState<number>(0.25);
   
   // Filter options to only show in-stock items
   const availableFrames = frameOptions.filter(frame => frame.inStock);
@@ -82,7 +89,26 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
   // Calculate costs
   const framePrice = selectedFrame ? selectedFrame.price * ((artworkWidth + artworkHeight) / 12) : 0;
   const matPrice = selectedMat ? selectedMat.price * (artworkWidth * artworkHeight / 144) : 0;
-  const totalPrice = framePrice + matPrice;
+  const bottomMatPrice = (showBottomMat && selectedBottomMat) ? 
+    selectedBottomMat.price * (artworkWidth * artworkHeight / 144) * 0.5 : 0; // 50% of regular mat price due to smaller size
+  const totalPrice = framePrice + matPrice + bottomMatPrice;
+  
+  // Handle bottom mat change
+  const handleBottomMatWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    if (value >= 0.125 && value <= 0.5) {
+      setBottomMatWidth(value);
+    }
+  };
+  
+  // Handle bottom mat toggle
+  const handleBottomMatToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setShowBottomMat(e.target.checked);
+    if (e.target.checked && !selectedBottomMat && availableMats.length > 0) {
+      // Default to first mat in the list if none selected
+      setSelectedBottomMat(availableMats[0]);
+    }
+  };
   
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -179,10 +205,13 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
       image: uploadedImage,
       frame: selectedFrame,
       mat: selectedMat,
+      bottomMat: showBottomMat ? selectedBottomMat : null,
       dimensions: {
         width: artworkWidth,
         height: artworkHeight,
-        matWidth: matWidth
+        matWidth: matWidth,
+        bottomMatWidth: showBottomMat ? bottomMatWidth : undefined,
+        useBottomMat: showBottomMat
       }
     };
     
@@ -310,6 +339,61 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
                 className="input w-full"
               />
             </div>
+            
+            <div className="mt-4 bottom-mat-section">
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="showBottomMat" 
+                  checked={showBottomMat}
+                  onChange={handleBottomMatToggle}
+                  className="mr-2"
+                />
+                <label htmlFor="showBottomMat" className="flex items-center cursor-pointer">
+                  <Layers className="h-4 w-4 mr-1" />
+                  Add Bottom Mat
+                </label>
+              </div>
+              
+              {showBottomMat && (
+                <div className="mt-2">
+                  <div className="mb-2">
+                    <label htmlFor="bottomMatWidth">Bottom Mat Width (inches)</label>
+                    <input 
+                      type="number" 
+                      id="bottomMatWidth" 
+                      value={bottomMatWidth} 
+                      onChange={handleBottomMatWidthChange} 
+                      step="0.125"
+                      min="0.125"
+                      max="0.5"
+                      className="input w-full"
+                    />
+                    <p className="text-xs mt-1 text-secondary">
+                      Recommended: between 0.125" and 0.5"
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label>Bottom Mat Color</label>
+                    <div className="mat-options mt-2">
+                      {availableMats.map(mat => (
+                        <div 
+                          key={`bottom-${mat.id}`} 
+                          className={`mat-option ${selectedBottomMat?.id === mat.id ? 'selected' : ''}`}
+                          onClick={() => setSelectedBottomMat(mat)}
+                        >
+                          <div className="mat-color-preview" style={{ backgroundColor: mat.color }}></div>
+                          <div>
+                            <div>{mat.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
@@ -341,14 +425,29 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
                       borderWidth: `${selectedFrame.width / 3}rem`,
                       borderColor: selectedFrame.color,
                       padding: selectedMat ? `${matWidth / 3}rem` : '0',
-                      backgroundColor: selectedMat ? selectedMat.color : 'transparent'
+                      backgroundColor: selectedMat ? selectedMat.color : 'transparent',
+                      position: 'relative'
                     }}
                   >
-                    <img src={uploadedImage} alt="Framed artwork" />
+                    {showBottomMat && selectedBottomMat && (
+                      <div 
+                        className="bottom-mat" 
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          border: `${bottomMatWidth / 3}rem solid ${selectedBottomMat.color}`,
+                          zIndex: 1
+                        }}
+                      />
+                    )}
+                    <img src={uploadedImage} alt="Framed artwork" style={{ position: 'relative', zIndex: 2 }} />
                   </div>
                 ) : (
                   <div className="preview-placeholder">
-                    <ArrowsExpand size={48} />
+                    <Maximize2 size={48} />
                     <p>Select a frame to see preview</p>
                   </div>
                 )}
