@@ -172,12 +172,12 @@ export function InventoryTable({ onAdd, onEdit, onView }: InventoryTableProps) {
             )}
           </div>
           
-          <Select value={selectedCategory || ""} onValueChange={(value) => setSelectedCategory(value || null)}>
+          <Select value={selectedCategory || "all"} onValueChange={(value) => setSelectedCategory(value === "all" ? null : value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Categories</SelectItem>
+              <SelectItem value="all">All Categories</SelectItem>
               {categories.map((category) => (
                 <SelectItem key={category} value={category}>
                   Category {category}
