@@ -1,48 +1,49 @@
-/**
- * Inventory Routes
- * 
- * This file defines all the API routes for the inventory management system.
- */
-
-import { Router } from 'express';
+import express from 'express';
+import multer from 'multer';
 import * as inventoryController from '../controllers/inventoryController';
 
-const router = Router();
+const router = express.Router();
+const upload = multer({ dest: 'uploads/' });
 
 // Inventory Items routes
-router.get('/items', inventoryController.getInventoryItems);
-router.get('/items/:id', inventoryController.getInventoryItem);
+router.get('/items', inventoryController.getAllInventoryItems);
+router.get('/items/low-stock', inventoryController.getLowStockItems);
+router.get('/items/:id', inventoryController.getInventoryItemById);
 router.post('/items', inventoryController.createInventoryItem);
 router.patch('/items/:id', inventoryController.updateInventoryItem);
 router.delete('/items/:id', inventoryController.deleteInventoryItem);
 
-// Stock Management routes
-router.post('/stock/:id', inventoryController.updateStockLevel);
-router.post('/stock/transfer/:id', inventoryController.transferStock);
+// Suppliers routes
+router.get('/suppliers', inventoryController.getAllSuppliers);
+router.get('/suppliers/:id', inventoryController.getSupplierById);
+router.post('/suppliers', inventoryController.createSupplier);
+router.patch('/suppliers/:id', inventoryController.updateSupplier);
+router.delete('/suppliers/:id', inventoryController.deleteSupplier);
 
-// Inventory Transactions routes
-router.get('/transactions', inventoryController.getInventoryTransactions);
+// Locations routes
+router.get('/locations', inventoryController.getAllLocations);
+router.get('/locations/:id', inventoryController.getLocationById);
+router.post('/locations', inventoryController.createLocation);
 
-// Vendor Management routes
-router.get('/vendors', inventoryController.getVendors);
-router.get('/vendors/:id', inventoryController.getVendor);
-router.post('/vendors', inventoryController.createVendor);
-router.patch('/vendors/:id', inventoryController.updateVendor);
-router.delete('/vendors/:id', inventoryController.deleteVendor);
-
-// Purchase Order routes
-router.get('/purchase-orders', inventoryController.getPurchaseOrders);
-router.get('/purchase-orders/:id', inventoryController.getPurchaseOrder);
+// Purchase Orders routes
+router.get('/purchase-orders', inventoryController.getAllPurchaseOrders);
+router.get('/purchase-orders/:id', inventoryController.getPurchaseOrderById);
 router.post('/purchase-orders', inventoryController.createPurchaseOrder);
-router.patch('/purchase-orders/:id', inventoryController.updatePurchaseOrder);
-router.patch('/purchase-orders/items/:id', inventoryController.updatePurchaseOrderItem);
-router.delete('/purchase-orders/:id', inventoryController.deletePurchaseOrder);
 
-// Report routes
-router.get('/low-stock', inventoryController.getLowStockAlerts);
-router.get('/reorder-report', inventoryController.getReorderReport);
+// Inventory Transactions route
+router.post('/transactions', inventoryController.createInventoryTransaction);
+
+// Barcode lookup
+router.get('/barcode/:barcode', inventoryController.lookupItemByBarcode);
+
+// Inventory valuation
 router.get('/valuation', inventoryController.getInventoryValuation);
-router.get('/activity', inventoryController.getInventoryActivity);
-router.post('/purchase-orders/auto-generate', inventoryController.createAutomaticPurchaseOrders);
+
+// Recommended purchase orders
+router.get('/recommended-orders', inventoryController.generateRecommendedPurchaseOrders);
+
+// CSV Import/Export
+router.post('/import', upload.single('csvFile'), inventoryController.importInventoryFromCSV);
+router.get('/export', inventoryController.exportInventoryToCSV);
 
 export default router;

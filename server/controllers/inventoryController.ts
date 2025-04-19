@@ -1,569 +1,305 @@
-/**
- * Inventory Controller
- * 
- * Handles all inventory API endpoints including:
- * - Inventory items
- * - Stock management
- * - Transactions
- * - Vendors
- * - Purchase orders
- * - Reports
- */
-
-import { Request, Response } from 'express';
-import { log } from '../vite';
-import * as inventoryService from '../services/inventoryService';
+import { Request, Response } from "express";
+import { storage } from "../storage";
 import { 
   insertInventoryItemSchema, 
-  insertVendorSchema,
-  insertPurchaseOrderSchema, 
-  insertPurchaseOrderItemSchema 
-} from '@shared/inventory-schema';
-import { ZodError } from 'zod';
+  insertSupplierSchema, 
+  insertInventoryLocationSchema,
+  insertPurchaseOrderSchema,
+  insertInventoryTransactionSchema
+} from "@shared/schema";
+import { validateRequest } from "../middleware/validation";
 
-/**
- * Inventory Items Endpoints
- */
-
-// Get all inventory items with optional filtering
-export async function getInventoryItems(req: Request, res: Response) {
+// Inventory Items controllers
+export const getAllInventoryItems = async (req: Request, res: Response) => {
   try {
-    const filters = {
-      type: req.query.type as string,
-      location: req.query.location as string,
-      lowStock: req.query.lowStock === 'true',
-      search: req.query.search as string
-    };
-    
-    const items = await inventoryService.getInventoryItemsWithStock(filters);
+    const items = await storage.getAllInventoryItems();
     res.json(items);
   } catch (error) {
-    log(`Error in getInventoryItems: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get inventory items' });
+    console.error("Error fetching inventory items:", error);
+    res.status(500).json({ error: "Failed to fetch inventory items" });
   }
-}
+};
 
-// Get a single inventory item by ID
-export async function getInventoryItem(req: Request, res: Response) {
+export const getInventoryItemById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const item = await inventoryService.getInventoryItemById(id);
-    
+    const item = await storage.getInventoryItem(parseInt(id));
     if (!item) {
-      return res.status(404).json({ error: 'Inventory item not found' });
+      return res.status(404).json({ error: "Inventory item not found" });
     }
-    
     res.json(item);
   } catch (error) {
-    log(`Error in getInventoryItem: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get inventory item' });
+    console.error(`Error fetching inventory item with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to fetch inventory item" });
   }
-}
+};
 
-// Create a new inventory item
-export async function createInventoryItem(req: Request, res: Response) {
-  try {
-    // Validate request body
-    const validatedData = insertInventoryItemSchema.parse(req.body);
-    
-    // Create the item
-    const item = await inventoryService.createInventoryItem(validatedData);
-    res.status(201).json(item);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
+export const createInventoryItem = [
+  validateRequest(insertInventoryItemSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const newItem = await storage.createInventoryItem(req.body);
+      res.status(201).json(newItem);
+    } catch (error) {
+      console.error("Error creating inventory item:", error);
+      res.status(500).json({ error: "Failed to create inventory item" });
     }
-    
-    log(`Error in createInventoryItem: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to create inventory item' });
   }
-}
+];
 
-// Update an inventory item
-export async function updateInventoryItem(req: Request, res: Response) {
+export const updateInventoryItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
-    // Validate request body
-    const validatedData = insertInventoryItemSchema.partial().parse(req.body);
-    
-    // Update the item
-    const item = await inventoryService.updateInventoryItem(id, validatedData);
-    res.json(item);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
+    const updatedItem = await storage.updateInventoryItem(parseInt(id), req.body);
+    if (!updatedItem) {
+      return res.status(404).json({ error: "Inventory item not found" });
     }
-    
-    log(`Error in updateInventoryItem: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to update inventory item' });
+    res.json(updatedItem);
+  } catch (error) {
+    console.error(`Error updating inventory item with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to update inventory item" });
   }
-}
+};
 
-// Delete an inventory item
-export async function deleteInventoryItem(req: Request, res: Response) {
+export const deleteInventoryItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    await inventoryService.deleteInventoryItem(id);
+    await storage.deleteInventoryItem(parseInt(id));
     res.status(204).send();
   } catch (error) {
-    log(`Error in deleteInventoryItem: ${error}`, 'inventoryController');
-    
-    // Provide better error messages for specific cases
-    if (error.message?.includes('existing stock')) {
-      return res.status(400).json({
-        error: 'Cannot delete inventory item with existing stock'
-      });
-    }
-    
-    res.status(500).json({ error: 'Failed to delete inventory item' });
+    console.error(`Error deleting inventory item with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to delete inventory item" });
   }
-}
+};
 
-/**
- * Stock Management Endpoints
- */
+export const getLowStockItems = async (req: Request, res: Response) => {
+  try {
+    const items = await storage.getLowStockItems();
+    res.json(items);
+  } catch (error) {
+    console.error("Error fetching low stock items:", error);
+    res.status(500).json({ error: "Failed to fetch low stock items" });
+  }
+};
 
-// Update stock level for an item
-export async function updateStockLevel(req: Request, res: Response) {
+// Suppliers controllers
+export const getAllSuppliers = async (req: Request, res: Response) => {
+  try {
+    const suppliers = await storage.getAllSuppliers();
+    res.json(suppliers);
+  } catch (error) {
+    console.error("Error fetching suppliers:", error);
+    res.status(500).json({ error: "Failed to fetch suppliers" });
+  }
+};
+
+export const getSupplierById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { quantity, location, transactionType, notes, userId } = req.body;
-    
-    if (typeof quantity !== 'number') {
-      return res.status(400).json({ error: 'Quantity must be a number' });
+    const supplier = await storage.getSupplier(parseInt(id));
+    if (!supplier) {
+      return res.status(404).json({ error: "Supplier not found" });
     }
-    
+    res.json(supplier);
+  } catch (error) {
+    console.error(`Error fetching supplier with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to fetch supplier" });
+  }
+};
+
+export const createSupplier = [
+  validateRequest(insertSupplierSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const newSupplier = await storage.createSupplier(req.body);
+      res.status(201).json(newSupplier);
+    } catch (error) {
+      console.error("Error creating supplier:", error);
+      res.status(500).json({ error: "Failed to create supplier" });
+    }
+  }
+];
+
+export const updateSupplier = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const updatedSupplier = await storage.updateSupplier(parseInt(id), req.body);
+    if (!updatedSupplier) {
+      return res.status(404).json({ error: "Supplier not found" });
+    }
+    res.json(updatedSupplier);
+  } catch (error) {
+    console.error(`Error updating supplier with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to update supplier" });
+  }
+};
+
+export const deleteSupplier = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await storage.deleteSupplier(parseInt(id));
+    res.status(204).send();
+  } catch (error) {
+    console.error(`Error deleting supplier with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to delete supplier" });
+  }
+};
+
+// Inventory Locations controllers
+export const getAllLocations = async (req: Request, res: Response) => {
+  try {
+    const locations = await storage.getAllInventoryLocations();
+    res.json(locations);
+  } catch (error) {
+    console.error("Error fetching inventory locations:", error);
+    res.status(500).json({ error: "Failed to fetch inventory locations" });
+  }
+};
+
+export const getLocationById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const location = await storage.getInventoryLocation(parseInt(id));
     if (!location) {
-      return res.status(400).json({ error: 'Location is required' });
+      return res.status(404).json({ error: "Inventory location not found" });
     }
-    
-    if (!transactionType) {
-      return res.status(400).json({ error: 'Transaction type is required' });
-    }
-    
-    await inventoryService.updateStockLevel(
-      id, 
-      quantity, 
-      location, 
-      transactionType, 
-      notes,
-      userId
-    );
-    
-    res.json({ success: true });
+    res.json(location);
   } catch (error) {
-    log(`Error in updateStockLevel: ${error}`, 'inventoryController');
-    
-    // Better error handling for specific cases
-    if (error.message?.includes('Insufficient stock')) {
-      return res.status(400).json({ error: error.message });
-    }
-    
-    res.status(500).json({ error: 'Failed to update stock level' });
+    console.error(`Error fetching inventory location with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to fetch inventory location" });
   }
-}
+};
 
-// Transfer stock between locations
-export async function transferStock(req: Request, res: Response) {
+export const createLocation = [
+  validateRequest(insertInventoryLocationSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const newLocation = await storage.createInventoryLocation(req.body);
+      res.status(201).json(newLocation);
+    } catch (error) {
+      console.error("Error creating inventory location:", error);
+      res.status(500).json({ error: "Failed to create inventory location" });
+    }
+  }
+];
+
+// Purchase Order controllers
+export const getAllPurchaseOrders = async (req: Request, res: Response) => {
+  try {
+    const purchaseOrders = await storage.getAllPurchaseOrders();
+    res.json(purchaseOrders);
+  } catch (error) {
+    console.error("Error fetching purchase orders:", error);
+    res.status(500).json({ error: "Failed to fetch purchase orders" });
+  }
+};
+
+export const getPurchaseOrderById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { quantity, sourceLocation, destinationLocation, notes, userId } = req.body;
-    
-    if (typeof quantity !== 'number' || quantity <= 0) {
-      return res.status(400).json({ error: 'Quantity must be a positive number' });
+    const purchaseOrder = await storage.getPurchaseOrder(parseInt(id));
+    if (!purchaseOrder) {
+      return res.status(404).json({ error: "Purchase order not found" });
     }
-    
-    if (!sourceLocation || !destinationLocation) {
-      return res.status(400).json({ error: 'Source and destination locations are required' });
+    res.json(purchaseOrder);
+  } catch (error) {
+    console.error(`Error fetching purchase order with ID ${req.params.id}:`, error);
+    res.status(500).json({ error: "Failed to fetch purchase order" });
+  }
+};
+
+export const createPurchaseOrder = [
+  validateRequest(insertPurchaseOrderSchema),
+  async (req: Request, res: Response) => {
+    try {
+      // Extract purchase order and lines from request
+      const { lines, ...purchaseOrderData } = req.body;
+      
+      // Create purchase order and its lines
+      const newPurchaseOrder = await storage.createPurchaseOrderWithLines(purchaseOrderData, lines);
+      res.status(201).json(newPurchaseOrder);
+    } catch (error) {
+      console.error("Error creating purchase order:", error);
+      res.status(500).json({ error: "Failed to create purchase order" });
     }
-    
-    await inventoryService.transferStock(
-      id,
-      quantity,
-      sourceLocation,
-      destinationLocation,
-      notes,
-      userId
-    );
-    
-    res.json({ success: true });
-  } catch (error) {
-    log(`Error in transferStock: ${error}`, 'inventoryController');
-    
-    if (error.message?.includes('Insufficient stock')) {
-      return res.status(400).json({ error: error.message });
+  }
+];
+
+// Inventory Transactions controller
+export const createInventoryTransaction = [
+  validateRequest(insertInventoryTransactionSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const newTransaction = await storage.createInventoryTransaction(req.body);
+      res.status(201).json(newTransaction);
+    } catch (error) {
+      console.error("Error creating inventory transaction:", error);
+      res.status(500).json({ error: "Failed to create inventory transaction" });
     }
-    
-    res.status(500).json({ error: 'Failed to transfer stock' });
   }
-}
+];
 
-/**
- * Inventory Transactions Endpoints
- */
-
-// Get inventory transactions with optional filtering
-export async function getInventoryTransactions(req: Request, res: Response) {
+// Barcode lookup
+export const lookupItemByBarcode = async (req: Request, res: Response) => {
   try {
-    const filters = {
-      itemId: req.query.itemId as string,
-      type: req.query.type as string,
-      startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
-      endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
-      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined
-    };
-    
-    const transactions = await inventoryService.getInventoryTransactions(filters);
-    res.json(transactions);
-  } catch (error) {
-    log(`Error in getInventoryTransactions: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get inventory transactions' });
-  }
-}
-
-/**
- * Vendor Management Endpoints
- */
-
-// Get all vendors
-export async function getVendors(req: Request, res: Response) {
-  try {
-    const vendors = await inventoryService.getAllVendors();
-    res.json(vendors);
-  } catch (error) {
-    log(`Error in getVendors: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get vendors' });
-  }
-}
-
-// Get a single vendor by ID
-export async function getVendor(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const vendor = await inventoryService.getVendorById(id);
-    
-    if (!vendor) {
-      return res.status(404).json({ error: 'Vendor not found' });
+    const { barcode } = req.params;
+    const item = await storage.getInventoryItemByBarcode(barcode);
+    if (!item) {
+      return res.status(404).json({ error: "No item found with this barcode" });
     }
-    
-    res.json(vendor);
-  } catch (error) {
-    log(`Error in getVendor: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get vendor' });
-  }
-}
-
-// Create a new vendor
-export async function createVendor(req: Request, res: Response) {
-  try {
-    // Validate request body
-    const validatedData = insertVendorSchema.parse(req.body);
-    
-    // Create the vendor
-    const vendor = await inventoryService.createVendor(validatedData);
-    res.status(201).json(vendor);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
-    }
-    
-    log(`Error in createVendor: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to create vendor' });
-  }
-}
-
-// Update a vendor
-export async function updateVendor(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    
-    // Validate request body
-    const validatedData = insertVendorSchema.partial().parse(req.body);
-    
-    // Update the vendor
-    const vendor = await inventoryService.updateVendor(id, validatedData);
-    res.json(vendor);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
-    }
-    
-    log(`Error in updateVendor: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to update vendor' });
-  }
-}
-
-// Delete a vendor
-export async function deleteVendor(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    await inventoryService.deleteVendor(id);
-    res.status(204).send();
-  } catch (error) {
-    log(`Error in deleteVendor: ${error}`, 'inventoryController');
-    
-    // Provide better error messages for specific cases
-    if (error.message?.includes('associated inventory items')) {
-      return res.status(400).json({
-        error: 'Cannot delete vendor with associated inventory items'
-      });
-    }
-    
-    if (error.message?.includes('associated purchase orders')) {
-      return res.status(400).json({
-        error: 'Cannot delete vendor with associated purchase orders'
-      });
-    }
-    
-    res.status(500).json({ error: 'Failed to delete vendor' });
-  }
-}
-
-/**
- * Purchase Order Endpoints
- */
-
-// Get all purchase orders with optional filtering
-export async function getPurchaseOrders(req: Request, res: Response) {
-  try {
-    const filters = {
-      vendorId: req.query.vendorId as string,
-      status: req.query.status as string,
-      startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
-      endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined
-    };
-    
-    const orders = await inventoryService.getAllPurchaseOrders(filters);
-    res.json(orders);
-  } catch (error) {
-    log(`Error in getPurchaseOrders: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get purchase orders' });
-  }
-}
-
-// Get a single purchase order by ID
-export async function getPurchaseOrder(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const order = await inventoryService.getPurchaseOrderById(id);
-    
-    if (!order) {
-      return res.status(404).json({ error: 'Purchase order not found' });
-    }
-    
-    res.json(order);
-  } catch (error) {
-    log(`Error in getPurchaseOrder: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get purchase order' });
-  }
-}
-
-// Create a new purchase order
-export async function createPurchaseOrder(req: Request, res: Response) {
-  try {
-    // Validate request body
-    const { order, items } = req.body;
-    
-    const validatedOrder = insertPurchaseOrderSchema.parse(order);
-    const validatedItems = items.map((item: any) => 
-      insertPurchaseOrderItemSchema.parse(item)
-    );
-    
-    // Create the purchase order
-    const createdOrder = await inventoryService.createPurchaseOrder(validatedOrder, validatedItems);
-    res.status(201).json(createdOrder);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
-    }
-    
-    log(`Error in createPurchaseOrder: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to create purchase order' });
-  }
-}
-
-// Update a purchase order
-export async function updatePurchaseOrder(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    
-    // Validate request body
-    const validatedData = insertPurchaseOrderSchema.partial().parse(req.body);
-    
-    // Update the purchase order
-    const order = await inventoryService.updatePurchaseOrder(id, validatedData);
-    res.json(order);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
-    }
-    
-    log(`Error in updatePurchaseOrder: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to update purchase order' });
-  }
-}
-
-// Update a purchase order item (e.g., mark as received)
-export async function updatePurchaseOrderItem(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    
-    // Validate request body
-    const validatedData = insertPurchaseOrderItemSchema.partial().parse(req.body);
-    
-    // Update the purchase order item
-    const item = await inventoryService.updatePurchaseOrderItem(id, validatedData);
     res.json(item);
   } catch (error) {
-    if (error instanceof ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors
-      });
-    }
-    
-    log(`Error in updatePurchaseOrderItem: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to update purchase order item' });
+    console.error(`Error looking up item with barcode ${req.params.barcode}:`, error);
+    res.status(500).json({ error: "Failed to lookup item by barcode" });
   }
-}
+};
 
-// Delete a purchase order
-export async function deletePurchaseOrder(req: Request, res: Response) {
+// Inventory valuation
+export const getInventoryValuation = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    await inventoryService.deletePurchaseOrder(id);
-    res.status(204).send();
-  } catch (error) {
-    log(`Error in deletePurchaseOrder: ${error}`, 'inventoryController');
-    
-    // Provide better error messages for specific cases
-    if (error.message?.includes('received items')) {
-      return res.status(400).json({
-        error: 'Cannot delete purchase order with received items'
-      });
-    }
-    
-    res.status(500).json({ error: 'Failed to delete purchase order' });
-  }
-}
-
-/**
- * Report Endpoints
- */
-
-// Get low stock alerts
-export async function getLowStockAlerts(req: Request, res: Response) {
-  try {
-    const alerts = await inventoryService.getLowStockAlerts();
-    res.json(alerts);
-  } catch (error) {
-    log(`Error in getLowStockAlerts: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get low stock alerts' });
-  }
-}
-
-// Generate reorder report
-export async function getReorderReport(req: Request, res: Response) {
-  try {
-    const report = await inventoryService.generateReorderReport();
-    res.json(report);
-  } catch (error) {
-    log(`Error in getReorderReport: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to generate reorder report' });
-  }
-}
-
-// Get inventory valuation
-export async function getInventoryValuation(req: Request, res: Response) {
-  try {
-    const valuation = await inventoryService.getInventoryValuation();
+    const valuation = await storage.getInventoryValuation();
     res.json(valuation);
   } catch (error) {
-    log(`Error in getInventoryValuation: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get inventory valuation' });
+    console.error("Error calculating inventory valuation:", error);
+    res.status(500).json({ error: "Failed to calculate inventory valuation" });
   }
-}
+};
 
-// Get inventory activity
-export async function getInventoryActivity(req: Request, res: Response) {
+// Generate recommended purchase orders
+export const generateRecommendedPurchaseOrders = async (req: Request, res: Response) => {
   try {
-    const startDate = req.query.startDate 
-      ? new Date(req.query.startDate as string)
-      : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Default to last 30 days
-      
-    const endDate = req.query.endDate
-      ? new Date(req.query.endDate as string)
-      : new Date();
-      
-    const activity = await inventoryService.getInventoryActivity(startDate, endDate);
-    res.json(activity);
+    const recommendations = await storage.generateRecommendedPurchaseOrders();
+    res.json(recommendations);
   } catch (error) {
-    log(`Error in getInventoryActivity: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get inventory activity' });
+    console.error("Error generating recommended purchase orders:", error);
+    res.status(500).json({ error: "Failed to generate recommended purchase orders" });
   }
-}
+};
 
-// Create automatic purchase orders
-export async function createAutomaticPurchaseOrders(req: Request, res: Response) {
+// CSV Import/Export
+export const importInventoryFromCSV = async (req: Request, res: Response) => {
   try {
-    const orders = await inventoryService.createAutomaticPurchaseOrders();
-    res.json(orders);
-  } catch (error) {
-    log(`Error in createAutomaticPurchaseOrders: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to create automatic purchase orders' });
-  }
-}
-
-/**
- * Material Link Endpoints
- */
-
-// Link inventory item to material
-export async function linkInventoryItemToMaterial(req: Request, res: Response) {
-  try {
-    const { id } = req.params;
-    const { materialType, materialId } = req.body;
-    
-    if (!materialType || !materialId) {
-      return res.status(400).json({ error: 'Material type and ID are required' });
+    if (!req.file) {
+      return res.status(400).json({ error: "No CSV file provided" });
     }
     
-    await inventoryService.linkInventoryItemToMaterial(id, materialType, materialId);
-    res.json({ success: true });
+    const result = await storage.importInventoryFromCSV(req.file.path);
+    res.json(result);
   } catch (error) {
-    log(`Error in linkInventoryItemToMaterial: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to link inventory item to material' });
+    console.error("Error importing inventory from CSV:", error);
+    res.status(500).json({ error: "Failed to import inventory from CSV" });
   }
-}
+};
 
-// Get inventory items for a specific material
-export async function getInventoryItemsByMaterial(req: Request, res: Response) {
+export const exportInventoryToCSV = async (req: Request, res: Response) => {
   try {
-    const { materialType, materialId } = req.params;
+    const csvData = await storage.exportInventoryToCSV();
     
-    const items = await inventoryService.getInventoryItemsByMaterial(materialType, materialId);
-    res.json(items);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=inventory-export.csv');
+    res.send(csvData);
   } catch (error) {
-    log(`Error in getInventoryItemsByMaterial: ${error}`, 'inventoryController');
-    res.status(500).json({ error: 'Failed to get inventory items by material' });
+    console.error("Error exporting inventory to CSV:", error);
+    res.status(500).json({ error: "Failed to export inventory to CSV" });
   }
-}
+};
