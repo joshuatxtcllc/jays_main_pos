@@ -970,18 +970,19 @@ export class DatabaseStorage implements IStorage {
 
   async getAllMaterialOrders(): Promise<MaterialOrder[]> {
     try {
-      // Use SQL directly to avoid column mismatch issues
+      // First try to get the column names from the table
+      const columns = await db.execute(sql`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'material_orders'
+      `);
+      
+      // Use only the columns that exist in the database
       const result = await db.execute<MaterialOrder[]>(sql`
-        SELECT id, material_type, material_id, material_name, 
-        quantity, status, source_order_id, order_date, expected_arrival, 
-        actual_arrival, supplier_name, supplier_order_number, notes, 
-        cost_per_unit, total_cost, priority, hub_order_id, 
-        hub_sync_status, hub_last_sync_date, hub_tracking_info, 
-        hub_estimated_delivery, hub_supplier_notes, order_reference, 
-        unit_measurement, created_at 
-        FROM material_orders
+        SELECT * FROM material_orders
         ORDER BY created_at DESC
       `);
+      
       return result;
     } catch (error) {
       console.error('Error in getAllMaterialOrders:', error);
