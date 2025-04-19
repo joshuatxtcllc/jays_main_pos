@@ -340,16 +340,72 @@ const FrameDesigner: React.FC<FrameDesignerProps> = ({
                 className="input w-full"
               />
             </div>
+          </div>
+          
+          {/* Bottom Mat Section - Separated as its own group for better visibility */}
+          <div className="frame-option-group" style={{ 
+            borderTop: '2px solid var(--primary, #3b82f6)', 
+            marginTop: '1.5rem', 
+            paddingTop: '1rem' 
+          }}>
+            <h4>Additional Mat Options</h4>
+            <div style={{ 
+              padding: '10px', 
+              border: '1px solid #ddd', 
+              borderRadius: '4px',
+              backgroundColor: '#f9f9f9',
+              marginBottom: '10px' 
+            }}>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="showBottomMat" 
+                  checked={showBottomMat}
+                  onChange={handleBottomMatToggle}
+                  style={{ width: '20px', height: '20px', marginRight: '10px' }}
+                />
+                <label htmlFor="showBottomMat" style={{ fontWeight: 'bold', fontSize: '1rem' }}>
+                  Add Bottom Mat (Double Matting)
+                </label>
+              </div>
+            </div>
             
-            <BottomMatOption 
-              showBottomMat={showBottomMat}
-              bottomMatWidth={bottomMatWidth}
-              selectedBottomMat={selectedBottomMat}
-              availableMats={availableMats}
-              onToggleBottomMat={handleBottomMatToggle}
-              onBottomMatWidthChange={handleBottomMatWidthChange}
-              onBottomMatSelect={setSelectedBottomMat}
-            />
+            {showBottomMat && (
+              <div>
+                <label htmlFor="bottomMatWidth">Bottom Mat Width (inches)</label>
+                <input 
+                  type="number" 
+                  id="bottomMatWidth" 
+                  value={bottomMatWidth} 
+                  onChange={handleBottomMatWidthChange} 
+                  step="0.125"
+                  min="0.125"
+                  max="0.5"
+                  className="input w-full"
+                />
+                <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>
+                  Recommended: between 0.125" and 0.5"
+                </p>
+                
+                <div className="mt-3">
+                  <label>Bottom Mat Color</label>
+                  <div className="mat-options mat-options-small mt-2">
+                    {availableMats.map(mat => (
+                      <div 
+                        key={`bottom-${mat.id}`} 
+                        className={`mat-option ${selectedBottomMat?.id === mat.id ? 'selected' : ''}`}
+                        onClick={() => setSelectedBottomMat(mat)}
+                      >
+                        <div className="mat-color-preview" style={{ backgroundColor: mat.color }}></div>
+                        <div>
+                          <div>{mat.name}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
             
           </div>
         </div>
