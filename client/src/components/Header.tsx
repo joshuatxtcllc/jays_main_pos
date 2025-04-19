@@ -97,6 +97,15 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Hub
             </span>
           </Link>
+          <Link href="/mat-test">
+            <span className={cn(
+              "font-medium transition-colors cursor-pointer",
+              location === "/mat-test" && "text-white",
+              "bg-primary text-white px-3 py-1 rounded-md"
+            )}>
+              Mat Test
+            </span>
+          </Link>
         </nav>
         
         <div className="flex items-center space-x-4">
@@ -234,6 +243,15 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               location === "/hub" && "text-primary"
             )}>
               Hub
+            </span>
+          </Link>
+          
+          <Link href="/mat-test">
+            <span className={cn(
+              "py-2 font-medium cursor-pointer",
+              location === "/mat-test" ? "text-white bg-primary px-3 py-1 rounded-md" : "text-primary font-bold"
+            )}>
+              Mat Test
             </span>
           </Link>
           
