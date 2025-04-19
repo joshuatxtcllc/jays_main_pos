@@ -9,7 +9,16 @@ import {
   orderSpecialServices, type OrderSpecialService, type InsertOrderSpecialService,
   wholesaleOrders, type WholesaleOrder, type InsertWholesaleOrder,
   customerNotifications, type CustomerNotification, type InsertCustomerNotification,
-  materialOrders, type MaterialOrder, type InsertMaterialOrder, type MaterialType, type MaterialOrderStatus
+  materialOrders, type MaterialOrder, type InsertMaterialOrder, type MaterialType, type MaterialOrderStatus,
+  // Inventory system imports
+  inventoryItems, type InventoryItem, type InsertInventoryItem,
+  inventoryTransactions, type InventoryTransaction, type InsertInventoryTransaction,
+  suppliers, type Supplier, type InsertSupplier,
+  inventoryLocations, type InventoryLocation, type InsertInventoryLocation,
+  inventoryCategories, type InventoryCategory,
+  purchaseOrders, type PurchaseOrder, type InsertPurchaseOrder,
+  purchaseOrderLines, type InsertPurchaseOrderLine,
+  type MeasurementUnit
 } from "@shared/schema";
 import { frameCatalog } from "../client/src/data/frameCatalog";
 import { matColorCatalog } from "../client/src/data/matColors";
