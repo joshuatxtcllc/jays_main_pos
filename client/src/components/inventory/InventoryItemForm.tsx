@@ -160,10 +160,10 @@ export function InventoryItemForm({
                 control={form.control}
                 name="sku"
                 render={({ field }) => (
-                  <FormItem className="text-foreground">
-                    <FormLabel className="text-foreground">SKU*</FormLabel>
+                  <FormItem>
+                    <FormLabel>SKU*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter SKU" {...field} className="text-foreground placeholder:text-muted-foreground" />
+                      <Input placeholder="Enter SKU" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

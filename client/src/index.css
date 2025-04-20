@@ -193,4 +193,24 @@
   .font-medium {
     font-weight: 600;
   }
+  
+  /* Light form text styles for better visibility in dialogs */
+  .light-form-text .form-labels label,
+  .light-form-text .form-labels span,
+  .light-form-text input,
+  .light-form-text textarea,
+  .light-form-text select,
+  .light-form-text button {
+    @apply text-foreground;
+  }
+  
+  .light-form-text [data-radix-select-trigger],
+  .light-form-text [data-state] {
+    @apply text-foreground;
+  }
+  
+  .light-form-text input::placeholder,
+  .light-form-text textarea::placeholder {
+    @apply text-muted-foreground;
+  }
 }
