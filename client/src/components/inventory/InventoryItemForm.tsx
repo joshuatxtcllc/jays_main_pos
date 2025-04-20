@@ -142,10 +142,10 @@ export function InventoryItemForm({
   
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto text-foreground bg-background light-form-text">
         <DialogHeader>
-          <DialogTitle>{editItem ? "Edit Inventory Item" : "Add New Inventory Item"}</DialogTitle>
-          <DialogDescription>
+          <DialogTitle className="text-foreground">{editItem ? "Edit Inventory Item" : "Add New Inventory Item"}</DialogTitle>
+          <DialogDescription className="text-muted-foreground">
             {editItem 
               ? "Update the details of this inventory item." 
               : "Fill in the details for the new inventory item."}
@@ -153,17 +153,17 @@ export function InventoryItemForm({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-2">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-2 text-foreground form-labels">
             <div className="grid grid-cols-2 gap-4">
               {/* SKU Field */}
               <FormField
                 control={form.control}
                 name="sku"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SKU*</FormLabel>
+                  <FormItem className="text-foreground">
+                    <FormLabel className="text-foreground">SKU*</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter SKU" {...field} />
+                      <Input placeholder="Enter SKU" {...field} className="text-foreground placeholder:text-muted-foreground" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
