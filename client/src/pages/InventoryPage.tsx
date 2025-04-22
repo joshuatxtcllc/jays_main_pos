@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { InventoryTable } from "@/components/inventory/InventoryTable";
 import { InventoryItemForm } from "@/components/inventory/InventoryItemForm";
 import { InventoryDetailView } from "@/components/inventory/InventoryDetailView";
+import InventoryDashboard from "@/components/inventory/InventoryDashboard";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -22,7 +23,7 @@ import {
   useInventoryLocations
 } from "@/hooks/use-inventory";
 import type { InventoryItem, InsertInventoryItem } from "@shared/schema";
-import { Package, Plus, AlertCircle, Truck, MapPin } from "lucide-react";
+import { Package, Plus, AlertCircle, Truck, MapPin, BarChart3 } from "lucide-react";
 
 export default function InventoryPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -130,6 +131,10 @@ export default function InventoryPage() {
       
       <Tabs value={currentTab} onValueChange={setCurrentTab}>
         <TabsList className="mb-4">
+          <TabsTrigger value="dashboard" className="flex items-center">
+            <BarChart3 className="h-4 w-4 mr-2" />
+            Dashboard
+          </TabsTrigger>
           <TabsTrigger value="inventory" className="flex items-center">
             <Package className="h-4 w-4 mr-2" />
             Inventory Items
@@ -147,6 +152,10 @@ export default function InventoryPage() {
             Storage Locations ({locations.length})
           </TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="dashboard">
+          <InventoryDashboard />
+        </TabsContent>
         
         <TabsContent value="inventory">
           <Card>

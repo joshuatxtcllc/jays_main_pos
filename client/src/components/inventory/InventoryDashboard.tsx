@@ -38,6 +38,18 @@ import { useInventoryMetrics, useLowStockItems, useInventoryActivity } from "@/h
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import type { InventoryItem } from "@shared/schema";
+
+// Extended type for low stock items with current quantity
+interface LowStockItem {
+  id: number;
+  sku: string;
+  name: string;
+  currentQuantity: number;
+  minimumStockLevel: number;
+  reorderLevel: number;
+  unitOfMeasure?: string;
+}
 
 // Color palette for charts
 const COLORS = ["#00ADB5", "#3A55D9", "#FF5722", "#7C4DFF", "#4CAF50", "#FFC107"];
@@ -47,7 +59,8 @@ const InventoryDashboard: React.FC = () => {
   
   // Fetch inventory metrics
   const { data: metrics, isLoading: metricsLoading } = useInventoryMetrics();
-  const { data: lowStockItems, isLoading: lowStockLoading } = useLowStockItems();
+  const { data: lowStockItems, isLoading: lowStockLoading } = useLowStockItems() as 
+    { data: LowStockItem[] | undefined, isLoading: boolean };
   const { data: activityData, isLoading: activityLoading } = useInventoryActivity(timeframe);
   
   // Calculate days of inventory
@@ -304,7 +317,7 @@ const InventoryDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-popover divide-y divide-border">
-                  {lowStockItems?.slice(0, 5).map((item) => (
+                  {lowStockItems?.slice(0, 5).map((item: LowStockItem) => (
                     <tr key={item.id} className="hover:bg-muted/50">
                       <td className="px-4 py-3 text-sm">{item.name}</td>
                       <td className="px-4 py-3 text-sm">{item.currentQuantity} {item.unitOfMeasure}</td>
@@ -315,7 +328,7 @@ const InventoryDashboard: React.FC = () => {
                           item.currentQuantity <= item.minimumStockLevel 
                             ? "destructive" 
                             : item.currentQuantity <= item.reorderLevel 
-                              ? "warning" 
+                              ? "secondary" 
                               : "outline"
                         }>
                           {item.currentQuantity <= item.minimumStockLevel 
