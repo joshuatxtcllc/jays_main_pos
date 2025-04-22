@@ -19,6 +19,10 @@ const PURCHASE_ORDERS_KEY = "/api/inventory/purchase-orders";
 const LOW_STOCK_KEY = "/api/inventory/items/low-stock";
 const VALUATION_KEY = "/api/inventory/valuation";
 const RECOMMENDED_ORDERS_KEY = "/api/inventory/recommended-purchase-orders";
+const METRICS_KEY = "/api/inventory/metrics";
+const ACTIVITY_KEY = "/api/inventory/activity";
+const STOCK_HISTORY_KEY = "/api/inventory/stock-history";
+const BATCH_OPERATIONS_KEY = "/api/inventory/batch-operations";
 
 // Inventory Items hooks
 export const useInventoryItems = () => {
@@ -326,6 +330,75 @@ export const useRecommendedPurchaseOrders = () => {
   return useQuery({
     queryKey: [RECOMMENDED_ORDERS_KEY],
     queryFn: inventoryService.getRecommendedPurchaseOrders
+  });
+};
+
+// Dashboard and Analytics hooks
+export const useInventoryMetrics = () => {
+  return useQuery({
+    queryKey: [METRICS_KEY],
+    queryFn: inventoryService.getInventoryMetrics
+  });
+};
+
+export const useInventoryActivity = (timeframe: 'week' | 'month' | 'quarter' = 'month') => {
+  return useQuery({
+    queryKey: [ACTIVITY_KEY, timeframe],
+    queryFn: () => inventoryService.getInventoryActivity(timeframe)
+  });
+};
+
+export const useStockHistory = (itemId: number, period: 'month' | 'quarter' | 'year' = 'month') => {
+  return useQuery({
+    queryKey: [STOCK_HISTORY_KEY, itemId, period],
+    queryFn: () => inventoryService.getStockHistory(itemId, period),
+    enabled: !!itemId
+  });
+};
+
+// Batch Operations hooks
+export const useBatchUpdateItems = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (updates: { ids: number[], changes: Partial<InventoryItem> }) => 
+      inventoryService.batchUpdateItems(updates.ids, updates.changes),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Batch update successful",
+        description: "Selected inventory items have been updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Batch update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+};
+
+export const useBatchDeleteItems = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (ids: number[]) => inventoryService.batchDeleteItems(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [INVENTORY_ITEMS_KEY] });
+      toast({
+        title: "Batch delete successful",
+        description: "Selected inventory items have been deleted.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Batch delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
 };
 

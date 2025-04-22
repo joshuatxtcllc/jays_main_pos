@@ -133,6 +133,55 @@ export const getRecommendedPurchaseOrders = async (): Promise<any> => {
   return res.json();
 };
 
+// Dashboard and Analytics
+export const getInventoryMetrics = async (): Promise<{
+  totalItems: number;
+  totalValue: number;
+  lowStockCount: number;
+  averageDailyUsage: number;
+  categoryDistribution: Array<{ name: string; itemCount: number }>;
+  locationValues: Array<{ name: string; totalValue: number }>;
+}> => {
+  const res = await apiRequest("GET", `${API_BASE}/metrics`);
+  return res.json();
+};
+
+export const getInventoryActivity = async (timeframe: 'week' | 'month' | 'quarter' = 'month'): Promise<{
+  totalReceived: number;
+  totalConsumed: number;
+  netChange: number;
+  dailyActivity: Array<{
+    date: string;
+    received: number;
+    consumed: number;
+  }>;
+}> => {
+  const res = await apiRequest("GET", `${API_BASE}/activity?timeframe=${timeframe}`);
+  return res.json();
+};
+
+export const getStockHistory = async (itemId: number, period: 'month' | 'quarter' | 'year' = 'month'): Promise<{
+  item: InventoryItem;
+  history: Array<{
+    date: string;
+    quantity: number;
+    type: 'receipt' | 'consumption' | 'adjustment';
+    notes: string;
+  }>;
+}> => {
+  const res = await apiRequest("GET", `${API_BASE}/stock-history/${itemId}?period=${period}`);
+  return res.json();
+};
+
+// Batch Operations
+export const batchUpdateItems = async (ids: number[], changes: Partial<InventoryItem>): Promise<void> => {
+  await apiRequest("PATCH", `${API_BASE}/batch-update`, { ids, changes });
+};
+
+export const batchDeleteItems = async (ids: number[]): Promise<void> => {
+  await apiRequest("DELETE", `${API_BASE}/batch-delete`, { ids });
+};
+
 // Import/Export
 export const importInventoryFromCSV = async (file: File): Promise<any> => {
   const formData = new FormData();
