@@ -40,11 +40,25 @@ interface OrderEditDialogProps {
 export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps) {
   const { updateOrder, isUpdatingOrder } = useOrders();
   const { toast } = useToast();
-  // Define typed state for form data to match Order shape
-  const [formData, setFormData] = useState<Partial<Order>>({
+  // Define typed state for form data with explicit string types
+  type OrderFormData = {
+    frameId: string;
+    matColorId: string;
+    glassOptionId: string;
+    artworkWidth: string;
+    artworkHeight: string;
+    matWidth: string;
+    artworkDescription: string;
+    artworkType: string;
+  };
+
+  const [formData, setFormData] = useState<OrderFormData>({
     frameId: '',
     matColorId: '',
     glassOptionId: '',
+    artworkWidth: '',
+    artworkHeight: '',
+    matWidth: '',
     artworkDescription: '',
     artworkType: ''
   });
@@ -90,9 +104,9 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
         frameId: order.frameId || '',
         matColorId: order.matColorId || '',
         glassOptionId: order.glassOptionId || '',
-        artworkWidth: order.artworkWidth,
-        artworkHeight: order.artworkHeight,
-        matWidth: order.matWidth,
+        artworkWidth: order.artworkWidth || '',
+        artworkHeight: order.artworkHeight || '',
+        matWidth: order.matWidth || '',
         artworkDescription: order.artworkDescription || '',
         artworkType: order.artworkType || '',
       });
@@ -101,9 +115,9 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
         frameId: '',
         matColorId: '',
         glassOptionId: '',
-        artworkWidth: undefined,
-        artworkHeight: undefined,
-        matWidth: undefined,
+        artworkWidth: '',
+        artworkHeight: '',
+        matWidth: '',
         artworkDescription: '',
         artworkType: '',
       });
@@ -136,9 +150,21 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
       // Determine if pricing needs to be recalculated based on dimension changes
       const dimensionsChanged = hasDimensionsChanged();
       
+      // Convert form string values to the correct types for the API
+      const orderUpdate: Partial<Order> = {
+        frameId: formData.frameId || undefined,
+        matColorId: formData.matColorId || undefined,
+        glassOptionId: formData.glassOptionId || undefined,
+        artworkWidth: formData.artworkWidth ? formData.artworkWidth : undefined,
+        artworkHeight: formData.artworkHeight ? formData.artworkHeight : undefined,
+        matWidth: formData.matWidth ? formData.matWidth : undefined,
+        artworkDescription: formData.artworkDescription || undefined,
+        artworkType: formData.artworkType || undefined
+      };
+      
       updateOrder({ 
         id: order.id, 
-        data: formData,
+        data: orderUpdate,
         recalculatePricing: dimensionsChanged
       }, {
         onSuccess: () => {
@@ -171,7 +197,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
             </Label>
             <div className="col-span-3">
               <Select 
-                value={formData.frameId || ''} 
+                value={formData.frameId?.toString() || ''} 
                 onValueChange={(value) => handleSelectChange('frameId', value)}
               >
                 <SelectTrigger>
@@ -193,7 +219,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
             </Label>
             <div className="col-span-3">
               <Select 
-                value={formData.matColorId} 
+                value={formData.matColorId?.toString() || ''} 
                 onValueChange={(value) => handleSelectChange('matColorId', value)}
               >
                 <SelectTrigger>
@@ -215,7 +241,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
             </Label>
             <div className="col-span-3">
               <Select 
-                value={formData.glassOptionId} 
+                value={formData.glassOptionId?.toString() || ''} 
                 onValueChange={(value) => handleSelectChange('glassOptionId', value)}
               >
                 <SelectTrigger>
@@ -240,7 +266,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
               name="artworkWidth"
               type="number"
               step="0.125"
-              value={formData.artworkWidth}
+              value={formData.artworkWidth?.toString() || ''}
               onChange={handleChange}
               className="col-span-3"
             />
@@ -254,7 +280,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
               name="artworkHeight"
               type="number"
               step="0.125"
-              value={formData.artworkHeight}
+              value={formData.artworkHeight?.toString() || ''}
               onChange={handleChange}
               className="col-span-3"
             />
@@ -268,7 +294,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
               name="matWidth"
               type="number"
               step="0.125"
-              value={formData.matWidth}
+              value={formData.matWidth?.toString() || ''}
               onChange={handleChange}
               className="col-span-3"
             />
@@ -280,7 +306,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
             <Input
               id="artworkDescription"
               name="artworkDescription"
-              value={formData.artworkDescription}
+              value={formData.artworkDescription?.toString() || ''}
               onChange={handleChange}
               className="col-span-3"
             />
@@ -292,7 +318,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
             <Input
               id="artworkType"
               name="artworkType"
-              value={formData.artworkType}
+              value={formData.artworkType?.toString() || ''}
               onChange={handleChange}
               className="col-span-3"
             />
