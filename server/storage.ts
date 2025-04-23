@@ -1034,20 +1034,64 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder> {
-    const [newMaterialOrder] = await db
-      .insert(materialOrders)
-      .values(materialOrder)
-      .returning();
-    return newMaterialOrder;
+    console.log('Creating material order with data:', materialOrder);
+    
+    // Clean up any properties that shouldn't be sent to database
+    const cleanData = { ...materialOrder };
+    
+    // If vendor is present but supplierName is not, use vendor as supplierName
+    if (cleanData.vendor && !cleanData.supplierName) {
+      cleanData.supplierName = cleanData.vendor;
+      delete cleanData.vendor; // Remove vendor as it doesn't exist in DB
+    }
+    
+    console.log('Cleaned data for material order creation:', cleanData);
+    
+    try {
+      const [newMaterialOrder] = await db
+        .insert(materialOrders)
+        .values(cleanData)
+        .returning();
+        
+      console.log('Successfully created material order:', newMaterialOrder.id);
+      return newMaterialOrder;
+    } catch (error) {
+      console.error('Error creating material order:', error);
+      throw error;
+    }
   }
 
-  async updateMaterialOrder(id: number, data: Partial<MaterialOrder>): Promise<MaterialOrder> {
-    const [updatedMaterialOrder] = await db
-      .update(materialOrders)
-      .set(data)
-      .where(eq(materialOrders.id, id))
-      .returning();
-    return updatedMaterialOrder;
+  async updateMaterialOrder(id: string | number, data: Partial<MaterialOrder>): Promise<MaterialOrder> {
+    console.log('updateMaterialOrder called with id:', id, 'and data:', data);
+    
+    // Convert id to number if it's a string representing a number
+    const materialId = typeof id === 'string' && !isNaN(parseInt(id)) 
+      ? parseInt(id) 
+      : id;
+      
+    // Clean up any properties that shouldn't be sent to database
+    const cleanData = { ...data };
+    // If vendor is present but supplierName is not, use vendor as supplierName
+    if (cleanData.vendor && !cleanData.supplierName) {
+      cleanData.supplierName = cleanData.vendor;
+      delete cleanData.vendor; // Remove vendor as it doesn't exist in DB
+    }
+    
+    console.log('Cleaned data for update:', cleanData);
+    
+    try {
+      const [updatedMaterialOrder] = await db
+        .update(materialOrders)
+        .set(cleanData)
+        .where(eq(materialOrders.id, materialId as number))
+        .returning();
+        
+      console.log('Successfully updated material order:', updatedMaterialOrder.id);
+      return updatedMaterialOrder;
+    } catch (error) {
+      console.error('Error updating material order:', error);
+      throw error;
+    }
   }
 
   async deleteMaterialOrder(id: number): Promise<void> {

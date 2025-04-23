@@ -50,18 +50,37 @@ export const getMaterialsForOrder = async (req: Request, res: Response) => {
 export const updateMaterial = async (req: Request, res: Response) => {
   try {
     const materialId = req.params.id;
-    const { status, notes, orderDate, receiveDate } = req.body;
+    
+    // Handle both formats: direct properties or nested in data property
+    let updateData;
+    if (req.body.data) {
+      // Client is sending { id, data: { status, notes, etc. } }
+      updateData = req.body.data;
+    } else {
+      // Client is sending properties directly
+      const { status, notes, orderDate, receiveDate, supplierName } = req.body;
+      updateData = {
+        status,
+        notes,
+        orderDate,
+        receiveDate,
+        supplierName
+      };
+    }
+    
+    // Filter out undefined values
+    const cleanedData = Object.fromEntries(
+      Object.entries(updateData).filter(([_, v]) => v !== undefined)
+    );
+    
+    console.log('Updating material order with data:', cleanedData);
     
     // Update material in storage
-    const updatedMaterial = await storage.updateMaterialOrder(materialId, {
-      status,
-      notes,
-      orderDate,
-      receiveDate
-    });
+    const updatedMaterial = await storage.updateMaterialOrder(materialId, cleanedData);
     
     res.json(updatedMaterial);
   } catch (error: any) {
+    console.error('Error updating material:', error);
     res.status(500).json({ message: error.message });
   }
 };

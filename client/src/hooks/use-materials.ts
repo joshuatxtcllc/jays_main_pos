@@ -117,8 +117,10 @@ export function useUpdateMaterial() {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async (material: Partial<Material> & { id: string }) => {
-      const response = await apiRequest('PATCH', `/api/materials/${material.id}`, material);
+    mutationFn: async (params: { id: string; data: Partial<Material> }) => {
+      // Convert { id, data } format to the format expected by the server
+      console.log('Updating material with data:', params);
+      const response = await apiRequest('PATCH', `/api/materials/${params.id}`, params);
       return await response.json();
     },
     onSuccess: () => {
@@ -129,6 +131,7 @@ export function useUpdateMaterial() {
       });
     },
     onError: (error: Error) => {
+      console.error('Material update error:', error);
       toast({
         title: "Update failed",
         description: error.message,
