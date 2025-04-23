@@ -1,123 +1,130 @@
-import {
-  useQuery,
-  useMutation,
-  useQueryClient
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "@/hooks/use-toast";
 
-// Material item types
-interface MaterialItem {
+export interface Material {
   id: string;
-  orderIds: number[];
+  materialType: string;
+  materialId: string;
+  materialName: string;
+  quantity: string;
+  status: 'pending' | 'ordered' | 'processed' | 'arrived';
+  supplier?: string;
+  price?: string;
+  color?: string;
+  dimensions?: string;
+  notes?: string;
+  sourceOrderId?: number;
+  orderDate?: string;
+  expectedDeliveryDate?: string;
+  actualDeliveryDate?: string;
+  unitMeasurement?: string;
+}
+
+export interface MaterialType {
+  id: string;
   name: string;
-  sku: string;
-  supplier: string;
-  type: string;
-  quantity: number;
-  status: string;
-  orderDate?: string;
-  receiveDate?: string;
-  priority: "low" | "medium" | "high";
-  notes?: string;
 }
 
-// Update material order params
-interface UpdateMaterialOrderParams {
+export interface MaterialSupplier {
   id: string;
-  status?: string;
-  notes?: string;
-  orderDate?: string;
-  receiveDate?: string;
+  name: string;
 }
 
-// Get all materials in the pick list
-export const useMaterialPickList = () => {
-  return useQuery<MaterialItem[]>({
+export interface CreatePurchaseOrderPayload {
+  materialIds: string[];
+  notes?: string;
+  expectedDeliveryDate?: string;
+}
+
+export function useMaterialsPickList() {
+  return useQuery({
     queryKey: ['/api/materials/pick-list'],
+    refetchOnWindowFocus: false
   });
-};
+}
 
-// Get materials grouped by supplier
-export const useMaterialsBySupplier = () => {
-  return useQuery<Record<string, MaterialItem[]>>({
+export function useMaterialsBySupplier() {
+  return useQuery({
     queryKey: ['/api/materials/by-supplier'],
+    refetchOnWindowFocus: false
   });
-};
+}
 
-// Get materials for a specific order
-export const useMaterialsForOrder = (orderId: number) => {
-  return useQuery<MaterialItem[]>({
+export function useMaterialsForOrder(orderId: number) {
+  return useQuery({
     queryKey: ['/api/materials/order', orderId],
-    enabled: !!orderId, // Only run if orderId is provided
+    queryFn: () => apiRequest('GET', `/api/materials/order/${orderId}`)
+      .then(res => res.json()),
+    refetchOnWindowFocus: false,
+    enabled: !!orderId
   });
-};
+}
 
-// Update material order status and notes
-export const useUpdateMaterialOrder = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  return useMutation({
-    mutationFn: async (params: UpdateMaterialOrderParams) => {
-      const response = await apiRequest(
-        'PATCH', 
-        `/api/materials/${params.id}`,
-        params
-      );
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error updating material",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-};
-
-// Create a purchase order from selected materials
-export const useCreatePurchaseOrder = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-  
-  return useMutation({
-    mutationFn: async (materialIds: string[]) => {
-      const response = await apiRequest(
-        'POST', 
-        '/api/purchase-orders',
-        { materialIds }
-      );
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/purchase-orders'] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error creating purchase order",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-};
-
-// Get material types (for filters)
-export const useMaterialTypes = () => {
-  return useQuery<string[]>({
+export function useMaterialTypes() {
+  return useQuery({
     queryKey: ['/api/materials/types'],
+    refetchOnWindowFocus: false
   });
-};
+}
 
-// Get material suppliers (for filters)
-export const useMaterialSuppliers = () => {
-  return useQuery<string[]>({
+export function useMaterialSuppliers() {
+  return useQuery({
     queryKey: ['/api/materials/suppliers'],
+    refetchOnWindowFocus: false
   });
-};
+}
+
+export function useUpdateMaterial() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string, data: Partial<Material> }) => {
+      const response = await apiRequest('PATCH', `/api/materials/${id}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/materials/pick-list'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/materials/by-supplier'] });
+      
+      toast({
+        title: "Material updated",
+        description: "The material has been successfully updated.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}
+
+export function useCreatePurchaseOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreatePurchaseOrderPayload) => {
+      const response = await apiRequest('POST', '/api/purchase-orders', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/materials/pick-list'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/materials/by-supplier'] });
+      
+      toast({
+        title: "Purchase order created",
+        description: "The purchase order has been successfully created.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to create purchase order",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}

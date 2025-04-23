@@ -1436,6 +1436,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register inventory management routes
   app.use('/api/inventory', inventoryRoutes);
+  
+  // Materials pick list routes
+  app.get('/api/materials/pick-list', getMaterialsPickList);
+  app.get('/api/materials/by-supplier', getMaterialsBySupplier);
+  app.get('/api/materials/order/:orderId', getMaterialsForOrder);
+  app.get('/api/materials/types', getMaterialTypes);
+  app.get('/api/materials/suppliers', getMaterialSuppliers);
+  app.patch('/api/materials/:id', updateMaterial);
+  app.post('/api/purchase-orders', createPurchaseOrder);
 
   const httpServer = createServer(app);
   return httpServer;

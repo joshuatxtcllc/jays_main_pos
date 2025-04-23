@@ -49,7 +49,7 @@ import {
   ArrowDownToLine
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMaterialPickList, useUpdateMaterialOrder } from "@/hooks/use-materials";
+import { useMaterialsPickList, useUpdateMaterial, useCreatePurchaseOrder } from "@/hooks/use-materials";
 
 // Status options for material orders
 const ORDER_STATUSES = [
@@ -99,8 +99,8 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
   const [statusNotes, setStatusNotes] = useState("");
   
   const { toast } = useToast();
-  const { data: materials = [], isLoading } = useMaterialPickList();
-  const updateMaterialOrder = useUpdateMaterialOrder();
+  const { data: materials = [], isLoading } = useMaterialsPickList();
+  const updateMaterialOrder = useUpdateMaterial();
   
   // Calculate unique suppliers and material types for filters
   const suppliers = [...new Set(materials.map(item => item.supplier))];
@@ -207,10 +207,12 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
     updateMaterialOrder.mutate(
       { 
         id: statusDialogItem.id, 
-        status: newStatus,
-        notes: statusNotes,
-        orderDate: newStatus === "ordered" ? new Date().toISOString() : statusDialogItem.orderDate,
-        receiveDate: newStatus === "received" ? new Date().toISOString() : statusDialogItem.receiveDate
+        data: {
+          status: newStatus,
+          notes: statusNotes,
+          orderDate: newStatus === "ordered" ? new Date().toISOString() : statusDialogItem.orderDate,
+          receiveDate: newStatus === "received" ? new Date().toISOString() : statusDialogItem.receiveDate
+        }
       },
       {
         onSuccess: () => {
@@ -242,9 +244,11 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
         
         return updateMaterialOrder.mutateAsync({
           id,
-          status,
-          orderDate: status === "ordered" ? new Date().toISOString() : item.orderDate,
-          receiveDate: status === "received" ? new Date().toISOString() : item.receiveDate
+          data: {
+            status,
+            orderDate: status === "ordered" ? new Date().toISOString() : item.orderDate,
+            receiveDate: status === "received" ? new Date().toISOString() : item.receiveDate
+          }
         });
       })
     ).then(() => {
@@ -287,6 +291,8 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
   };
   
   // Create purchase order from selected items
+  const createPurchaseOrderMutation = useCreatePurchaseOrder();
+  
   const createPurchaseOrder = () => {
     if (selectedItems.length === 0) {
       toast({
@@ -297,23 +303,24 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
       return;
     }
     
-    // Logic to create purchase order
-    // This would typically call an API or service function
-    // For now, we'll just log and show a toast
-    console.log("Creating purchase order for:", selectedItems);
-    
-    toast({
-      title: "Purchase order created",
-      description: `Created PO for ${selectedItems.length} items`,
-    });
-    
-    // Update all selected items to "ordered" status
-    bulkUpdateStatus("ordered");
-    
-    // Call the onCreateOrder callback if provided
-    if (onCreateOrder) {
-      onCreateOrder();
-    }
+    // Create purchase order with selected items
+    createPurchaseOrderMutation.mutate(
+      { 
+        materialIds: selectedItems,
+        expectedDeliveryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days from now
+      },
+      {
+        onSuccess: () => {
+          // Update all selected items to "ordered" status
+          bulkUpdateStatus("ordered");
+          
+          // Call the onCreateOrder callback if provided
+          if (onCreateOrder) {
+            onCreateOrder();
+          }
+        }
+      }
+    );
   };
   
   // Export pick list 

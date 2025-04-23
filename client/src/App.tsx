@@ -13,6 +13,7 @@ import CustomerManagement from "./pages/CustomerManagement";
 import ProductionPage from "./pages/ProductionPage";
 import OrderProgressPage from "./pages/OrderProgressPage";
 import MaterialOrdersPage from "./pages/MaterialOrdersPage";
+import MaterialsPickListPage from "./pages/MaterialsPickListPage";
 import HubIntegrationPage from "./pages/HubIntegrationPage";
 import MatOptionPage from "./pages/MatOptionPage";
 import InventoryPage from "./pages/InventoryPage";
@@ -88,6 +89,7 @@ function App() {
                   <Route path="/dashboard" component={Dashboard} />
                   <Route path="/production" component={ProductionPage} />
                   <Route path="/materials" component={MaterialOrdersPage} />
+                  <Route path="/materials/pick-list" component={MaterialsPickListPage} />
                   <Route path="/inventory" component={InventoryPage} />
                   <Route path="/hub" component={HubIntegrationPage} />
                   <Route path="/mat-test" component={MatOptionPage} />
