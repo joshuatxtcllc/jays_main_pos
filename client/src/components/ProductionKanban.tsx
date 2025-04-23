@@ -41,6 +41,7 @@ function OrderCard({
   moveOrder
 }: OrderCardProps) {
   const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [estimatedDays, setEstimatedDays] = useState(7);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -138,7 +139,7 @@ function OrderCard({
           </div>
         )}
       </CardContent>
-      <CardFooter className="pt-0 flex justify-between">
+      <CardFooter className="pt-0 flex gap-2">
         <Button 
           variant="outline" 
           size="sm"
@@ -147,6 +148,15 @@ function OrderCard({
         >
           <ArrowLeftCircle className="h-4 w-4 mr-1" />
           Back
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setIsEditDialogOpen(true)}
+        >
+          <Edit className="h-4 w-4 mr-1" />
+          Edit
         </Button>
         
         {order.productionStatus === 'order_processed' ? (
@@ -197,6 +207,13 @@ function OrderCard({
             <ArrowRightCircle className="h-4 w-4 ml-1" />
           </Button>
         )}
+        
+        {/* Order Edit Dialog */}
+        <OrderEditDialog 
+          isOpen={isEditDialogOpen} 
+          onClose={() => setIsEditDialogOpen(false)} 
+          order={order} 
+        />
       </CardFooter>
     </Card>
   );

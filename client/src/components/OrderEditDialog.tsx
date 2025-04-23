@@ -35,7 +35,14 @@ interface OrderEditDialogProps {
 
 export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps) {
   const { updateOrder, isUpdatingOrder } = useOrders();
-  const [formData, setFormData] = useState<Partial<Order>>({});
+  // Define typed state for form data to match Order shape
+  const [formData, setFormData] = useState<Partial<Order>>({
+    frameId: '',
+    matColorId: '',
+    glassOptionId: '',
+    artworkDescription: '',
+    artworkType: ''
+  });
 
   // Fetch necessary reference data
   const { data: frames } = useQuery({
@@ -85,7 +92,16 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
         artworkType: order.artworkType || '',
       });
     } else {
-      setFormData({});
+      setFormData({
+        frameId: '',
+        matColorId: '',
+        glassOptionId: '',
+        artworkWidth: undefined,
+        artworkHeight: undefined,
+        matWidth: undefined,
+        artworkDescription: '',
+        artworkType: '',
+      });
     }
   }, [order]);
 
