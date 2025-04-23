@@ -89,7 +89,7 @@ function App() {
                   <Route path="/dashboard" component={Dashboard} />
                   <Route path="/production" component={ProductionPage} />
                   <Route path="/materials" component={MaterialOrdersPage} />
-                  <Route path="/materials/pick-list" component={MaterialsPickListPage} />
+                  <Route path="/materials-pick-list" component={MaterialsPickListPage} />
                   <Route path="/inventory" component={InventoryPage} />
                   <Route path="/hub" component={HubIntegrationPage} />
                   <Route path="/mat-test" component={MatOptionPage} />

@@ -89,6 +89,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Materials
             </span>
           </Link>
+          <Link href="/materials-pick-list">
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/materials-pick-list" && "text-primary"
+            )}>
+              Pick List
+            </span>
+          </Link>
           <Link href="/inventory">
             <span className={cn(
               "font-medium hover:text-primary transition-colors cursor-pointer",
@@ -243,6 +251,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               location === "/materials" && "text-primary"
             )}>
               Materials
+            </span>
+          </Link>
+          <Link href="/materials-pick-list">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/materials-pick-list" && "text-primary"
+            )}>
+              Pick List
             </span>
           </Link>
           <Link href="/inventory">
