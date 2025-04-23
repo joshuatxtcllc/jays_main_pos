@@ -104,7 +104,17 @@ function OrderCard({
             <span className="font-medium">Size:</span> {order.artworkWidth}×{order.artworkHeight}"
           </div>
           <div>
-            <span className="font-medium">Glass:</span> {order.glassOptionId?.split('-')[1] || 'None'}
+            <span className="font-medium">Glass:</span> {
+              (() => {
+                // Handle both formats: with hyphen (vendor-id) or just id (museum, uv)
+                if (!order.glassOptionId) return 'None';
+                return order.glassOptionId.includes('-') 
+                  ? order.glassOptionId.split('-')[1] 
+                  : order.glassOptionId === 'museum' ? 'Museum' : 
+                    order.glassOptionId === 'uv' ? 'UV Protection' : 
+                    order.glassOptionId;
+              })()
+            }
           </div>
         </div>
         
