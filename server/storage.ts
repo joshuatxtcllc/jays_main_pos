@@ -155,6 +155,12 @@ export interface IStorage {
   createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder>;
   updateMaterialOrder(id: number, data: Partial<MaterialOrder>): Promise<MaterialOrder>;
   deleteMaterialOrder(id: number): Promise<void>;
+  
+  // Materials pick list methods
+  getMaterialsPickList(): Promise<any[]>; // Materials for all orders that need processing
+  getMaterialsForOrder(orderId: number): Promise<any[]>; // Materials for a specific order
+  updateMaterialOrder(id: string, data: any): Promise<any>; // Update material status
+  createPurchaseOrder(materialIds: string[]): Promise<any>; // Create a purchase order from materials
 }
 
 import { db } from "./db";
@@ -1580,6 +1586,189 @@ export class DatabaseStorage implements IStorage {
       return 'id,sku,name,description,quantity\n';
     } catch (error) {
       console.error('Error in exportInventoryToCSV:', error);
+      throw error;
+    }
+  }
+
+  // Materials pick list methods
+  async getMaterialsPickList(): Promise<any[]> {
+    try {
+      // Format material orders into a format suitable for the pick list UI
+      const materials = await db.select().from(materialOrders);
+      
+      // Transform MaterialOrder objects into MaterialItem objects for the UI
+      return materials.map(material => ({
+        id: material.id.toString(),
+        orderIds: material.sourceOrderId ? [material.sourceOrderId] : [],
+        name: material.materialName,
+        sku: material.materialId,
+        supplier: material.supplierName || material.vendor || 'Unknown',
+        type: material.materialType,
+        quantity: Number(material.quantity),
+        status: material.status,
+        orderDate: material.orderDate?.toISOString() || undefined,
+        receiveDate: material.actualArrival?.toISOString() || undefined,
+        priority: material.priority === 'high' ? 'high' : 
+                 material.priority === 'low' ? 'low' : 'medium',
+        notes: material.notes
+      }));
+    } catch (error) {
+      console.error("Error getting materials pick list:", error);
+      return [];
+    }
+  }
+  
+  async getMaterialsForOrder(orderId: number): Promise<any[]> {
+    try {
+      // Get materials for a specific order
+      const materials = await db.select()
+        .from(materialOrders)
+        .where(eq(materialOrders.sourceOrderId, orderId));
+      
+      // Transform MaterialOrder objects into MaterialItem objects for the UI
+      return materials.map(material => ({
+        id: material.id.toString(),
+        orderIds: [orderId],
+        name: material.materialName,
+        sku: material.materialId,
+        supplier: material.supplierName || material.vendor || 'Unknown',
+        type: material.materialType,
+        quantity: Number(material.quantity),
+        status: material.status,
+        orderDate: material.orderDate?.toISOString() || undefined,
+        receiveDate: material.actualArrival?.toISOString() || undefined,
+        priority: material.priority === 'high' ? 'high' : 
+                 material.priority === 'low' ? 'low' : 'medium',
+        notes: material.notes
+      }));
+    } catch (error) {
+      console.error(`Error getting materials for order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  async updateMaterialOrder(id: string | number, data: any): Promise<any> {
+    try {
+      const materialId = typeof id === 'string' ? parseInt(id, 10) : id;
+      
+      // Update the material order in the database
+      const [updatedMaterial] = await db
+        .update(materialOrders)
+        .set({
+          status: data.status,
+          notes: data.notes,
+          orderDate: data.orderDate ? new Date(data.orderDate) : undefined,
+          actualArrival: data.receiveDate ? new Date(data.receiveDate) : undefined
+        })
+        .where(eq(materialOrders.id, materialId))
+        .returning();
+      
+      if (!updatedMaterial) {
+        throw new Error(`Material order with ID ${id} not found`);
+      }
+      
+      // Return the updated material in UI format
+      return {
+        id: updatedMaterial.id.toString(),
+        orderIds: updatedMaterial.sourceOrderId ? [updatedMaterial.sourceOrderId] : [],
+        name: updatedMaterial.materialName,
+        sku: updatedMaterial.materialId,
+        supplier: updatedMaterial.supplierName || updatedMaterial.vendor || 'Unknown',
+        type: updatedMaterial.materialType,
+        quantity: Number(updatedMaterial.quantity),
+        status: updatedMaterial.status,
+        orderDate: updatedMaterial.orderDate?.toISOString() || undefined,
+        receiveDate: updatedMaterial.actualArrival?.toISOString() || undefined,
+        priority: updatedMaterial.priority === 'high' ? 'high' : 
+                 updatedMaterial.priority === 'low' ? 'low' : 'medium',
+        notes: updatedMaterial.notes
+      };
+    } catch (error) {
+      console.error(`Error updating material order ${id}:`, error);
+      throw error;
+    }
+  }
+  
+  async createPurchaseOrder(materialIds: string[]): Promise<any> {
+    try {
+      // Convert string IDs to numbers
+      const numericIds = materialIds.map(id => parseInt(id, 10));
+      
+      // Get the material orders to include in the purchase order
+      const materialsToOrder = await db.select()
+        .from(materialOrders)
+        .where(sql`${materialOrders.id} IN (${numericIds.join(', ')})`);
+      
+      if (materialsToOrder.length === 0) {
+        throw new Error('No material orders found with the provided IDs');
+      }
+      
+      // Group materials by supplier
+      const supplierGroups: Record<string, MaterialOrder[]> = {};
+      for (const material of materialsToOrder) {
+        const supplier = material.supplierName || material.vendor || 'Unknown';
+        if (!supplierGroups[supplier]) {
+          supplierGroups[supplier] = [];
+        }
+        supplierGroups[supplier].push(material);
+      }
+      
+      // Create purchase orders for each supplier
+      const purchaseOrders = [];
+      
+      for (const supplier in supplierGroups) {
+        // Create a new purchase order
+        const [purchaseOrder] = await db.insert(purchaseOrders)
+          .values({
+            supplier: supplier,
+            status: 'pending',
+            totalAmount: supplierGroups[supplier].reduce(
+              (sum, material) => sum + Number(material.totalCost || 0), 
+              0
+            ),
+            notes: `Auto-generated purchase order for ${supplierGroups[supplier].length} items`
+          })
+          .returning();
+          
+        // Create purchase order lines for each material
+        for (const material of supplierGroups[supplier]) {
+          // Find the inventory item corresponding to the material
+          const [inventoryItem] = await db.select()
+            .from(inventoryItems)
+            .where(sql`${inventoryItems.sku} = ${material.materialId}`);
+            
+          const itemId = inventoryItem?.id || null;
+          
+          // Create a purchase order line
+          await db.insert(purchaseOrderLines)
+            .values({
+              purchaseOrderId: purchaseOrder.id,
+              itemId: itemId,
+              quantity: material.quantity,
+              unitCost: material.costPerUnit || 0,
+              lineTotal: material.totalCost || 0,
+              notes: material.notes
+            });
+          
+          // Update the material order status to 'ordered'
+          await db.update(materialOrders)
+            .set({
+              status: 'ordered',
+              orderDate: new Date()
+            })
+            .where(eq(materialOrders.id, material.id));
+        }
+        
+        purchaseOrders.push(purchaseOrder);
+      }
+      
+      return {
+        success: true,
+        message: `Created ${purchaseOrders.length} purchase orders`,
+        purchaseOrders
+      };
+    } catch (error) {
+      console.error('Error creating purchase order:', error);
       throw error;
     }
   }

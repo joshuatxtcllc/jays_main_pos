@@ -45,6 +45,15 @@ import {
   calculateGlassPrice 
 } from "./services/pricingService";
 import inventoryRoutes from "./routes/inventoryRoutes";
+import { 
+  getMaterialsPickList, 
+  getMaterialsBySupplier, 
+  getMaterialsForOrder, 
+  updateMaterial, 
+  createPurchaseOrder,
+  getMaterialTypes,
+  getMaterialSuppliers
+} from "./controllers/materialsController";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
