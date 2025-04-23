@@ -288,7 +288,8 @@ export const materialOrders = pgTable("material_orders", {
   materialType: text("material_type").$type<MaterialType>().notNull(),
   materialId: text("material_id").notNull(), // frameId, matColorId, etc.
   materialName: text("material_name").notNull(),
-  vendor: text("vendor"), // Vendor name (e.g., Larson, Nielsen)
+  // Note: 'vendor' field is removed as it doesn't exist in the database
+  // Use 'supplierName' instead
   quantity: numeric("quantity").notNull(),
   status: text("status").$type<MaterialOrderStatus>().notNull().default('pending'),
   sourceOrderId: integer("source_order_id").references(() => orders.id),
