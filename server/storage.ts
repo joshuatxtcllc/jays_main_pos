@@ -1602,7 +1602,7 @@ export class DatabaseStorage implements IStorage {
         orderIds: material.sourceOrderId ? [material.sourceOrderId] : [],
         name: material.materialName,
         sku: material.materialId,
-        supplier: material.supplierName || material.vendor || 'Unknown',
+        supplier: material.supplierName || 'Unknown',
         type: material.materialType,
         quantity: Number(material.quantity),
         status: material.status,
@@ -1631,7 +1631,7 @@ export class DatabaseStorage implements IStorage {
         orderIds: [orderId],
         name: material.materialName,
         sku: material.materialId,
-        supplier: material.supplierName || material.vendor || 'Unknown',
+        supplier: material.supplierName || 'Unknown',
         type: material.materialType,
         quantity: Number(material.quantity),
         status: material.status,
@@ -1673,7 +1673,7 @@ export class DatabaseStorage implements IStorage {
         orderIds: updatedMaterial.sourceOrderId ? [updatedMaterial.sourceOrderId] : [],
         name: updatedMaterial.materialName,
         sku: updatedMaterial.materialId,
-        supplier: updatedMaterial.supplierName || updatedMaterial.vendor || 'Unknown',
+        supplier: updatedMaterial.supplierName || 'Unknown',
         type: updatedMaterial.materialType,
         quantity: Number(updatedMaterial.quantity),
         status: updatedMaterial.status,
@@ -1706,7 +1706,7 @@ export class DatabaseStorage implements IStorage {
       // Group materials by supplier
       const supplierGroups: Record<string, MaterialOrder[]> = {};
       for (const material of materialsToOrder) {
-        const supplier = material.supplierName || material.vendor || 'Unknown';
+        const supplier = material.supplierName || 'Unknown';
         if (!supplierGroups[supplier]) {
           supplierGroups[supplier] = [];
         }
