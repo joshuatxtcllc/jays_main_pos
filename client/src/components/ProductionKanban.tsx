@@ -7,11 +7,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProductionKanban } from '@/hooks/use-production';
-import { Loader2, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info, GripVertical } from 'lucide-react';
+import { Loader2, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info, GripVertical, Edit } from 'lucide-react';
 import { Order, ProductionStatus, productionStatuses } from '@shared/schema';
 import { formatCurrency } from '@/lib/utils';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { OrderEditDialog } from '@/components/OrderEditDialog';
 
 // Define item types for drag and drop
 const ItemTypes = {
