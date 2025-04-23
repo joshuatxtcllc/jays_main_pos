@@ -246,48 +246,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
       
-      // Update quantity and recalculate prices if necessary
-      const updates: Partial<Order> = {};
+      // Update and recalculate prices if necessary
+      const updates: Partial<Order> = { ...req.body };
       
-      // Handle quantity updates
-      if (req.body.quantity !== undefined) {
-        const quantity = parseInt(req.body.quantity);
-        if (isNaN(quantity) || quantity < 1) {
+      // Remove non-order properties
+      delete updates.recalculatePricing;
+      
+      // Flag to check if we need to recalculate pricing
+      const recalculatePricing = req.body.recalculatePricing === true || 
+        updates.quantity !== undefined || 
+        updates.artworkWidth !== undefined || 
+        updates.artworkHeight !== undefined || 
+        updates.matWidth !== undefined ||
+        updates.frameId !== order.frameId ||
+        updates.matColorId !== order.matColorId ||
+        updates.glassOptionId !== order.glassOptionId;
+      
+      // If size or material components changed, recalculate pricing
+      if (recalculatePricing) {
+        console.log("Recalculating pricing due to dimension or material changes");
+        
+        // If quantity is updated, use the new value, otherwise use existing
+        const quantity = updates.quantity !== undefined 
+          ? parseInt(updates.quantity as unknown as string) 
+          : (order.quantity || 1);
+          
+        if (updates.quantity !== undefined && (isNaN(quantity) || quantity < 1)) {
           return res.status(400).json({ message: "Invalid quantity value" });
         }
         
+        // Update the quantity in the updates object
         updates.quantity = quantity;
         
-        // Recalculate subtotal based on new quantity if needed
-        if (quantity !== (order.quantity || 1)) {
-          // For simplicity, we'll multiply the unit price by the new quantity
-          const unitPrice = Number(order.subtotal) / (order.quantity || 1);
-          const newSubtotal = unitPrice * quantity;
-          updates.subtotal = newSubtotal.toString();
+        // Determine new dimensions
+        const artworkWidth = updates.artworkWidth !== undefined 
+          ? Number(updates.artworkWidth) 
+          : Number(order.artworkWidth);
           
-          // Recalculate tax and total
-          const taxRate = Number(order.tax) / Number(order.subtotal);
-          const newTax = newSubtotal * taxRate;
-          updates.tax = newTax.toString();
-          updates.total = (newSubtotal + newTax).toString();
+        const artworkHeight = updates.artworkHeight !== undefined 
+          ? Number(updates.artworkHeight) 
+          : Number(order.artworkHeight);
           
-          // Also update the order group totals
-          if (order.orderGroupId) {
-            const orderGroup = await storage.getOrderGroup(order.orderGroupId);
-            if (orderGroup) {
-              const orderGroupOrders = await storage.getOrdersByGroupId(order.orderGroupId);
-              
-              // Calculate the difference in price due to quantity change
-              const priceDifference = newSubtotal - Number(order.subtotal);
-              const taxDifference = newTax - Number(order.tax);
-              
-              // Update order group totals
-              const updatedGroup = await storage.updateOrderGroup(order.orderGroupId, {
-                subtotal: (Number(orderGroup.subtotal) + priceDifference).toString(),
-                tax: (Number(orderGroup.tax) + taxDifference).toString(),
-                total: (Number(orderGroup.total) + priceDifference + taxDifference).toString()
-              });
-            }
+        const matWidth = updates.matWidth !== undefined 
+          ? Number(updates.matWidth) 
+          : Number(order.matWidth);
+          
+        // Calculate united inches for pricing (width + height)
+        const unitedInches = artworkWidth + artworkHeight;
+        
+        // Get unit price based on dimensions and frame type
+        // For now, we'll use a simplified calculation
+        const frameId = updates.frameId || order.frameId;
+        const matColorId = updates.matColorId || order.matColorId;
+        const glassOptionId = updates.glassOptionId || order.glassOptionId;
+        
+        // Simplified pricing calculation
+        // In a real implementation, we would fetch pricing from the database
+        const basePrice = unitedInches * 5; // $5 per united inch as base
+        const framePrice = basePrice * 0.5; // Frame is 50% of base
+        const matPrice = unitedInches * 0.2 * matWidth; // Mat price based on size and width
+        const glassPrice = (artworkWidth * artworkHeight) * 0.1; // Glass based on area
+        
+        // Calculate new subtotal
+        const newUnitPrice = basePrice + framePrice + matPrice + glassPrice;
+        const newSubtotal = newUnitPrice * quantity;
+        updates.subtotal = newSubtotal.toString();
+        
+        // Calculate tax at standard rate (e.g., 8%)
+        const taxRate = order.orderGroupId 
+          ? (Number(order.tax) / Number(order.subtotal)) 
+          : 0.08;
+          
+        const newTax = newSubtotal * taxRate;
+        updates.tax = newTax.toString();
+        updates.total = (newSubtotal + newTax).toString();
+        
+        // Update the order group totals if necessary
+        if (order.orderGroupId) {
+          const orderGroup = await storage.getOrderGroup(order.orderGroupId);
+          if (orderGroup) {
+            // Calculate price difference
+            const priceDifference = newSubtotal - Number(order.subtotal);
+            const taxDifference = newTax - Number(order.tax);
+            
+            // Update order group totals
+            await storage.updateOrderGroup(order.orderGroupId, {
+              subtotal: (Number(orderGroup.subtotal) + priceDifference).toString(),
+              tax: (Number(orderGroup.tax) + taxDifference).toString(),
+              total: (Number(orderGroup.total) + priceDifference + taxDifference).toString()
+            });
           }
         }
       }

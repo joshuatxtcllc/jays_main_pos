@@ -8,6 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQuery } from '@tanstack/react-query';
 import { Order } from '@shared/schema';
 import { useOrders } from '@/hooks/use-orders';
+import { useToast } from '@/hooks/use-toast';
+
+// For Type safety with Numeric/String conversions in the form
+type FormValue<T> = T extends number ? string | number : T;
 
 // Interface for frame data
 interface Frame {
@@ -35,6 +39,7 @@ interface OrderEditDialogProps {
 
 export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps) {
   const { updateOrder, isUpdatingOrder } = useOrders();
+  const { toast } = useToast();
   // Define typed state for form data to match Order shape
   const [formData, setFormData] = useState<Partial<Order>>({
     frameId: '',
@@ -114,13 +119,37 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Check if dimensions were modified to trigger recalculation
+  const hasDimensionsChanged = () => {
+    if (!order) return false;
+    
+    // Compare string representations to handle different types
+    return (
+      String(formData.artworkWidth) !== String(order.artworkWidth) ||
+      String(formData.artworkHeight) !== String(order.artworkHeight) ||
+      String(formData.matWidth) !== String(order.matWidth)
+    );
+  };
+
   const handleSubmit = () => {
     if (order && Object.keys(formData).length > 0) {
+      // Determine if pricing needs to be recalculated based on dimension changes
+      const dimensionsChanged = hasDimensionsChanged();
+      
       updateOrder({ 
         id: order.id, 
-        data: formData 
+        data: formData,
+        recalculatePricing: dimensionsChanged
       }, {
         onSuccess: () => {
+          // If dimensions changed, show additional message about pricing updates
+          if (dimensionsChanged) {
+            toast({
+              title: 'Size Updated',
+              description: 'Order dimensions and pricing have been recalculated',
+              variant: 'default',
+            });
+          }
           onClose();
         }
       });
@@ -142,7 +171,7 @@ export function OrderEditDialog({ isOpen, onClose, order }: OrderEditDialogProps
             </Label>
             <div className="col-span-3">
               <Select 
-                value={formData.frameId} 
+                value={formData.frameId || ''} 
                 onValueChange={(value) => handleSelectChange('frameId', value)}
               >
                 <SelectTrigger>

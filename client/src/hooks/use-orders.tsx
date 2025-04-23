@@ -35,8 +35,16 @@ export function useOrders() {
 
   // Update order mutation (for editing frame specs, etc)
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number, data: Partial<Order> }) => {
-      const res = await apiRequest('PATCH', `/api/orders/${id}`, data);
+    mutationFn: async ({ id, data, recalculatePricing = true }: { 
+      id: number, 
+      data: Partial<Order>,
+      recalculatePricing?: boolean 
+    }) => {
+      // Include a flag to indicate if pricing should be recalculated based on new dimensions
+      const res = await apiRequest('PATCH', `/api/orders/${id}`, {
+        ...data,
+        recalculatePricing
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -44,9 +52,11 @@ export function useOrders() {
         title: 'Order updated',
         description: 'The order has been successfully updated',
       });
-      // Invalidate relevant queries to refresh the data
+      // Invalidate relevant queries to refresh the data across the system
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/production/kanban'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/materials/pick-list'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/order-groups'] });
     },
     onError: (error: Error) => {
       toast({
