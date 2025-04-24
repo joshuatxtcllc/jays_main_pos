@@ -1,358 +1,247 @@
-import { MailService } from '@sendgrid/mail';
-import type { MailDataRequired } from '@sendgrid/mail';
+import sgMail from '@sendgrid/mail';
 
-// Create a new instance of the MailService
-const mailService = new MailService();
-
-// Initialize SendGrid with API key
+// Initialize SendGrid with the API key
 if (process.env.SENDGRID_API_KEY) {
-  mailService.setApiKey(process.env.SENDGRID_API_KEY);
-} else {
-  console.warn('SENDGRID_API_KEY not found. Email service will not work.');
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 }
 
-interface EmailOptions {
+interface EmailParams {
   to: string;
+  from: string;
   subject: string;
   text?: string;
   html?: string;
-  from?: string;
-  attachments?: any[];
 }
 
 /**
  * Send an email using SendGrid
+ * @param params Email parameters including to, from, subject, text, and html
+ * @returns A promise that resolves when the email is sent
  */
-export async function sendEmail(options: EmailOptions): Promise<boolean> {
+export async function sendEmailWithSendGrid(params: EmailParams): Promise<void> {
+  // Check if SendGrid is configured
   if (!process.env.SENDGRID_API_KEY) {
-    console.warn('Email not sent: SENDGRID_API_KEY not configured');
-    return false;
+    console.warn('SendGrid API key is not configured. Email sending is disabled.');
+    return;
   }
 
   try {
-    // Create email data for SendGrid
-    const msg: MailDataRequired = {
-      to: options.to,
-      from: options.from || 'noreply@jaysframesguru.com',
-      subject: options.subject,
-      text: options.text || options.subject // Ensure we always have text content
-    };
-
-    // Add text content if provided
-    if (options.text) {
-      msg.text = options.text;
-    }
-
-    // Add HTML content if provided
-    if (options.html) {
-      msg.html = options.html;
-    }
-
-    // Add attachments if provided
-    if (options.attachments && options.attachments.length > 0) {
-      msg.attachments = options.attachments;
-    }
-
-    await mailService.send(msg);
-    return true;
-  } catch (error) {
+    // Send the email
+    await sgMail.send({
+      to: params.to,
+      from: params.from,
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
+    });
+    
+    console.log(`Email sent successfully to ${params.to}`);
+  } catch (error: any) {
     console.error('SendGrid Error:', error);
-    return false;
+    
+    // Rethrow the error to be handled by the caller
+    throw new Error(`Failed to send email: ${error.message}`);
   }
 }
 
 /**
- * Send an order confirmation email
+ * Generate an HTML email template for order status updates
+ * @param customerName Customer's name
+ * @param orderId Order ID
+ * @param orderStatus Current order status
+ * @param estimatedCompletion Estimated completion date
+ * @returns HTML string for the email
  */
-export async function sendOrderConfirmation(
-  customerEmail: string,
+export function generateOrderStatusEmailTemplate(
   customerName: string,
   orderId: number,
-  orderSummary: any
-): Promise<boolean> {
-  const subject = `Your Order Confirmation #${orderId} - Jay's Frames Guru`;
-  
-  // Generate HTML for order details
-  let orderItems = '';
-  if (orderSummary.items && Array.isArray(orderSummary.items)) {
-    orderItems = orderSummary.items.map((item: any) => `
-      <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #eee;">${item.description || 'Custom Framing'}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #eee; text-align: right;">$${(item.price || 0).toFixed(2)}</td>
-      </tr>
-    `).join('');
-  }
-
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px;">Order Confirmation</h2>
-      
-      <p>Hello ${customerName},</p>
-      
-      <p>Thank you for your order! We're pleased to confirm that we've received your custom framing order.</p>
-      
-      <div style="background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; padding: 15px; margin: 20px 0;">
-        <h3 style="margin-top: 0; color: #555;">Order #${orderId}</h3>
-        <p>Placed on: ${new Date().toLocaleDateString()}</p>
-        
-        <table style="width: 100%; border-collapse: collapse;">
-          <tr style="background-color: #f2f2f2;">
-            <th style="padding: 10px; text-align: left;">Item</th>
-            <th style="padding: 10px; text-align: right;">Price</th>
-          </tr>
-          ${orderItems}
-          <tr>
-            <td style="padding: 10px; text-align: right; font-weight: bold;">Subtotal:</td>
-            <td style="padding: 10px; text-align: right;">$${(orderSummary.subtotal || 0).toFixed(2)}</td>
-          </tr>
-          <tr>
-            <td style="padding: 10px; text-align: right; font-weight: bold;">Tax:</td>
-            <td style="padding: 10px; text-align: right;">$${(orderSummary.tax || 0).toFixed(2)}</td>
-          </tr>
-          <tr style="font-weight: bold; font-size: 1.1em;">
-            <td style="padding: 10px; text-align: right;">Total:</td>
-            <td style="padding: 10px; text-align: right;">$${(orderSummary.total || 0).toFixed(2)}</td>
-          </tr>
-        </table>
-      </div>
-      
-      <p>We'll notify you when your custom frame is ready for pickup. You can also check the status of your order at any time by logging into your account or contacting us directly.</p>
-      
-      <p>If you have any questions, please don't hesitate to contact us.</p>
-      
-      <p>Thank you for choosing Jay's Frames Guru!</p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9em; color: #777;">
-        <p>Jay's Frames Guru Framing<br>
-        123 Main Street<br>
-        Anytown, USA 12345<br>
-        Phone: (555) 123-4567<br>
-        Email: info@jaysframesguru.com</p>
-      </div>
-    </div>
-  `;
-
-  return sendEmail({
-    to: customerEmail,
-    subject,
-    html,
-    text: `Order Confirmation #${orderId} - Thank you for your order! We'll notify you when your custom frame is ready for pickup.`,
-  });
-}
-
-/**
- * Send a payment receipt email
- */
-export async function sendPaymentReceipt(
-  customerEmail: string,
-  customerName: string,
-  orderGroupId: number,
-  paymentDetails: any
-): Promise<boolean> {
-  const subject = `Payment Receipt - Order Group #${orderGroupId} - Jay's Frames Guru`;
-  
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px;">Payment Receipt</h2>
-      
-      <p>Hello ${customerName},</p>
-      
-      <p>Thank you for your payment. This email confirms that we've received your payment for Order Group #${orderGroupId}.</p>
-      
-      <div style="background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; padding: 15px; margin: 20px 0;">
-        <h3 style="margin-top: 0; color: #555;">Payment Details</h3>
-        <p><strong>Date:</strong> ${new Date(paymentDetails.date || Date.now()).toLocaleDateString()}</p>
-        <p><strong>Amount:</strong> $${(paymentDetails.amount || 0).toFixed(2)}</p>
-        <p><strong>Payment Method:</strong> ${paymentDetails.method || 'Credit Card'}</p>
-        <p><strong>Transaction ID:</strong> ${paymentDetails.transactionId || 'N/A'}</p>
-      </div>
-      
-      <p>Your framing order is now in progress. We'll send you updates as your order moves through our production process.</p>
-      
-      <p>Thank you for choosing Jay's Frames Guru!</p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9em; color: #777;">
-        <p>Jay's Frames Guru Framing<br>
-        123 Main Street<br>
-        Anytown, USA 12345<br>
-        Phone: (555) 123-4567<br>
-        Email: info@jaysframesguru.com</p>
-      </div>
-    </div>
-  `;
-
-  return sendEmail({
-    to: customerEmail,
-    subject,
-    html,
-    text: `Payment Receipt - Order Group #${orderGroupId} - Thank you for your payment of $${(paymentDetails.amount || 0).toFixed(2)}. Your framing order is now in progress.`,
-  });
-}
-
-/**
- * Send an order status update email
- */
-export async function sendOrderStatusUpdate(
-  customerEmail: string,
-  customerName: string,
-  orderId: number,
-  newStatus: string,
-  previousStatus?: string,
-  estimatedCompletionDays?: number
-): Promise<boolean> {
+  orderStatus: string,
+  estimatedCompletion?: Date
+): string {
   // Format the status for display
-  const formatStatus = (status: string) => status
+  const formattedStatus = orderStatus
     .split('_')
     .map(word => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
   
-  const statusDisplay = formatStatus(newStatus);
-  const previousStatusDisplay = previousStatus ? formatStatus(previousStatus) : '';
-  
-  const subject = `Order #${orderId} Status Update - ${statusDisplay} - Jay's Frames Guru`;
-  
-  // Determine the appropriate message based on the production status
-  let statusMessage = '';
-  let progressPercentage = 0;
+  // Format the estimated completion date if provided
+  const completionDate = estimatedCompletion 
+    ? new Date(estimatedCompletion).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+    : 'Not available';
 
-  switch (newStatus) {
-    case 'order_processed':
-      statusMessage = 'Your custom framing order has been received and is being processed. We\'ll begin working on it soon!';
-      progressPercentage = 10;
-      break;
-    case 'scheduled':
-      const completionDate = estimatedCompletionDays 
-        ? new Date(new Date().setDate(new Date().getDate() + estimatedCompletionDays)).toLocaleDateString() 
-        : 'the estimated completion date';
-      statusMessage = `Your order has been scheduled for production! Our team will complete your framing project by ${completionDate}.`;
-      progressPercentage = 20;
-      break;
-    case 'materials_ordered':
-      statusMessage = 'We\'ve ordered the special materials for your custom frame. This step ensures you get the perfect frame for your artwork.';
-      progressPercentage = 30;
-      break;
-    case 'materials_arrived':
-      statusMessage = 'Good news! The materials for your custom frame have arrived. We\'ll begin cutting and assembling soon.';
-      progressPercentage = 40;
-      break;
-    case 'frame_cut':
-      statusMessage = 'Our frame specialists have custom-cut your frame to the exact dimensions needed for your artwork.';
-      progressPercentage = 60;
-      break;
-    case 'mat_cut':
-      statusMessage = 'The matboard for your artwork has been precision-cut. This will beautifully showcase your piece while providing proper spacing.';
-      progressPercentage = 70;
-      break;
-    case 'prepped':
-      statusMessage = 'Your frame, mat, and glass have been prepared and your artwork is being carefully mounted and assembled.';
-      progressPercentage = 85;
-      break;
-    case 'completed':
-      statusMessage = 'Great news! Your custom frame is complete and ready for pickup. Please visit our store during business hours to collect your beautifully framed piece.';
-      progressPercentage = 100;
-      break;
-    case 'delayed':
-      statusMessage = 'We apologize, but there\'s been a slight delay with your order. Our team is working diligently to get back on schedule. We\'ll keep you updated on progress.';
-      progressPercentage = previousStatus ? getProgressPercentage(previousStatus) : 50;
-      break;
-    default:
-      statusMessage = `Your order status has been updated to "${statusDisplay}".`;
-      progressPercentage = 50;
-  }
-
-  // Progress bar HTML
+  // Create a visual progress bar based on the status
+  const statusSteps = [
+    'order_processed',
+    'scheduled',
+    'materials_ordered',
+    'materials_arrived',
+    'frame_cut',
+    'mat_cut',
+    'prepped',
+    'completed'
+  ];
+  
+  const currentStepIndex = statusSteps.indexOf(orderStatus);
+  const progressPercentage = Math.max(
+    10, 
+    Math.min(100, Math.round((currentStepIndex + 1) / statusSteps.length * 100))
+  );
+  
   const progressBarHtml = `
-    <div style="margin: 20px 0;">
-      <p style="margin-bottom: 5px;"><strong>Order Progress: ${progressPercentage}%</strong></p>
-      <div style="background-color: #eee; border-radius: 5px; height: 20px; width: 100%;">
-        <div style="background-color: #4CAF50; border-radius: 5px; height: 20px; width: ${progressPercentage}%"></div>
+    <div style="margin: 20px 0; width: 100%;">
+      <div style="width: 100%; background-color: #f0f0f0; height: 20px; border-radius: 10px; overflow: hidden;">
+        <div style="width: ${progressPercentage}%; background-color: #4CAF50; height: 20px;"></div>
       </div>
-      <p style="font-size: 0.8em; color: #666; margin-top: 5px;">Current Stage: ${statusDisplay}</p>
-    </div>
-  `;
-
-  // Next steps message
-  let nextStepsMessage = '';
-  if (newStatus !== 'completed' && newStatus !== 'delayed') {
-    const nextStep = getNextStep(newStatus);
-    nextStepsMessage = `
-      <div style="margin-top: 15px;">
-        <p><strong>What's Next:</strong> ${nextStep}</p>
-      </div>
-    `;
-  }
-  
-  const html = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px;">Order Progress Update</h2>
-      
-      <p>Hello ${customerName},</p>
-      
-      <div style="background-color: #f9f9f9; border: 1px solid #eee; border-radius: 5px; padding: 15px; margin: 20px 0;">
-        <h3 style="margin-top: 0; color: #555;">Order #${orderId}</h3>
-        
-        ${progressBarHtml}
-        
-        <p><strong>Update:</strong> ${statusMessage}</p>
-        
-        ${nextStepsMessage}
-      </div>
-      
-      <p>If you have any questions about your order, please don't hesitate to contact us.</p>
-      
-      <p>Thank you for choosing Jay's Frames Guru!</p>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 0.9em; color: #777;">
-        <p>Jay's Frames Guru Framing<br>
-        123 Main Street<br>
-        Anytown, USA 12345<br>
-        Phone: (555) 123-4567<br>
-        Email: info@jaysframesguru.com</p>
+      <div style="display: flex; justify-content: space-between; margin-top: 5px; font-size: 12px;">
+        <span>Order Placed</span>
+        <span>In Production</span>
+        <span>Completed</span>
       </div>
     </div>
   `;
 
-  return sendEmail({
-    to: customerEmail,
-    subject,
-    html,
-    text: `Order #${orderId} Progress Update - ${statusDisplay} (${progressPercentage}% complete) - ${statusMessage}`,
-  });
+  // Generate the HTML email
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Order Status Update</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          color: #333;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          padding: 20px;
+        }
+        .header {
+          background-color: #4A90E2;
+          color: white;
+          padding: 20px;
+          text-align: center;
+        }
+        .content {
+          padding: 20px;
+          background-color: #f9f9f9;
+        }
+        .footer {
+          text-align: center;
+          padding: 20px;
+          font-size: 12px;
+          color: #666;
+        }
+        .button {
+          display: inline-block;
+          background-color: #4A90E2;
+          color: white;
+          padding: 10px 20px;
+          text-decoration: none;
+          border-radius: 5px;
+          margin-top: 20px;
+        }
+        .status-box {
+          background-color: #e8f4fd;
+          border-left: 4px solid #4A90E2;
+          padding: 15px;
+          margin: 20px 0;
+        }
+        .details-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+        .details-table th, .details-table td {
+          border: 1px solid #ddd;
+          padding: 10px;
+          text-align: left;
+        }
+        .details-table th {
+          background-color: #f0f0f0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Order Status Update</h1>
+        </div>
+        
+        <div class="content">
+          <p>Hello ${customerName},</p>
+          
+          <p>We're writing to provide you with an update on your custom framing order.</p>
+          
+          <div class="status-box">
+            <h2>Order #${orderId} Status: ${formattedStatus}</h2>
+            <p>Your order is now in the <strong>${formattedStatus}</strong> stage.</p>
+            <p><strong>Estimated Completion:</strong> ${completionDate}</p>
+          </div>
+          
+          ${progressBarHtml}
+          
+          <h3>What's Next?</h3>
+          <p>Your order is progressing through our custom framing process. Here's what's happening:</p>
+          
+          <table class="details-table">
+            <tr>
+              <th>Current Stage</th>
+              <th>Description</th>
+            </tr>
+            <tr>
+              <td>${formattedStatus}</td>
+              <td>${getStageDescription(orderStatus)}</td>
+            </tr>
+          </table>
+          
+          <p>We'll notify you when your order moves to the next stage or is ready for pickup.</p>
+          
+          <a href="#" class="button">Track Your Order</a>
+        </div>
+        
+        <div class="footer">
+          <p>Thank you for choosing Jays Frames Guru Framing</p>
+          <p>123 Frame Street, Anytown, ST 12345</p>
+          <p>Phone: (555) 123-4567 | Email: info@jaysframes.com</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 }
 
-// Helper function to get the appropriate next step message
-function getNextStep(currentStatus: string): string {
-  switch (currentStatus) {
-    case 'order_processed':
-      return "We'll schedule your order for production and provide an estimated completion date.";
-    case 'scheduled':
-      return "We'll order specialized materials for your custom frame from our suppliers.";
-    case 'materials_ordered':
-      return "Once materials arrive, we'll begin the framing process.";
-    case 'materials_arrived':
-      return "Our master framers will cut your custom frame pieces to precision dimensions.";
-    case 'frame_cut':
-      return "We'll prepare the matboard that will showcase your artwork.";
-    case 'mat_cut':
-      return "Final assembly of your custom frame, including mounting your artwork and installing glass.";
-    case 'prepped':
-      return "Quality inspection and finishing details, preparing your frame for pickup.";
-    default:
-      return "We'll continue processing your order through our production workflow.";
-  }
-}
-
-// Helper function to get progress percentage based on status
-function getProgressPercentage(status: string): number {
+// Helper function to get the description for each order status
+function getStageDescription(status: string): string {
   switch (status) {
-    case 'order_processed': return 10;
-    case 'scheduled': return 20;
-    case 'materials_ordered': return 30;
-    case 'materials_arrived': return 40;
-    case 'frame_cut': return 60;
-    case 'mat_cut': return 70;
-    case 'prepped': return 85;
-    case 'completed': return 100;
-    default: return 50;
+    case 'order_processed':
+      return 'Your order has been processed and is scheduled for production.';
+    case 'scheduled':
+      return 'Your order has been scheduled and is in our production queue.';
+    case 'materials_ordered':
+      return 'We have ordered the special materials needed for your custom frame.';
+    case 'materials_arrived':
+      return 'All materials for your order have arrived and are ready for production.';
+    case 'frame_cut':
+      return 'Your frame has been cut to the specified dimensions.';
+    case 'mat_cut':
+      return 'Your mat board has been cut and prepared for assembly.';
+    case 'prepped':
+      return 'Your frame is assembled and is going through final quality checks.';
+    case 'completed':
+      return 'Your order is complete and ready for pickup!';
+    case 'delayed':
+      return 'Your order is temporarily delayed. We will contact you with more information.';
+    default:
+      return 'Your order is being processed by our team.';
   }
 }
