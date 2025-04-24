@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
+import * as invoiceController from './controllers/invoiceController';
 import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors } from "./controllers/matboardController";
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
