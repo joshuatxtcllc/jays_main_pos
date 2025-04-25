@@ -253,11 +253,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update and recalculate prices if necessary
       const updates: Partial<Order> = { ...req.body };
       
-      // Remove non-order properties
-      delete updates.recalculatePricing;
+      // Extract non-order properties before updating
+      const recalculatePricingFlag = req.body.recalculatePricing === true;
+      
+      // Remove non-order properties that aren't in the Order interface
+      const { recalculatePricing, ...orderUpdates } = req.body;
       
       // Flag to check if we need to recalculate pricing
-      const recalculatePricing = req.body.recalculatePricing === true || 
+      const shouldRecalculatePricing = recalculatePricingFlag || 
         updates.quantity !== undefined || 
         updates.artworkWidth !== undefined || 
         updates.artworkHeight !== undefined || 
@@ -267,7 +270,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updates.glassOptionId !== order.glassOptionId;
       
       // If size or material components changed, recalculate pricing
-      if (recalculatePricing) {
+      if (shouldRecalculatePricing) {
         console.log("Recalculating pricing due to dimension or material changes");
         
         // If quantity is updated, use the new value, otherwise use existing
@@ -1452,7 +1455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: 'pending',
         notes: `Auto-generated material order for Order #${order.id}`,
         sourceOrderId: order.id,
-        vendor: vendorMap[frameVendor] || frameVendor,
+        supplierName: vendorMap[frameVendor] || frameVendor,
         costPerUnit: '0',
         totalCost: '0',
         expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
