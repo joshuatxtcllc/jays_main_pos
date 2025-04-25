@@ -665,6 +665,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/vendor-catalog/all', getAllVendorFrames);
   app.get('/api/vendor-catalog/search/:itemNumber', searchFramesByItemNumber);
   app.post('/api/vendor-catalog/sync', syncFramesWithDatabase);
+  
+  // Custom framing pricing endpoints
+  app.post('/api/pricing/calculate', calculatePrice);
+  
+  // Glass options endpoint
+  app.get('/api/glass-options', async (req, res) => {
+    try {
+      // Define available glass options with proper pricing for Houston
+      const glassOptions = [
+        { id: "regular", name: "Regular Glass", price: "0.08", description: "Standard clear glass" },
+        { id: "non-glare", name: "Non-glare Glass", price: "0.15", description: "Reduces reflections" },
+        { id: "museum", name: "Museum Glass", price: "0.30", description: "Anti-reflective with UV protection" },
+        { id: "uv", name: "Museum Non-glare", price: "0.40", description: "Premium anti-reflective with 99% UV protection" }
+      ];
+      res.json(glassOptions);
+    } catch (error) {
+      console.error("Error fetching glass options:", error);
+      res.status(500).json({ message: "Failed to fetch glass options" });
+    }
+  });
 
   // Order Groups
   app.get('/api/order-groups', async (req, res) => {
