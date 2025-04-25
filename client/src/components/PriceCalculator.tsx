@@ -42,9 +42,9 @@ const PriceCalculator = () => {
   const [artworkHeight, setArtworkHeight] = useState<number>(20);
   const [matWidth, setMatWidth] = useState<number>(2);
   const [quantity, setQuantity] = useState<number>(1);
-  const [frameId, setFrameId] = useState<string | null>(null);
-  const [matColorId, setMatColorId] = useState<string | null>(null);
-  const [glassOptionId, setGlassOptionId] = useState<string | null>(null);
+  const [frameId, setFrameId] = useState<string>("none");
+  const [matColorId, setMatColorId] = useState<string>("none");
+  const [glassOptionId, setGlassOptionId] = useState<string>("none");
   const [includeWholesalePrices, setIncludeWholesalePrices] = useState<boolean>(false);
   const [pricingResult, setPricingResult] = useState<PricingResult | null>(null);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
@@ -150,12 +150,12 @@ const PriceCalculator = () => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Frame</h3>
-            <Select value={frameId || ''} onValueChange={setFrameId}>
+            <Select value={frameId} onValueChange={setFrameId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a frame" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No frame</SelectItem>
+                <SelectItem value="none">No frame</SelectItem>
                 {materialsLoading ? (
                   <SelectItem value="loading" disabled>
                     Loading frames...
@@ -178,7 +178,7 @@ const PriceCalculator = () => {
                 <SelectValue placeholder="Select a mat color" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No mat</SelectItem>
+                <SelectItem value="none">No mat</SelectItem>
                 {materialsLoading ? (
                   <SelectItem value="loading" disabled>
                     Loading mat colors...
@@ -207,7 +207,7 @@ const PriceCalculator = () => {
                 <SelectValue placeholder="Select glass type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No glass</SelectItem>
+                <SelectItem value="none">No glass</SelectItem>
                 {materialsLoading ? (
                   <SelectItem value="loading" disabled>
                     Loading glass options...
