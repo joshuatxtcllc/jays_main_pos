@@ -1,173 +1,293 @@
+import { storage } from '../storage';
+
 /**
- * Pricing Service
+ * Houston Heights custom pricing service
  * 
- * This service handles the calculation of prices based on industry-standard
- * sliding scale markup calculations.
+ * This service implements the logic for calculating custom framing prices
+ * based on united inch measurements with sliding scale markups specifically
+ * for the Houston Heights location.
  */
 
-interface MarkupRange {
-  minValue: number;
-  maxValue: number;
-  minFoot: number;
-  markup: number;
-  discount: number;
-}
-
-// Frame molding markup chart based on wholesale price per foot
-const frameMoldingMarkupChart: MarkupRange[] = [
-  { minValue: 0.00, maxValue: 0.99, minFoot: 4, markup: 4.6, discount: 0 },
-  { minValue: 1.00, maxValue: 1.49, minFoot: 4, markup: 4.4, discount: 0 },
-  { minValue: 1.50, maxValue: 1.99, minFoot: 4, markup: 4.3, discount: 0 },
-  { minValue: 2.00, maxValue: 2.99, minFoot: 4, markup: 4.1, discount: 0 },
-  { minValue: 3.00, maxValue: 3.99, minFoot: 4, markup: 3.9, discount: 0 },
-  { minValue: 4.00, maxValue: 4.99, minFoot: 4, markup: 3.8, discount: 0 },
-  { minValue: 5.00, maxValue: 6.99, minFoot: 4, markup: 3.6, discount: 0 },
-  { minValue: 7.00, maxValue: 8.99, minFoot: 4, markup: 3.4, discount: 0 },
-  { minValue: 9.00, maxValue: 9.99, minFoot: 4, markup: 3.2, discount: 0 },
-  { minValue: 10.00, maxValue: 9999.99, minFoot: 4, markup: 3.1, discount: 0 }
-];
-
+// Individual component pricing functions used by the existing system
 /**
- * Determines the appropriate markup based on the wholesale price per foot
- * @param pricePerFoot The wholesale price per foot
- * @returns The markup factor to apply
- */
-export function getFrameMarkup(pricePerFoot: number): number {
-  // Find the appropriate markup range
-  const range = frameMoldingMarkupChart.find(
-    range => pricePerFoot >= range.minValue && pricePerFoot <= range.maxValue
-  );
-  
-  // Default to the highest range if no match (shouldn't happen with proper ranges)
-  return range ? range.markup : 3.1;
-}
-
-/**
- * Calculate retail frame price based on wholesale price and measurements
- * @param wholesalePrice Wholesale price per foot
- * @param perimeter Perimeter in feet
- * @returns Retail price
+ * Calculate frame price based on wholesale price and perimeter
+ * @param wholesalePrice The wholesale price per foot
+ * @param perimeter The perimeter in feet
+ * @returns The retail price
  */
 export function calculateFramePrice(wholesalePrice: number, perimeter: number): number {
-  const markup = getFrameMarkup(wholesalePrice);
-  console.log(`Using frame markup ${markup}x for wholesale price $${wholesalePrice}/ft`);
+  // Calculate united inches (rough approximation from perimeter)
+  const unitedInches = perimeter * 6; // Rough conversion
   
-  // Get the minimum foot charge or actual perimeter, whichever is greater
-  const minFoot = 4; // All entries in our chart use 4 minimum feet
-  const effectivePerimeter = Math.max(minFoot, perimeter);
+  // Get markup based on united inches
+  const markup = calculateFrameMarkup(unitedInches);
   
-  // Calculate base price
-  const basePrice = wholesalePrice * effectivePerimeter * markup;
-  
-  // Target price for 16x20 (32" + 40" perimeter = 72" = 6ft) should be around $134
-  // Let's adjust the formula to hit this target
-  // For a standard frame with $10/ft wholesale, 6ft perimeter, 3.1 markup: 
-  // $10 × 6ft × 3.1 = $186
-  // We need to adjust to get close to $134, which is about 72% of the base price
-  const targetPercentage = 0.72;
-  const adjustedPrice = basePrice * targetPercentage;
-  
-  console.log(`Frame price calculation: $${wholesalePrice}/ft × ${effectivePerimeter}ft × ${markup} markup = $${basePrice}, adjusted to ${(targetPercentage * 100).toFixed(0)}%: $${adjustedPrice.toFixed(2)}`);
-  
-  return adjustedPrice;
+  // Apply Houston-specific frame pricing factor
+  return wholesalePrice * perimeter * markup * FRAME_MARKUP_FACTOR;
 }
 
-// Mat pricing based on united inches and size brackets
-// For matboard pricing, we calculate a base price per sq inch, then use a size-based sliding scale
-const matPricingTable: {
-  sizeRange: [number, number],   // United inch range [min, max]
-  priceMultiplier: number,       // Multiplier for the base price per sq inch
-  minimumCharge: number          // Minimum charge for this size range
-}[] = [
-  { sizeRange: [0, 20], priceMultiplier: 2.5, minimumCharge: 25 },
-  { sizeRange: [21, 40], priceMultiplier: 2.3, minimumCharge: 30 },
-  { sizeRange: [41, 60], priceMultiplier: 2.0, minimumCharge: 35 },
-  { sizeRange: [61, 80], priceMultiplier: 1.8, minimumCharge: 40 },
-  { sizeRange: [81, 1000], priceMultiplier: 1.5, minimumCharge: 45 }
-];
+/**
+ * Calculate mat price based on wholesale price and area
+ * @param wholesalePrice The wholesale price per square inch
+ * @param area The area in square inches
+ * @param unitedInches The united inches of the outer dimensions
+ * @returns The retail price
+ */
+export function calculateMatPrice(wholesalePrice: number, area: number, unitedInches: number): number {
+  // Get markup based on united inches
+  const markup = calculateMatMarkup(unitedInches);
+  
+  // Calculate price
+  return area * wholesalePrice * markup;
+}
 
 /**
- * Calculate matboard price using size-based pricing and minimums
- * Industry standard practice is to have a minimum charge that increases with size
- * plus a per-square-inch charge that decreases with size
+ * Calculate glass price based on wholesale price and area
+ * @param wholesalePrice The wholesale price per square inch
+ * @param area The area in square inches
+ * @returns The retail price
  */
-export function calculateMatPrice(
-  wholesalePrice: number, 
-  matArea: number,
-  outerUnitedInch: number
+export function calculateGlassPrice(wholesalePrice: number, area: number): number {
+  // Calculate united inches (rough approximation from area)
+  const unitedInches = Math.sqrt(area) * 2;
+  
+  // Get markup based on united inches
+  const markup = calculateGlassMarkup(unitedInches);
+  
+  // Apply Houston-specific glass pricing factor
+  return wholesalePrice * area * markup * GLASS_MARKUP_FACTOR;
+}
+
+// Types
+export interface FramePricingParams {
+  frameId: string;
+  matColorId: string;
+  glassOptionId: string;
+  artworkWidth: number;
+  artworkHeight: number;
+  matWidth: number;
+  quantity: number;
+  includeWholesalePrices?: boolean;
+}
+
+export interface PricingResult {
+  framePrice: number;
+  matPrice: number;
+  glassPrice: number;
+  laborCost: number;
+  materialCost: number;
+  subtotal: number;
+  totalPrice: number;
+  wholesalePrices?: {
+    frame?: string;
+    mat?: string;
+    glass?: string;
+  };
+  laborRates?: {
+    baseRate: number;
+    regionalFactor: number;
+    estimates: {
+      frameAssembly: number;
+      matCutting: number;
+      glassCutting: number;
+      fitting: number;
+      finishing: number;
+    };
+  };
+}
+
+// Houston-specific markup values
+const FRAME_MARKUP_FACTOR = 0.1667; // Reduce frame price to 1/6th (16.67%)
+const GLASS_MARKUP_FACTOR = 0.45; // Reduce glass price by 55% (to 45%)
+const MAT_BASE_PRICE = 0.8; // Base price per united inch for matting
+const HOUSTON_REGIONAL_FACTOR = 1.25; // Houston Heights area regional labor rate factor
+const BASE_LABOR_RATE = 35; // Base hourly labor rate
+
+/**
+ * Calculate sliding scale markup for frame pricing
+ * Based on united inches
+ */
+function calculateFrameMarkup(unitedInches: number): number {
+  if (unitedInches <= 20) return 2.0;
+  if (unitedInches <= 40) return 2.5;
+  if (unitedInches <= 60) return 3.0;
+  if (unitedInches <= 80) return 3.5;
+  return 4.0;
+}
+
+/**
+ * Calculate sliding scale markup for glass pricing
+ * Based on united inches
+ */
+function calculateGlassMarkup(unitedInches: number): number {
+  if (unitedInches <= 20) return 2.0;
+  if (unitedInches <= 40) return 2.3;
+  if (unitedInches <= 60) return 2.6;
+  if (unitedInches <= 80) return 2.9;
+  return 3.2;
+}
+
+/**
+ * Calculate sliding scale markup for mat pricing
+ * Based on united inches
+ */
+function calculateMatMarkup(unitedInches: number): number {
+  if (unitedInches <= 20) return 2.0;
+  if (unitedInches <= 40) return 2.2;
+  if (unitedInches <= 60) return 2.4;
+  if (unitedInches <= 80) return 2.6;
+  return 2.8;
+}
+
+/**
+ * Calculate labor estimates based on materials and dimensions
+ */
+function calculateLaborEstimates(
+  hasFrame: boolean,
+  hasMat: boolean,
+  hasGlass: boolean,
+  unitedInches: number
+): { 
+  frameAssembly: number,
+  matCutting: number,
+  glassCutting: number,
+  fitting: number,
+  finishing: number
+} {
+  const sizeFactor = unitedInches / 40; // Normalize to a standard size
+  
+  // Base time estimates in hours
+  return {
+    frameAssembly: hasFrame ? 0.25 * sizeFactor : 0,
+    matCutting: hasMat ? 0.3 * sizeFactor : 0,
+    glassCutting: hasGlass ? 0.15 * sizeFactor : 0,
+    fitting: 0.2 * sizeFactor,
+    finishing: 0.1 * sizeFactor
+  };
+}
+
+/**
+ * Calculate total labor cost based on estimated hours
+ */
+function calculateLaborCost(
+  estimates: { 
+    frameAssembly: number,
+    matCutting: number,
+    glassCutting: number,
+    fitting: number,
+    finishing: number
+  },
+  baseRate: number,
+  regionalFactor: number
 ): number {
-  // Find the appropriate pricing bracket
-  const priceBracket = matPricingTable.find(
-    bracket => outerUnitedInch >= bracket.sizeRange[0] && outerUnitedInch <= bracket.sizeRange[1]
+  const totalHours = 
+    estimates.frameAssembly + 
+    estimates.matCutting + 
+    estimates.glassCutting + 
+    estimates.fitting + 
+    estimates.finishing;
+    
+  return totalHours * baseRate * regionalFactor;
+}
+
+/**
+ * Main pricing calculation function for custom frames
+ */
+export async function calculateFramingPrice(params: FramePricingParams): Promise<PricingResult> {
+  const {
+    frameId,
+    matColorId,
+    glassOptionId,
+    artworkWidth,
+    artworkHeight,
+    matWidth,
+    quantity,
+    includeWholesalePrices = false
+  } = params;
+
+  // Get frame, mat, and glass information
+  const frame = frameId && frameId !== 'none' ? await storage.getFrame(frameId) : null;
+  const matColor = matColorId && matColorId !== 'none' ? await storage.getMatColor(matColorId) : null;
+  const glassOption = glassOptionId && glassOptionId !== 'none' ? await storage.getGlassOption(glassOptionId) : null;
+
+  // Calculate dimensions
+  const artworkUnitedInches = artworkWidth + artworkHeight;
+  const finishedWidth = artworkWidth + (matWidth * 2);
+  const finishedHeight = artworkHeight + (matWidth * 2);
+  const finishedUnitedInches = finishedWidth + finishedHeight;
+  const matSurfaceArea = finishedWidth * finishedHeight - (artworkWidth * artworkHeight);
+  const frameLength = (finishedWidth * 2) + (finishedHeight * 2);
+
+  // Initialize wholesale prices if requested
+  const wholesalePrices = includeWholesalePrices ? {
+    frame: frame ? frame.price : '0.00',
+    mat: '0.00',
+    glass: glassOption ? glassOption.price || '0.00' : '0.00'
+  } : undefined;
+
+  // Calculate frame price
+  let framePrice = 0;
+  if (frame) {
+    const frameWholesalePrice = parseFloat(frame.price);
+    const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
+    // Apply Houston-specific frame pricing factor
+    framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * FRAME_MARKUP_FACTOR;
+  }
+
+  // Calculate mat price
+  let matPrice = 0;
+  if (matColor) {
+    const matBasePrice = MAT_BASE_PRICE; // Price per square inch
+    const matMarkup = calculateMatMarkup(finishedUnitedInches);
+    matPrice = matSurfaceArea * matBasePrice * matMarkup;
+    
+    // Update wholesale price for mat if requested
+    if (wholesalePrices) {
+      wholesalePrices.mat = (matSurfaceArea * matBasePrice).toFixed(2);
+    }
+  }
+
+  // Calculate glass price
+  let glassPrice = 0;
+  if (glassOption) {
+    const glassBasePrice = glassOption.price ? parseFloat(glassOption.price) : 0;
+    const glassMarkup = calculateGlassMarkup(finishedUnitedInches);
+    // Apply Houston-specific glass pricing factor
+    glassPrice = glassBasePrice * finishedWidth * finishedHeight / 144 * glassMarkup * GLASS_MARKUP_FACTOR;
+  }
+
+  // Calculate labor costs
+  const laborEstimates = calculateLaborEstimates(
+    !!frame,
+    !!matColor,
+    !!glassOption,
+    finishedUnitedInches
   );
   
-  // Use the lowest bracket if no match is found
-  const { priceMultiplier, minimumCharge } = priceBracket || 
-    { priceMultiplier: 1.5, minimumCharge: 45 };
-  
-  // The mat pricing calculation seems to be using a very high base price
-  // Let's use the correct units: wholesale price is likely per square foot, needs conversion to per square inch
-  // 1 square foot = 144 square inches
-  const wholesalePricePerSqInch = wholesalePrice / 144;
-  
-  // For 16x20 piece (36" united inches), standard mat size would be:
-  // - Art: 16x20 = 320 sq inches
-  // - Add 4" border all around: 24x28 = 672 sq inches
-  // - Mat area: 672 - 320 = 352 sq inches
-  
-  // For this mat area, we want a price of around $32
-  // For a standard mat with $4/sq ft wholesale, 352 sq area, 2.3 markup: 
-  // $4 / 144 × 352 × 2.3 × 6 = $42.70
-  // We need to adjust to get to $32, which is about 75% of the calculated price
-  
-  // Calculate the base price
-  const basePrice = wholesalePricePerSqInch * matArea * priceMultiplier * 6;
-  
-  // Apply our target adjustment of 75%
-  const targetPercentage = 0.75;
-  const adjustedPrice = basePrice * targetPercentage;
-  
-  // Log the calculation for debugging
-  console.log(`Mat pricing: ${outerUnitedInch}" united inches, ${matArea} sq inches`);
-  console.log(`Adjusted wholesale price: $${wholesalePrice} per sq ft = $${wholesalePricePerSqInch.toFixed(6)} per sq inch`);
-  console.log(`Base price: $${wholesalePricePerSqInch.toFixed(6)}/sq inch * ${matArea} sq inches * ${priceMultiplier}x multiplier * 6 = $${basePrice.toFixed(2)}`);
-  console.log(`Adjusted to ${(targetPercentage * 100).toFixed(0)}%: $${adjustedPrice.toFixed(2)}`);
-  console.log(`Minimum charge for this size: $${minimumCharge}`);
-  
-  // Return the greater of adjusted price or minimum charge
-  const finalPrice = Math.max(adjustedPrice, minimumCharge);
-  console.log(`Final mat price: $${finalPrice.toFixed(2)}`);
-  
-  return finalPrice;
-}
+  const laborCost = calculateLaborCost(
+    laborEstimates,
+    BASE_LABOR_RATE,
+    HOUSTON_REGIONAL_FACTOR
+  );
 
-/**
- * Calculate glass price
- * Using a combination of area-based pricing with markup and target adjustment
- */
-export function calculateGlassPrice(
-  wholesalePrice: number,
-  glassArea: number
-): number {
-  // Base calculation 
-  const basePrice = glassArea * wholesalePrice * 3;
-  
-  // For 16x20 glass (320 sq inches), with a target price of $39
-  // Standard glass at $0.08/sq inch wholesale:
-  // 320 * 0.08 * 3 = $76.80
-  // We need to adjust to get to $39, which is about 51% of the base price
-  
-  const targetPercentage = 0.51;
-  const adjustedPrice = basePrice * targetPercentage;
-  
-  // Log the calculation for debugging
-  console.log(`Glass pricing: ${glassArea} sq inches at $${wholesalePrice} per sq inch`);
-  console.log(`Base price: ${glassArea} * $${wholesalePrice} * 3 = $${basePrice.toFixed(2)}`);
-  console.log(`Adjusted to ${(targetPercentage * 100).toFixed(0)}%: $${adjustedPrice.toFixed(2)}`);
-  
-  // Minimum charge for glass to ensure profitability on small pieces
-  const minimumCharge = 25;
-  const finalPrice = Math.max(adjustedPrice, minimumCharge);
-  
-  return finalPrice;
+  // Calculate totals
+  const materialCost = framePrice + matPrice + glassPrice;
+  const subtotal = materialCost + laborCost;
+  const totalPrice = subtotal * quantity;
+
+  return {
+    framePrice,
+    matPrice,
+    glassPrice,
+    laborCost,
+    materialCost,
+    subtotal,
+    totalPrice,
+    wholesalePrices,
+    laborRates: {
+      baseRate: BASE_LABOR_RATE,
+      regionalFactor: HOUSTON_REGIONAL_FACTOR,
+      estimates: laborEstimates
+    }
+  };
 }

@@ -8,12 +8,7 @@ import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors }
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
 import { 
-  calculatePrice, 
-  getLaborRates,
-  getAllFrames as getPricingFrames,
-  getAllMatColors,
-  getAllGlassOptions,
-  updateWholesalePricesFromVendor
+  calculatePrice
 } from './controllers/pricingController';
 import { 
   getLarsonJuhlFrames, 
@@ -49,9 +44,7 @@ import {
 import { z } from "zod";
 import Stripe from "stripe";
 import { 
-  calculateFramePrice, 
-  calculateMatPrice, 
-  calculateGlassPrice 
+  calculateFramingPrice
 } from "./services/pricingService";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import invoiceRoutes from "./routes/invoiceRoutes";
@@ -417,9 +410,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const perimeter = 2 * unitedInch / 12;
           console.log('Frame perimeter:', perimeter, 'feet');
           
-          // Calculate frame price using sliding scale markup based on wholesale price per foot
+          // Calculate frame price using Houston Heights pricing service
           const frameWholesalePrice = Number(frame.price);
-          const framePrice = calculateFramePrice(frameWholesalePrice, perimeter);
+          const framePrice = frameWholesalePrice * perimeter * 2.5 * 0.1667; // Apply markup and Houston factor
           console.log('Frame price:', framePrice, 'from base price:', frameWholesalePrice);
           
           // Mat pricing calculations
@@ -433,16 +426,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const matArea = (outerWidth * outerHeight) - (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight));
           console.log('Mat area:', matArea, 'square inches');
           
-          // Calculate mat price using our pricing service
+          // Calculate mat price using Houston Heights formula
           const matPriceBase = Number(matColor.price);
-          const matPrice = calculateMatPrice(matPriceBase, matArea, outerUnitedInch);
+          // Apply scaling based on united inches, area and Houston factor
+          const matPrice = matPriceBase * matArea * 0.45 * (1 + (outerUnitedInch * 0.01)); 
           console.log('Mat price:', matPrice, 'from base price:', matPriceBase);
           
-          // Glass price calculations
+          // Glass price calculations for Houston Heights
           const glassArea = (Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth)) * 
                            (Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth));
           const glassWholesalePrice = Number(glassOption.price);
-          const glassPrice = calculateGlassPrice(glassWholesalePrice, glassArea);
+          // Apply Houston-specific glass pricing with 45% adjustment factor
+          const glassPrice = glassWholesalePrice * glassArea * 0.45;
           console.log('Glass price:', glassPrice, 'from base price:', glassWholesalePrice);
           
           // Backing price (with markup)
@@ -1503,11 +1498,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
-  app.post('/api/pricing/update-wholesale', updateWholesalePricesFromVendor);
-  app.get('/api/pricing/labor-rates', getLaborRates);
-  app.get('/api/pricing/frames', getPricingFrames);
-  app.get('/api/pricing/mat-colors', getAllMatColors);
-  app.get('/api/pricing/glass-options', getAllGlassOptions);
   
   // Materials pick list routes
   app.get('/api/materials/pick-list', getMaterialsPickList);

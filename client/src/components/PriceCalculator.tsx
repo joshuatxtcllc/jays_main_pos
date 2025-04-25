@@ -211,7 +211,7 @@ const PriceCalculator = () => {
                     Loading mat colors...
                   </SelectItem>
                 ) : (
-                  matColors?.map((mat: any) => (
+                  matColors.map((mat: MatColor) => (
                     <SelectItem key={mat.id} value={mat.id}>
                       <div className="flex items-center">
                         <div 
@@ -240,7 +240,7 @@ const PriceCalculator = () => {
                     Loading glass options...
                   </SelectItem>
                 ) : (
-                  glassOptions?.map((glass: any) => (
+                  glassOptions.map((glass: GlassOption) => (
                     <SelectItem key={glass.id} value={glass.id}>
                       {glass.name}
                     </SelectItem>
