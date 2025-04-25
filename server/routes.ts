@@ -7,6 +7,7 @@ import * as invoiceController from './controllers/invoiceController';
 import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors } from "./controllers/matboardController";
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
+import { calculatePrice, updateFramePrices, getLaborRates } from './controllers/pricingController';
 import { 
   getLarsonJuhlFrames, 
   getNielsenFrames, 
@@ -1492,6 +1493,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register customer invoices routes
   app.use('/api/customers', customerInvoicesRoutes);
+  
+  // Houston Heights location-specific pricing routes
+  app.post('/api/pricing/calculate', calculatePrice);
+  app.post('/api/pricing/update-wholesale', updateFramePrices);
+  app.get('/api/pricing/labor-rates', getLaborRates);
   
   // Materials pick list routes
   app.get('/api/materials/pick-list', getMaterialsPickList);
