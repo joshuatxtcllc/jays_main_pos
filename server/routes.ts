@@ -46,6 +46,8 @@ import {
   calculateGlassPrice 
 } from "./services/pricingService";
 import inventoryRoutes from "./routes/inventoryRoutes";
+import invoiceRoutes from "./routes/invoiceRoutes";
+import customerInvoicesRoutes from "./routes/customerInvoicesRoutes";
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 

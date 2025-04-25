@@ -56,13 +56,20 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
   const minFoot = 4; // All entries in our chart use 4 minimum feet
   const effectivePerimeter = Math.max(minFoot, perimeter);
   
-  // Calculate retail price, but applying a 1/3 reduction factor as requested
+  // Calculate base price
   const basePrice = wholesalePrice * effectivePerimeter * markup;
-  const reducedPrice = basePrice / 3;
   
-  console.log(`Frame price calculation: $${wholesalePrice}/ft × ${effectivePerimeter}ft × ${markup} markup = $${basePrice}, reduced to 1/3: $${reducedPrice}`);
+  // Target price for 16x20 (32" + 40" perimeter = 72" = 6ft) should be around $134
+  // Let's adjust the formula to hit this target
+  // For a standard frame with $10/ft wholesale, 6ft perimeter, 3.1 markup: 
+  // $10 × 6ft × 3.1 = $186
+  // We need to adjust to get close to $134, which is about 72% of the base price
+  const targetPercentage = 0.72;
+  const adjustedPrice = basePrice * targetPercentage;
   
-  return reducedPrice;
+  console.log(`Frame price calculation: $${wholesalePrice}/ft × ${effectivePerimeter}ft × ${markup} markup = $${basePrice}, adjusted to ${(targetPercentage * 100).toFixed(0)}%: $${adjustedPrice.toFixed(2)}`);
+  
+  return adjustedPrice;
 }
 
 // Mat pricing based on united inches and size brackets
@@ -103,17 +110,32 @@ export function calculateMatPrice(
   // 1 square foot = 144 square inches
   const wholesalePricePerSqInch = wholesalePrice / 144;
   
-  // Calculate the price based on area and adjusted wholesale price
-  const calculatedPrice = wholesalePricePerSqInch * matArea * priceMultiplier * 6;
+  // For 16x20 piece (36" united inches), standard mat size would be:
+  // - Art: 16x20 = 320 sq inches
+  // - Add 4" border all around: 24x28 = 672 sq inches
+  // - Mat area: 672 - 320 = 352 sq inches
+  
+  // For this mat area, we want a price of around $32
+  // For a standard mat with $4/sq ft wholesale, 352 sq area, 2.3 markup: 
+  // $4 / 144 × 352 × 2.3 × 6 = $42.70
+  // We need to adjust to get to $32, which is about 75% of the calculated price
+  
+  // Calculate the base price
+  const basePrice = wholesalePricePerSqInch * matArea * priceMultiplier * 6;
+  
+  // Apply our target adjustment of 75%
+  const targetPercentage = 0.75;
+  const adjustedPrice = basePrice * targetPercentage;
   
   // Log the calculation for debugging
   console.log(`Mat pricing: ${outerUnitedInch}" united inches, ${matArea} sq inches`);
   console.log(`Adjusted wholesale price: $${wholesalePrice} per sq ft = $${wholesalePricePerSqInch.toFixed(6)} per sq inch`);
-  console.log(`Base price: $${wholesalePricePerSqInch.toFixed(6)}/sq inch * ${matArea} sq inches * ${priceMultiplier}x multiplier * 6 = $${calculatedPrice.toFixed(2)}`);
+  console.log(`Base price: $${wholesalePricePerSqInch.toFixed(6)}/sq inch * ${matArea} sq inches * ${priceMultiplier}x multiplier * 6 = $${basePrice.toFixed(2)}`);
+  console.log(`Adjusted to ${(targetPercentage * 100).toFixed(0)}%: $${adjustedPrice.toFixed(2)}`);
   console.log(`Minimum charge for this size: $${minimumCharge}`);
   
-  // Return the greater of calculated price or minimum charge
-  const finalPrice = Math.max(calculatedPrice, minimumCharge);
+  // Return the greater of adjusted price or minimum charge
+  const finalPrice = Math.max(adjustedPrice, minimumCharge);
   console.log(`Final mat price: $${finalPrice.toFixed(2)}`);
   
   return finalPrice;
@@ -121,12 +143,31 @@ export function calculateMatPrice(
 
 /**
  * Calculate glass price
- * For now using a simple markup factor until we get the sliding scale
+ * Using a combination of area-based pricing with markup and target adjustment
  */
 export function calculateGlassPrice(
   wholesalePrice: number,
   glassArea: number
 ): number {
-  // For now, use fixed 45% reduction as requested previously
-  return glassArea * wholesalePrice * 3 * 0.45;
+  // Base calculation 
+  const basePrice = glassArea * wholesalePrice * 3;
+  
+  // For 16x20 glass (320 sq inches), with a target price of $39
+  // Standard glass at $0.08/sq inch wholesale:
+  // 320 * 0.08 * 3 = $76.80
+  // We need to adjust to get to $39, which is about 51% of the base price
+  
+  const targetPercentage = 0.51;
+  const adjustedPrice = basePrice * targetPercentage;
+  
+  // Log the calculation for debugging
+  console.log(`Glass pricing: ${glassArea} sq inches at $${wholesalePrice} per sq inch`);
+  console.log(`Base price: ${glassArea} * $${wholesalePrice} * 3 = $${basePrice.toFixed(2)}`);
+  console.log(`Adjusted to ${(targetPercentage * 100).toFixed(0)}%: $${adjustedPrice.toFixed(2)}`);
+  
+  // Minimum charge for glass to ensure profitability on small pieces
+  const minimumCharge = 25;
+  const finalPrice = Math.max(adjustedPrice, minimumCharge);
+  
+  return finalPrice;
 }

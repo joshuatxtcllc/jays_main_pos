@@ -1,125 +1,80 @@
-import { Router } from 'express';
+import express from 'express';
 import { storage } from '../storage';
 
-const router = Router();
+const router = express.Router();
 
 // Get invoice by order group ID
 router.get('/:orderGroupId', async (req, res) => {
   try {
-    const { orderGroupId } = req.params;
-    
-    if (!orderGroupId || isNaN(parseInt(orderGroupId))) {
+    const orderGroupId = parseInt(req.params.orderGroupId);
+    if (isNaN(orderGroupId)) {
       return res.status(400).json({ message: 'Invalid order group ID' });
     }
     
-    const groupId = parseInt(orderGroupId);
-    
-    // Get order group details
-    const orderGroup = await storage.getOrderGroup(groupId);
+    // Get the order group
+    const orderGroup = await storage.getOrderGroup(orderGroupId);
     if (!orderGroup) {
       return res.status(404).json({ message: 'Order group not found' });
     }
     
-    // Get all orders in this group
-    const orders = await storage.getOrdersByGroupId(groupId);
+    // Get the customer
+    const customer = orderGroup.customerId 
+      ? await storage.getCustomer(orderGroup.customerId)
+      : undefined;
+    
+    if (!customer && orderGroup.customerId) {
+      return res.status(404).json({ message: 'Customer not found' });
+    }
+    
+    // Get the orders for this order group
+    const orders = await storage.getOrdersByGroupId(orderGroupId);
     if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: 'No orders found in this group' });
+      return res.status(404).json({ message: 'No orders found for this group' });
     }
     
-    // Get customer details
-    const customer = await storage.getCustomer(orderGroup.customerId || 0);
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-    
-    // Return all the data needed for the invoice
-    return res.status(200).json({
+    // Return the invoice data
+    res.status(200).json({
       orderGroup,
-      orders,
-      customer
+      customer,
+      orders
     });
   } catch (error) {
-    console.error('Error generating invoice:', error);
-    return res.status(500).json({ message: 'Failed to generate invoice' });
+    console.error('Error getting invoice:', error);
+    res.status(500).json({ message: 'Error retrieving invoice data' });
   }
 });
 
-// Send invoice by email
-router.post('/:orderGroupId/send', async (req, res) => {
+// Generate PDF invoice (placeholder for future functionality)
+router.get('/:orderGroupId/pdf', async (req, res) => {
   try {
-    const { orderGroupId } = req.params;
-    const { email } = req.body;
-    
-    if (!orderGroupId || isNaN(parseInt(orderGroupId))) {
+    const orderGroupId = parseInt(req.params.orderGroupId);
+    if (isNaN(orderGroupId)) {
       return res.status(400).json({ message: 'Invalid order group ID' });
     }
     
-    const groupId = parseInt(orderGroupId);
-    
-    // Get order group details
-    const orderGroup = await storage.getOrderGroup(groupId);
-    if (!orderGroup) {
-      return res.status(404).json({ message: 'Order group not found' });
-    }
-    
-    // Get customer details
-    const customer = await storage.getCustomer(orderGroup.customerId || 0);
-    if (!customer) {
-      return res.status(404).json({ message: 'Customer not found' });
-    }
-    
-    // Use customer email if not specified in request
-    const recipientEmail = email || customer.email;
-    if (!recipientEmail) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'No email address available for this customer' 
-      });
-    }
-    
-    // Get all orders in this group
-    const orders = await storage.getOrdersByGroupId(groupId);
-    
-    // Update the order group to mark the invoice as sent
-    await storage.updateOrderGroup(groupId, { 
-      invoiceEmailSent: true,
-      invoiceEmailDate: new Date()
-    });
-    
-    return res.status(200).json({ 
-      success: true,
-      message: 'Invoice sent successfully' 
-    });
+    // This would generate a PDF in a real implementation
+    // For now, just return a success message
+    res.status(200).json({ message: 'PDF generation feature coming soon' });
   } catch (error) {
-    console.error('Error sending invoice by email:', error);
-    return res.status(500).json({ 
-      success: false,
-      message: 'Failed to send invoice by email' 
-    });
+    console.error('Error generating PDF invoice:', error);
+    res.status(500).json({ message: 'Error generating PDF invoice' });
   }
 });
 
-// Mark invoice as sent
-router.patch('/:orderGroupId/mark-sent', async (req, res) => {
+// Email invoice to customer (placeholder for future functionality)
+router.post('/:orderGroupId/email', async (req, res) => {
   try {
-    const { orderGroupId } = req.params;
-    
-    if (!orderGroupId || isNaN(parseInt(orderGroupId))) {
+    const orderGroupId = parseInt(req.params.orderGroupId);
+    if (isNaN(orderGroupId)) {
       return res.status(400).json({ message: 'Invalid order group ID' });
     }
     
-    const groupId = parseInt(orderGroupId);
-    
-    // Update the order group to mark the invoice as sent
-    await storage.updateOrderGroup(groupId, { 
-      invoiceEmailSent: true,
-      invoiceEmailDate: new Date()
-    });
-    
-    return res.status(200).json({ success: true });
+    // This would email the invoice in a real implementation
+    // For now, just return a success message
+    res.status(200).json({ message: 'Email functionality coming soon' });
   } catch (error) {
-    console.error('Error marking invoice as sent:', error);
-    return res.status(500).json({ success: false });
+    console.error('Error emailing invoice:', error);
+    res.status(500).json({ message: 'Error emailing invoice' });
   }
 });
 
