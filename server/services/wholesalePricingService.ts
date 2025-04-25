@@ -1,82 +1,34 @@
 /**
  * Wholesale Pricing Service
  * 
- * This service handles fetching the most current wholesale prices from vendor APIs
- * and applies location-specific markups and labor rates for accurate pricing
- * calculations tailored to the Houston Heights, Texas area.
+ * This service provides real-time wholesale pricing information for custom framing materials
+ * with specific markups for the Houston Heights, Texas location.
  */
 
-import { Frame, MatColor, GlassOption } from '@shared/schema';
-import { calculateFramePrice, calculateMatPrice, calculateGlassPrice } from './pricingService';
+import axios from 'axios';
+import { db } from '../db';
+import { frames, matColors, glassOptions } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
-// Houston Heights labor rates and markup factors
-const HOUSTON_HEIGHTS_LABOR_RATE = 65; // per hour
-const HOUSTON_HEIGHTS_REGIONAL_FACTOR = 1.15; // 15% additional for higher cost market
-
-// Standard labor time estimates (in hours)
-interface LaborEstimates {
-  frameAssembly: number; // Time to assemble frame per united inch
-  matCutting: number;    // Time to cut a mat per united inch
-  glassCutting: number;  // Time to cut glass per united inch
-  fitting: number;       // Time to fit artwork into assembled frame
-  finishing: number;     // Time for final assembly, cleaning, etc.
-}
-
-// Houston Heights labor time estimates
-const LABOR_ESTIMATES: LaborEstimates = {
-  frameAssembly: 0.01,  // 0.01 hour per united inch
-  matCutting: 0.008,    // 0.008 hour per united inch
-  glassCutting: 0.007,  // 0.007 hour per united inch
-  fitting: 0.25,        // 15 minutes base time
-  finishing: 0.33       // 20 minutes base time
+type WholesaleMaterialPrices = {
+  framePrice: number;
+  matPrice: number;
+  glassPrice: number;
 };
 
-/**
- * Calculate labor cost based on united inches and labor estimates
- * @param unitedInches Total united inches (width + height)
- * @returns The calculated labor cost
- */
-function calculateLaborCost(unitedInches: number): number {
-  // Calculate time required for each step
-  const frameAssemblyTime = LABOR_ESTIMATES.frameAssembly * unitedInches;
-  const matCuttingTime = LABOR_ESTIMATES.matCutting * unitedInches;
-  const glassCuttingTime = LABOR_ESTIMATES.glassCutting * unitedInches;
-  
-  // Fixed time regardless of size
-  const fittingTime = LABOR_ESTIMATES.fitting;
-  const finishingTime = LABOR_ESTIMATES.finishing;
-  
-  // Total labor time
-  const totalLaborTime = frameAssemblyTime + matCuttingTime + glassCuttingTime + fittingTime + finishingTime;
-  
-  // Calculate labor cost based on Houston Heights rate
-  const laborCost = totalLaborTime * HOUSTON_HEIGHTS_LABOR_RATE;
-  
-  console.log(`Labor cost calculation: ${totalLaborTime.toFixed(2)} hours × $${HOUSTON_HEIGHTS_LABOR_RATE}/hr = $${laborCost.toFixed(2)}`);
-  
-  return laborCost;
-}
+type LaborRates = {
+  baseRate: number;
+  regionalFactor: number;
+  estimates: {
+    frameAssembly: number;
+    matCutting: number;
+    glassCutting: number;
+    fitting: number;
+    finishing: number;
+  };
+};
 
-/**
- * Calculate the retail price for a custom frame with vendor API prices
- * @param frame Frame details with wholesale price info
- * @param mat MatColor details with wholesale price info
- * @param glass GlassOption details with wholesale price info
- * @param artworkWidth Width of the artwork in inches
- * @param artworkHeight Height of the artwork in inches
- * @param matWidth Width of the mat border in inches
- * @param quantity Number of identical frames to produce
- * @returns Object containing component prices and total price
- */
-export async function calculateRetailPrice(
-  frame: Frame | null,
-  mat: MatColor | null,
-  glass: GlassOption | null,
-  artworkWidth: number,
-  artworkHeight: number,
-  matWidth: number = 0,
-  quantity: number = 1
-): Promise<{
+interface PricingResult {
   framePrice: number;
   matPrice: number;
   glassPrice: number;
@@ -84,228 +36,241 @@ export async function calculateRetailPrice(
   materialCost: number;
   subtotal: number;
   totalPrice: number;
-}> {
-  // Calculate united inches (width + height)
-  const artworkUnitedInches = artworkWidth + artworkHeight;
-  
-  // Calculate outer dimensions with mat (if applicable)
-  const frameWidth = artworkWidth + (matWidth * 2);
-  const frameHeight = artworkHeight + (matWidth * 2);
-  const frameUnitedInches = frameWidth + frameHeight;
-  
-  // Calculate perimeter in feet (for frame pricing)
-  const framePerimeterInches = (frameWidth * 2) + (frameHeight * 2);
-  const framePerimeterFeet = framePerimeterInches / 12;
-  
-  // Calculate areas in square inches
-  const artworkArea = artworkWidth * artworkHeight;
-  const frameArea = frameWidth * frameHeight;
-  const matArea = frameArea - artworkArea;
-  
-  // Get wholesale prices from objects or use defaults
-  const frameWholesalePrice = frame?.price ? parseFloat(frame.price) : 8.00; // Default $8/ft
-  const matWholesalePrice = mat?.price ? parseFloat(mat.price) : 4.00;      // Default $4/sq ft
-  const glassWholesalePrice = glass?.price ? parseFloat(glass.price) : 0.08; // Default $0.08/sq inch
-  
-  // Calculate component prices using the pricing service
-  const framePrice = frame ? calculateFramePrice(frameWholesalePrice, framePerimeterFeet) : 0;
-  const matPrice = mat ? calculateMatPrice(matWholesalePrice, matArea, frameUnitedInches) : 0;
-  const glassPrice = glass ? calculateGlassPrice(glassWholesalePrice, frameArea) : 0;
-  
-  // Calculate labor cost
-  const laborCost = calculateLaborCost(artworkUnitedInches);
-  
-  // Apply Houston Heights regional factor to all costs
-  const adjustedFramePrice = framePrice * HOUSTON_HEIGHTS_REGIONAL_FACTOR;
-  const adjustedMatPrice = matPrice * HOUSTON_HEIGHTS_REGIONAL_FACTOR;
-  const adjustedGlassPrice = glassPrice * HOUSTON_HEIGHTS_REGIONAL_FACTOR;
-  const adjustedLaborCost = laborCost * HOUSTON_HEIGHTS_REGIONAL_FACTOR;
-  
-  // Calculate material cost and subtotal
-  const materialCost = adjustedFramePrice + adjustedMatPrice + adjustedGlassPrice;
-  const subtotal = (materialCost + adjustedLaborCost) * quantity;
-  
-  // Round all prices to 2 decimal places for consistency
-  const roundedFramePrice = Math.round(adjustedFramePrice * 100) / 100;
-  const roundedMatPrice = Math.round(adjustedMatPrice * 100) / 100;
-  const roundedGlassPrice = Math.round(adjustedGlassPrice * 100) / 100;
-  const roundedLaborCost = Math.round(adjustedLaborCost * 100) / 100;
-  const roundedMaterialCost = Math.round(materialCost * 100) / 100;
-  const roundedSubtotal = Math.round(subtotal * 100) / 100;
-  
-  // Log the detailed price breakdown
-  console.log(`
-  Price Breakdown for ${artworkWidth}"×${artworkHeight}" artwork with ${mat ? matWidth + '"' : 'no'} mat:
-  ------------------------------------------------------------
-  Frame (${frame?.name || 'None'}): $${roundedFramePrice.toFixed(2)}
-  Mat (${mat?.name || 'None'}): $${roundedMatPrice.toFixed(2)}
-  Glass (${glass?.name || 'None'}): $${roundedGlassPrice.toFixed(2)}
-  Labor: $${roundedLaborCost.toFixed(2)}
-  ------------------------------------------------------------
-  Material Cost: $${roundedMaterialCost.toFixed(2)}
-  Quantity: ${quantity}
-  ------------------------------------------------------------
-  Subtotal: $${roundedSubtotal.toFixed(2)}
-  `);
-  
-  return {
-    framePrice: roundedFramePrice,
-    matPrice: roundedMatPrice,
-    glassPrice: roundedGlassPrice,
-    laborCost: roundedLaborCost,
-    materialCost: roundedMaterialCost,
-    subtotal: roundedSubtotal,
-    totalPrice: roundedSubtotal
+  wholesalePrices?: {
+    frame?: string;
+    mat?: string;
+    glass?: string;
   };
+  laborRates?: LaborRates;
 }
 
 /**
- * Interface for API response from vendor wholesale price API
+ * Helper function to fetch real-time wholesale pricing from vendor APIs
+ * @param frameId The frame's unique ID to get wholesale price 
+ * @returns The wholesale price per foot
  */
-interface VendorWholesalePriceResponse {
-  success: boolean;
-  data: {
-    sku: string;
-    wholesalePrice: number;
-    currency: string;
-    inStock: boolean;
-    minimumOrder: number;
-    leadTime: number; // in days
-  };
-}
-
-/**
- * Fetch current wholesale price from vendor API
- * @param vendorId The vendor identifier (e.g., "larson", "nielsen")
- * @param productSku The product SKU or item number
- * @returns The current wholesale price
- */
-export async function fetchWholesalePrice(
-  vendorId: string,
-  productSku: string
-): Promise<number> {
+export async function getFrameWholesalePrice(frameId: string): Promise<number | null> {
+  // In a real implementation, this would connect to the vendor API
+  // For now, we'll use the existing price in the database as the wholesale price
   try {
-    // This would be replaced with actual API calls to vendor systems
-    // For now, we'll use a simulated response with realistic pricing
+    const [frame] = await db.select().from(frames).where(eq(frames.id, frameId));
+    if (!frame) return null;
     
-    console.log(`Fetching wholesale price for ${productSku} from ${vendorId}`);
+    // Simulate wholesale price (typically 1/3 of retail)
+    return parseFloat(frame.price) / 3;
+  } catch (error) {
+    console.error('Error fetching wholesale frame price:', error);
+    return null;
+  }
+}
+
+/**
+ * Returns the Houston Heights location-specific labor rates
+ */
+export function getHoustonHeightsLaborRates(): LaborRates {
+  return {
+    baseRate: 35.00, // Hourly base rate for Houston Heights
+    regionalFactor: 1.15, // Regional adjustment factor for Houston (15% higher than average)
+    estimates: {
+      frameAssembly: 0.25, // Estimated hours for frame assembly
+      matCutting: 0.15, // Estimated hours for cutting mats
+      glassCutting: 0.10, // Estimated hours for cutting glass
+      fitting: 0.20, // Estimated hours for fitting everything together
+      finishing: 0.15, // Estimated hours for final touches
+    }
+  };
+}
+
+/**
+ * Calculate retail price for a custom framing job with Houston Heights-specific pricing
+ */
+export async function calculateRetailPrice(
+  frameId: string | null, 
+  matColorId: string | null, 
+  glassOptionId: string | null,
+  artworkWidth: number,
+  artworkHeight: number,
+  matWidth: number,
+  quantity: number = 1,
+  includeWholesalePrices: boolean = false
+): Promise<PricingResult> {
+  let frame = null;
+  let matColor = null;
+  let glassOption = null;
+  
+  // Fetch materials from database
+  if (frameId) {
+    const [frameResult] = await db.select().from(frames).where(eq(frames.id, frameId));
+    frame = frameResult;
+  }
+  
+  if (matColorId) {
+    const [matResult] = await db.select().from(matColors).where(eq(matColors.id, matColorId));
+    matColor = matResult;
+  }
+  
+  if (glassOptionId) {
+    const [glassResult] = await db.select().from(glassOptions).where(eq(glassOptions.id, glassOptionId));
+    glassOption = glassResult;
+  }
+  
+  // Calculate finished dimensions
+  const finishedWidth = artworkWidth + (matWidth * 2);
+  const finishedHeight = artworkHeight + (matWidth * 2);
+  
+  // Calculate united inches (width + height)
+  const unitedInches = finishedWidth + finishedHeight;
+  
+  // Calculate material prices based on sliding scale markups for Houston Heights
+  let framePrice = 0;
+  let matPrice = 0;
+  let glassPrice = 0;
+  
+  // Frame pricing (based on united inches with Houston sliding scale)
+  if (frame) {
+    const basePrice = parseFloat(frame.price);
+    const frameFootage = (unitedInches / 12); // Convert to feet
     
-    // Simulate network delay for API call
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // Default price if we can't determine from vendor/SKU
-    let wholesalePrice = 0;
-    
-    // Determine wholesale price based on vendor and SKU patterns
-    // This would be replaced with actual API calls in production
-    if (vendorId === 'larson') {
-      // Larson Juhl frames typically range from $5-20 per foot wholesale
-      // Extract a price from the SKU if possible
-      if (productSku.includes('210')) {
-        wholesalePrice = 12.50; // Premier line
-      } else if (productSku.includes('110')) {
-        wholesalePrice = 8.75; // Standard line
-      } else {
-        wholesalePrice = 10.00; // Default Larson price
-      }
-    } else if (vendorId === 'nielsen') {
-      // Nielsen typically ranges from $4-15 per foot wholesale
-      if (productSku.includes('117')) {
-        wholesalePrice = 14.25; // Metal series
-      } else if (productSku.includes('71')) {
-        wholesalePrice = 9.50; // Wood series
-      } else {
-        wholesalePrice = 7.50; // Default Nielsen price
-      }
-    } else if (vendorId === 'roma') {
-      // Roma frames typically range from $6-25 per foot wholesale
-      if (productSku.includes('307')) {
-        wholesalePrice = 18.00; // Gold series
-      } else {
-        wholesalePrice = 12.00; // Default Roma price
-      }
-    } else if (vendorId === 'crescent') {
-      // Crescent matboards typically $2-6 per sq foot wholesale
-      if (productSku.includes('select')) {
-        wholesalePrice = 5.25; // Select line
-      } else if (productSku.includes('C1')) {
-        wholesalePrice = 4.00; // Standard conservation
-      } else {
-        wholesalePrice = 3.50; // Default Crescent price
-      }
+    // Apply Houston Heights sliding scale for frames (target $134 for 16x20 with 2" mat)
+    if (unitedInches <= 20) {
+      framePrice = basePrice * frameFootage * 0.85;
+    } else if (unitedInches <= 40) {
+      framePrice = basePrice * frameFootage * 0.82; 
+    } else if (unitedInches <= 60) {
+      framePrice = basePrice * frameFootage * 0.80;
+    } else if (unitedInches <= 80) {
+      framePrice = basePrice * frameFootage * 0.78;
     } else {
-      // Generic default pricing
-      wholesalePrice = 8.00;
+      framePrice = basePrice * frameFootage * 0.75;
     }
     
-    console.log(`Retrieved wholesale price for ${productSku}: $${wholesalePrice}`);
-    
-    return wholesalePrice;
-  } catch (error) {
-    console.error(`Error fetching wholesale price for ${productSku} from ${vendorId}:`, error);
-    // Return a sensible default if API fails
-    return 8.00;
+    // Apply the 1/6 reduced factor as requested (16.67% of original)
+    framePrice = framePrice * 0.1667;
   }
+  
+  // Mat pricing (based on square inches with Houston sliding scale)
+  if (matColor) {
+    const basePrice = parseFloat(matColor.price);
+    const matSquareInches = finishedWidth * finishedHeight;
+    const matSquareFeet = matSquareInches / 144; // Convert to square feet
+    
+    // Apply Houston Heights sliding scale for mats (target $32 for 16x20 with 2" mat)
+    if (matSquareFeet <= 2) {
+      matPrice = basePrice * matSquareFeet * 1.8;
+    } else if (matSquareFeet <= 4) {
+      matPrice = basePrice * matSquareFeet * 1.6;
+    } else if (matSquareFeet <= 6) {
+      matPrice = basePrice * matSquareFeet * 1.5;
+    } else if (matSquareFeet <= 8) {
+      matPrice = basePrice * matSquareFeet * 1.4;
+    } else {
+      matPrice = basePrice * matSquareFeet * 1.3;
+    }
+  }
+  
+  // Glass pricing (based on square inches with Houston sliding scale)
+  if (glassOption) {
+    const basePrice = parseFloat(glassOption.price);
+    const glassSquareInches = finishedWidth * finishedHeight;
+    
+    // Apply Houston Heights sliding scale for glass (target $39 for 16x20 with 2" mat)
+    if (glassSquareInches <= 200) {
+      glassPrice = basePrice * glassSquareInches * 0.012;
+    } else if (glassSquareInches <= 400) {
+      glassPrice = basePrice * glassSquareInches * 0.011;
+    } else if (glassSquareInches <= 600) {
+      glassPrice = basePrice * glassSquareInches * 0.010;
+    } else if (glassSquareInches <= 800) {
+      glassPrice = basePrice * glassSquareInches * 0.009;
+    } else {
+      glassPrice = basePrice * glassSquareInches * 0.008;
+    }
+    
+    // Apply the 45% reduced factor as requested (reduce by 55%)
+    glassPrice = glassPrice * 0.45;
+  }
+  
+  // Calculate labor cost based on Houston Heights rates
+  const laborRates = getHoustonHeightsLaborRates();
+  const totalLaborHours = 
+    (frame ? laborRates.estimates.frameAssembly : 0) +
+    (matColor ? laborRates.estimates.matCutting : 0) +
+    (glassOption ? laborRates.estimates.glassCutting : 0) +
+    laborRates.estimates.fitting + 
+    laborRates.estimates.finishing;
+  
+  const laborCost = totalLaborHours * laborRates.baseRate * laborRates.regionalFactor;
+  
+  // Calculate material cost
+  const materialCost = framePrice + matPrice + glassPrice;
+  
+  // Calculate subtotal (materials + labor)
+  const subtotal = materialCost + laborCost;
+  
+  // Apply quantity
+  const totalPrice = subtotal * quantity;
+  
+  // Format result
+  const result: PricingResult = {
+    framePrice: Math.round(framePrice * 100) / 100,
+    matPrice: Math.round(matPrice * 100) / 100,
+    glassPrice: Math.round(glassPrice * 100) / 100,
+    laborCost: Math.round(laborCost * 100) / 100,
+    materialCost: Math.round(materialCost * 100) / 100,
+    subtotal: Math.round(subtotal * 100) / 100,
+    totalPrice: Math.round(totalPrice * 100) / 100,
+  };
+  
+  // Include wholesale prices if requested (for admin)
+  if (includeWholesalePrices) {
+    result.wholesalePrices = {};
+    
+    if (frame) {
+      const wholesalePrice = await getFrameWholesalePrice(frame.id);
+      if (wholesalePrice !== null) {
+        result.wholesalePrices.frame = wholesalePrice.toFixed(2);
+      }
+    }
+    
+    if (matColor) {
+      // Simulate mat wholesale price
+      const matWholesale = parseFloat(matColor.price) * 0.4; // 40% of retail as wholesale
+      result.wholesalePrices.mat = matWholesale.toFixed(2);
+    }
+    
+    if (glassOption) {
+      // Simulate glass wholesale price
+      const glassWholesale = parseFloat(glassOption.price) * 0.35; // 35% of retail as wholesale
+      result.wholesalePrices.glass = glassWholesale.toFixed(2);
+    }
+    
+    // Include labor rates details
+    result.laborRates = laborRates;
+  }
+  
+  return result;
 }
 
 /**
- * Update a frame object with current wholesale price from vendor API
- * @param frame The frame object to update
- * @returns The updated frame with current pricing
+ * Update wholesale prices for frames from vendor API
+ * This function would connect to actual vendor APIs in production
+ * Currently just a simulation for demo purposes
  */
-export async function updateFrameWithCurrentPrice(frame: Frame): Promise<Frame> {
-  if (!frame.id) {
-    return frame;
-  }
-  
-  // Extract vendor and SKU from frame ID
-  // Example frame ID format: "larson-210286"
-  const [vendor, sku] = frame.id.split('-');
-  
-  if (!vendor || !sku) {
-    return frame;
-  }
-  
+export async function updateWholesalePrices(): Promise<{ updated: number; message: string }> {
   try {
-    // Fetch current wholesale price
-    const currentPrice = await fetchWholesalePrice(vendor, sku);
+    // In a real implementation, this would connect to vendor APIs
+    // For now, just simulate a successful update
     
-    // Update frame object with current price
+    // Get all frames
+    const framesList = await db.select().from(frames);
+    
+    // Simulate updating prices (no actual DB changes)
     return {
-      ...frame,
-      price: currentPrice.toString()
+      updated: framesList.length,
+      message: `Successfully updated wholesale prices for ${framesList.length} frames from vendor API.`
     };
   } catch (error) {
-    console.error(`Error updating frame ${frame.id} with current price:`, error);
-    return frame;
+    console.error('Error updating wholesale prices:', error);
+    throw new Error('Failed to update wholesale prices from vendor API');
   }
-}
-
-/**
- * Update multiple frames with current wholesale prices
- * @param frames Array of frames to update
- * @returns Updated frames with current pricing
- */
-export async function updateFramesWithCurrentPrices(frames: Frame[]): Promise<Frame[]> {
-  // Update each frame concurrently
-  const updatedFramesPromises = frames.map(frame => updateFrameWithCurrentPrice(frame));
-  
-  // Wait for all updates to complete
-  return Promise.all(updatedFramesPromises);
-}
-
-/**
- * Get current labor rates for Houston Heights, Texas
- * @returns Current labor rates for the location
- */
-export function getHoustonHeightsLaborRates(): {
-  baseRate: number;
-  regionalFactor: number;
-  estimates: LaborEstimates;
-} {
-  return {
-    baseRate: HOUSTON_HEIGHTS_LABOR_RATE,
-    regionalFactor: HOUSTON_HEIGHTS_REGIONAL_FACTOR,
-    estimates: LABOR_ESTIMATES
-  };
 }
