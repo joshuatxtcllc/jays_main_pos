@@ -113,6 +113,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Hub
             </span>
           </Link>
+          <Link href="/pricing">
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/pricing" && "text-primary"
+            )}>
+              Pricing
+            </span>
+          </Link>
           <Link href="/mat-test">
             <span className={cn(
               "font-medium transition-colors cursor-pointer",
@@ -275,6 +283,15 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               location === "/hub" && "text-primary"
             )}>
               Hub
+            </span>
+          </Link>
+          
+          <Link href="/pricing">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/pricing" && "text-primary"
+            )}>
+              Pricing
             </span>
           </Link>
           
