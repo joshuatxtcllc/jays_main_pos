@@ -118,6 +118,7 @@ export interface IStorage {
   createOrderGroup(orderGroup: InsertOrderGroup): Promise<OrderGroup>;
   updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup>;
   getOrdersByGroupId(orderGroupId: number): Promise<Order[]>;
+  getOrderGroupsByCustomerId(customerId: number): Promise<OrderGroup[]>;
   
   // Order methods
   getOrder(id: number): Promise<Order | undefined>;
@@ -658,6 +659,18 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedOrderGroup;
+  }
+  
+  async getOrderGroupsByCustomerId(customerId: number): Promise<OrderGroup[]> {
+    try {
+      console.log(`Storage: Getting order groups for customer ID: ${customerId}`);
+      const result = await db.select().from(orderGroups).where(eq(orderGroups.customerId, customerId));
+      console.log(`Storage: Found ${result.length} order groups for customer ID: ${customerId}`);
+      return result;
+    } catch (error) {
+      console.error("Storage: Error getting order groups by customer ID:", error);
+      throw error;
+    }
   }
   
   async getOrdersByGroupId(orderGroupId: number): Promise<Order[]> {

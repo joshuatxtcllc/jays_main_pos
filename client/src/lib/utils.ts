@@ -36,8 +36,9 @@ export function calculateBackingPrice(width: number, height: number, matWidth: n
   const backingHeight = height + (matWidth * 2);
   const backingArea = backingWidth * backingHeight;
   
-  // Base wholesale price per square inch
-  const baseWholesalePricePerSqInch = 0.03;
+  // Base wholesale price per square inch (adjusted to more realistic value)
+  // Standard foamcore backing is much less expensive than previously calculated
+  const baseWholesalePricePerSqInch = 0.008;
   
   // Apply sliding scale based on size
   let wholesalePriceFactor = 1.0;
@@ -54,10 +55,14 @@ export function calculateBackingPrice(width: number, height: number, matWidth: n
   // Calculate wholesale cost
   const wholesaleCost = backingArea * baseWholesalePricePerSqInch * wholesalePriceFactor;
   
-  // Apply retail markup (typically 4-5x for backing materials)
-  const retailMarkup = 4.5;
+  // Apply retail markup (adjusted to standard framing industry markup)
+  const retailMarkup = 3.0;
   
-  return wholesaleCost * retailMarkup;
+  // Minimum backing charge
+  const minimumBackingCharge = 10.0;
+  
+  // Return the greater of the calculated price or minimum charge
+  return Math.max(wholesaleCost * retailMarkup, minimumBackingCharge);
 }
 
 // Calculate frame price based on dimensions and base price

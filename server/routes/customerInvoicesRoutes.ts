@@ -27,7 +27,7 @@ router.get('/:customerId/invoices', async (req, res) => {
     }
     
     // For each order group, get the orders and construct invoice data
-    const invoices = await Promise.all(orderGroups.map(async (orderGroup) => {
+    const invoices = await Promise.all(orderGroups.map(async (orderGroup: any) => {
       const orders = await storage.getOrdersByGroupId(orderGroup.id);
       return {
         orderGroup,
