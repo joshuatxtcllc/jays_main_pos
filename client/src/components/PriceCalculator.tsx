@@ -49,16 +49,43 @@ const PriceCalculator = () => {
   const [pricingResult, setPricingResult] = useState<PricingResult | null>(null);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
 
+  // Define frame interface
+  interface Frame {
+    id: string;
+    name: string;
+    price: string;
+    description?: string;
+    material?: string;
+    color?: string;
+    thumbnailUrl?: string;
+  }
+
+  // Define mat color interface
+  interface MatColor {
+    id: string;
+    name: string;
+    color: string;
+    category?: string;
+  }
+
+  // Define glass option interface
+  interface GlassOption {
+    id: string;
+    name: string;
+    description?: string;
+    price?: string;
+  }
+
   // Fetch material options
-  const { data: frames, isLoading: framesLoading } = useQuery({
+  const { data: frames = [], isLoading: framesLoading } = useQuery<Frame[]>({
     queryKey: ['/api/frames'],
   });
 
-  const { data: matColors, isLoading: matColorsLoading } = useQuery({
+  const { data: matColors = [], isLoading: matColorsLoading } = useQuery<MatColor[]>({
     queryKey: ['/api/mat-colors'],
   });
 
-  const { data: glassOptions, isLoading: glassOptionsLoading } = useQuery({
+  const { data: glassOptions = [], isLoading: glassOptionsLoading } = useQuery<GlassOption[]>({
     queryKey: ['/api/glass-options'],
   });
 
@@ -161,7 +188,7 @@ const PriceCalculator = () => {
                     Loading frames...
                   </SelectItem>
                 ) : (
-                  frames?.map((frame: any) => (
+                  frames.map((frame: Frame) => (
                     <SelectItem key={frame.id} value={frame.id}>
                       {frame.name} (${parseFloat(frame.price).toFixed(2)}/ft)
                     </SelectItem>
@@ -173,7 +200,7 @@ const PriceCalculator = () => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Mat Color</h3>
-            <Select value={matColorId || ''} onValueChange={setMatColorId}>
+            <Select value={matColorId} onValueChange={setMatColorId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a mat color" />
               </SelectTrigger>
@@ -202,7 +229,7 @@ const PriceCalculator = () => {
 
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Glass</h3>
-            <Select value={glassOptionId || ''} onValueChange={setGlassOptionId}>
+            <Select value={glassOptionId} onValueChange={setGlassOptionId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select glass type" />
               </SelectTrigger>
