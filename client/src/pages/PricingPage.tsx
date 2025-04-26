@@ -52,6 +52,7 @@ const formSchema = z.object({
     message: "Quantity must be a positive integer",
   }),
   includeWholesalePrices: z.boolean().default(false),
+  addToWholesaleOrder: z.boolean().default(true),
 });
 
 // Define the expected result type
@@ -122,6 +123,7 @@ export default function PricingPage() {
       matWidth: "2",
       quantity: "1",
       includeWholesalePrices: true,
+      addToWholesaleOrder: true,
     },
   });
 
@@ -390,6 +392,31 @@ export default function PricingPage() {
                           checked={field.value}
                           onChange={field.onChange}
                           className="accent-primary h-4 w-4"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Add to Wholesale Order Switch */}
+                <FormField
+                  control={form.control}
+                  name="addToWholesaleOrder"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-primary/10">
+                      <div className="space-y-0.5">
+                        <FormLabel className="font-bold">Add to Wholesale Order</FormLabel>
+                        <FormDescription>
+                          This will create a material order for the frame shop
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value}
+                          onChange={field.onChange}
+                          className="accent-primary h-4 w-4"
+                          disabled={true} // Making it mandatory - can't be unchecked
                         />
                       </FormControl>
                     </FormItem>

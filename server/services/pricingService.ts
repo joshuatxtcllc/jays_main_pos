@@ -97,9 +97,9 @@ export interface PricingResult {
 }
 
 // Houston-specific markup values
-const FRAME_MARKUP_FACTOR = 0.1667; // Reduce frame price to 1/6th (16.67%)
+const FRAME_MARKUP_FACTOR = 0.4; // Adjust frame price to be more accurate for Houston market (40%)
 const GLASS_MARKUP_FACTOR = 0.45; // Reduce glass price by 55% (to 45%)
-const MAT_BASE_PRICE = 0.8; // Base price per united inch for matting
+const MAT_BASE_PRICE = 3.5; // Base price per square inch for matting in Houston market
 const HOUSTON_REGIONAL_FACTOR = 1.25; // Houston Heights area regional labor rate factor
 const BASE_LABOR_RATE = 35; // Base hourly labor rate
 
