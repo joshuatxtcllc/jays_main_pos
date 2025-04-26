@@ -294,6 +294,15 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
             </span>
           </Link>
           
+          <Link href="/vendor-settings">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/vendor-settings" && "text-primary"
+            )}>
+              Vendor Settings
+            </span>
+          </Link>
+          
           <div className="py-2 flex items-center">
             <span className="font-medium mr-4">Cart:</span>
             <CartWidget />
