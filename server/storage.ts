@@ -98,6 +98,8 @@ export interface IStorage {
   getFrame(id: string): Promise<Frame | undefined>;
   getAllFrames(): Promise<Frame[]>;
   updateFrame(id: string, data: Partial<Frame>): Promise<Frame>;
+  addFrame(frame: InsertFrame): Promise<Frame>;
+  searchFramesByItemNumber(itemNumber: string): Promise<Frame[]>;
   
   // Mat color methods
   getMatColor(id: string): Promise<MatColor | undefined>;
@@ -517,6 +519,43 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedFrame;
+  }
+  
+  async addFrame(frame: InsertFrame): Promise<Frame> {
+    console.log(`Storage: Adding new frame to database: ${frame.name} (${frame.id})`);
+    
+    try {
+      const [newFrame] = await db
+        .insert(frames)
+        .values(frame)
+        .returning();
+        
+      console.log(`Storage: Successfully added frame to database`);
+      return newFrame;
+    } catch (error) {
+      console.error(`Storage: Error adding frame to database:`, error);
+      throw error;
+    }
+  }
+  
+  async searchFramesByItemNumber(itemNumber: string): Promise<Frame[]> {
+    console.log(`Storage: Searching frames by item number: ${itemNumber}`);
+    
+    try {
+      // Extract all frames from database
+      const allFrames = await this.getAllFrames();
+      const lowerItemNumber = itemNumber.toLowerCase();
+      
+      // Filter frames by item number
+      return allFrames.filter(frame => {
+        // Extract item number from the ID (e.g., "larson-210286" -> "210286")
+        const frameItemNumber = frame.id.split('-')[1]?.toLowerCase() || '';
+        return frameItemNumber.includes(lowerItemNumber);
+      });
+    } catch (error) {
+      console.error(`Storage: Error searching frames by item number:`, error);
+      return [];
+    }
   }
   
   // Mat color methods
