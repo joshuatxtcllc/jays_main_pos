@@ -3,7 +3,8 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
+import { Edit, Eye } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -381,6 +382,15 @@ const Orders = () => {
                               onClick={() => setLocation(`/order-progress/${order.id}`)}
                             >
                               Track Progress
+                            </Button>
+                            <Button 
+                              variant="default" 
+                              size="sm"
+                              asChild
+                            >
+                              <Link href={`/orders/${order.id}`}>
+                                <Edit className="h-4 w-4 mr-1" /> Details
+                              </Link>
                             </Button>
                           </div>
                         </div>

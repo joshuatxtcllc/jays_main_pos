@@ -19,6 +19,7 @@ import MatOptionPage from "./pages/MatOptionPage";
 import InventoryPage from "./pages/InventoryPage";
 import PricingPage from "./pages/PricingPage";
 import VendorSettings from "./pages/VendorSettings";
+import OrderDetailsPage from "./pages/OrderDetailsPage";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
