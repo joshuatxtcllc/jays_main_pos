@@ -101,6 +101,7 @@ function App() {
                   <Route path="/checkout/:orderGroupId" component={Checkout} />
                   <Route path="/payment-status" component={PaymentStatus} />
                   <Route path="/order-progress/:orderId" component={OrderProgressPage} />
+                  <Route path="/orders/:orderId" component={OrderDetailsPage} />
                   <Route path="/customers/:id" component={CustomerManagement} />
                   <Route path="/customers" component={CustomerManagement} />
                   <Route component={NotFound} />
