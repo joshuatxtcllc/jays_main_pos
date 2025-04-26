@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { vendorCatalogService } from '../services/vendorCatalogService';
+import { vendorApiService } from '../services/vendorApiService';
 import { db } from '../db';
 import { frames } from '@shared/schema';
 
@@ -8,11 +9,21 @@ import { frames } from '@shared/schema';
  */
 export async function getLarsonJuhlFrames(req: Request, res: Response) {
   try {
-    const larsonFrames = await vendorCatalogService.fetchLarsonJuhlFrames();
-    res.json(larsonFrames);
-  } catch (error) {
+    console.log('Fetching frames from Larson-Juhl API...');
+    // First try the new vendor API service
+    try {
+      const larsonFrames = await vendorApiService.fetchLarsonCatalog();
+      console.log(`Retrieved ${larsonFrames.length} frames from Larson-Juhl API`);
+      res.json(larsonFrames);
+    } catch (apiError) {
+      console.error('Error using direct vendor API, falling back to catalog service:', apiError);
+      // Fall back to the catalog service if the API call fails
+      const larsonFrames = await vendorCatalogService.fetchLarsonJuhlFrames();
+      res.json(larsonFrames);
+    }
+  } catch (error: any) {
     console.error('Error fetching Larson-Juhl frames:', error);
-    res.status(500).json({ message: 'Failed to fetch Larson-Juhl frames' });
+    res.status(500).json({ message: 'Failed to fetch Larson-Juhl frames', error: error.message });
   }
 }
 
@@ -21,11 +32,21 @@ export async function getLarsonJuhlFrames(req: Request, res: Response) {
  */
 export async function getNielsenFrames(req: Request, res: Response) {
   try {
-    const nielsenFrames = await vendorCatalogService.fetchNielsenFrames();
-    res.json(nielsenFrames);
-  } catch (error) {
+    console.log('Fetching frames from Nielsen Bainbridge API...');
+    // First try the new vendor API service
+    try {
+      const nielsenFrames = await vendorApiService.fetchBellaCatalog(); // Using Bella as Nielsen replacement
+      console.log(`Retrieved ${nielsenFrames.length} frames from Nielsen API`);
+      res.json(nielsenFrames);
+    } catch (apiError) {
+      console.error('Error using direct vendor API, falling back to catalog service:', apiError);
+      // Fall back to the catalog service if the API call fails
+      const nielsenFrames = await vendorCatalogService.fetchNielsenFrames();
+      res.json(nielsenFrames);
+    }
+  } catch (error: any) {
     console.error('Error fetching Nielsen frames:', error);
-    res.status(500).json({ message: 'Failed to fetch Nielsen frames' });
+    res.status(500).json({ message: 'Failed to fetch Nielsen frames', error: error.message });
   }
 }
 
@@ -34,11 +55,21 @@ export async function getNielsenFrames(req: Request, res: Response) {
  */
 export async function getRomaFrames(req: Request, res: Response) {
   try {
-    const romaFrames = await vendorCatalogService.fetchRomaFrames();
-    res.json(romaFrames);
-  } catch (error) {
+    console.log('Fetching frames from Roma API...');
+    // First try the new vendor API service
+    try {
+      const romaFrames = await vendorApiService.fetchRomaCatalog();
+      console.log(`Retrieved ${romaFrames.length} frames from Roma API`);
+      res.json(romaFrames);
+    } catch (apiError) {
+      console.error('Error using direct vendor API, falling back to catalog service:', apiError);
+      // Fall back to the catalog service if the API call fails
+      const romaFrames = await vendorCatalogService.fetchRomaFrames();
+      res.json(romaFrames);
+    }
+  } catch (error: any) {
     console.error('Error fetching Roma frames:', error);
-    res.status(500).json({ message: 'Failed to fetch Roma frames' });
+    res.status(500).json({ message: 'Failed to fetch Roma frames', error: error.message });
   }
 }
 
@@ -47,11 +78,21 @@ export async function getRomaFrames(req: Request, res: Response) {
  */
 export async function getAllVendorFrames(req: Request, res: Response) {
   try {
-    const allFrames = await vendorCatalogService.fetchAllVendorFrames();
-    res.json(allFrames);
-  } catch (error) {
+    console.log('Fetching frames from all vendor APIs...');
+    // First try the new vendor API service
+    try {
+      const allFrames = await vendorApiService.fetchAllCatalogs();
+      console.log(`Retrieved ${allFrames.length} total frames from all vendor APIs`);
+      res.json(allFrames);
+    } catch (apiError) {
+      console.error('Error using direct vendor API, falling back to catalog service:', apiError);
+      // Fall back to the catalog service if the API call fails
+      const allFrames = await vendorCatalogService.fetchAllVendorFrames();
+      res.json(allFrames);
+    }
+  } catch (error: any) {
     console.error('Error fetching all vendor frames:', error);
-    res.status(500).json({ message: 'Failed to fetch frames from vendor catalogs' });
+    res.status(500).json({ message: 'Failed to fetch frames from vendor catalogs', error: error.message });
   }
 }
 
