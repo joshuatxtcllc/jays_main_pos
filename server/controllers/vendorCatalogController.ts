@@ -107,16 +107,53 @@ export async function searchFramesByItemNumber(req: Request, res: Response) {
       return res.status(400).json({ message: 'Item number is required' });
     }
     
-    const matchingFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
+    console.log(`Searching for frame with item number: ${itemNumber} across vendor APIs`);
     
-    if (matchingFrames.length === 0) {
-      return res.status(404).json({ message: `No frames found with item number: ${itemNumber}` });
+    // First try the new vendor API service
+    try {
+      const matchingFrames = await vendorApiService.searchFrames(itemNumber);
+      
+      if (matchingFrames.length > 0) {
+        console.log(`Found ${matchingFrames.length} frames matching item number ${itemNumber} in vendor APIs`);
+        return res.json(matchingFrames);
+      }
+      
+      // If no matches found in vendor APIs, try database search
+      console.log(`No frames found in vendor APIs, checking database`);
+      
+      // Try database search using IStorage
+      const databaseFrames = await storage.searchFramesByItemNumber(itemNumber);
+      
+      if (databaseFrames.length > 0) {
+        console.log(`Found ${databaseFrames.length} frames matching item number ${itemNumber} in database`);
+        return res.json(databaseFrames);
+      }
+      
+      // Finally, fall back to catalog service if needed
+      console.log(`No frames found in database, falling back to catalog service`);
+      const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
+      
+      if (catalogFrames.length === 0) {
+        return res.status(404).json({ message: `No frames found with item number: ${itemNumber}` });
+      }
+      
+      console.log(`Found ${catalogFrames.length} frames matching item number ${itemNumber} in catalog service`);
+      return res.json(catalogFrames);
+    } catch (apiError) {
+      console.error('Error using direct vendor API, falling back to catalog service:', apiError);
+      
+      // Fall back to catalog service
+      const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
+      
+      if (catalogFrames.length === 0) {
+        return res.status(404).json({ message: `No frames found with item number: ${itemNumber}` });
+      }
+      
+      return res.json(catalogFrames);
     }
-    
-    res.json(matchingFrames);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error searching frames by item number:', error);
-    res.status(500).json({ message: 'Failed to search for frames' });
+    res.status(500).json({ message: 'Failed to search for frames', error: error.message });
   }
 }
 
