@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Order, ProductionStatus, productionStatuses } from '@shared/schema';
 import { useProduction } from '@/hooks/use-production';
+import { Link } from 'wouter';
 import { 
   Card, 
   CardContent, 
@@ -210,7 +211,7 @@ export default function OrderProgress({
       {showHistory && (
         <CardFooter className="flex justify-end border-t pt-4">
           <Button variant="ghost" asChild>
-            <a href={`/order-progress/${order.id}`}>View detailed progress</a>
+            <Link href={`/order-progress/${order.id}`}>View detailed progress</Link>
           </Button>
         </CardFooter>
       )}

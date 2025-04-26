@@ -155,8 +155,8 @@ export default function OrderProgressPage() {
           </CardContent>
           <CardFooter className="border-t pt-6">
             <Button variant="outline" className="w-full" asChild>
-              <Link href={`/order/${order.id}`}>
-                View Full Order Details
+              <Link href={`/orders`}>
+                View All Orders
               </Link>
             </Button>
           </CardFooter>
