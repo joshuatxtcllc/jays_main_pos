@@ -121,6 +121,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Pricing
             </span>
           </Link>
+          <Link href="/vendor-settings">
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/vendor-settings" && "text-primary"
+            )}>
+              Vendor Settings
+            </span>
+          </Link>
         </nav>
         
         <div className="flex items-center space-x-4">

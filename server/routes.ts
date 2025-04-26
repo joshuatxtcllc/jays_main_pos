@@ -49,6 +49,7 @@ import {
 import inventoryRoutes from "./routes/inventoryRoutes";
 import invoiceRoutes from "./routes/invoiceRoutes";
 import customerInvoicesRoutes from "./routes/customerInvoicesRoutes";
+import vendorSettingsRoutes from "./routes/vendorSettingsRoutes";
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 
@@ -1518,6 +1519,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register customer invoices routes
   app.use('/api/customers', customerInvoicesRoutes);
+  
+  // Register vendor settings routes
+  app.use('/api/vendor-api', vendorSettingsRoutes);
   
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
