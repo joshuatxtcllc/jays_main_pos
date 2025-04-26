@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { vendorCatalogService } from '../services/vendorCatalogService';
 import { vendorApiService } from '../services/vendorApiService';
+import { storage } from '../storage';
 import { db } from '../db';
 import { frames } from '@shared/schema';
 

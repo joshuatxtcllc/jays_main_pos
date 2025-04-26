@@ -105,11 +105,13 @@ class VendorApiService {
     this.larsonConfig = {
       baseUrl: process.env.LARSON_API_URL || 'https://api.larsonjuhl.com/v1',
       apiKey: process.env.LARSON_API_KEY || '',
+      apiSecret: process.env.LARSON_API_SECRET || '',
     };
 
     this.romaConfig = {
       baseUrl: process.env.ROMA_API_URL || 'https://api.romamoulding.com/v2',
       apiKey: process.env.ROMA_API_KEY || '',
+      apiSecret: process.env.ROMA_API_SECRET || '',
     };
 
     this.bellaConfig = {
@@ -288,7 +290,7 @@ class VendorApiService {
           height: '',
           depth: '',
           collection: '',
-          imageUrl: frame.thumbnailUrl,
+          imageUrl: frame.thumbnailUrl || '',
           vendor: frame.id.split('-')[0] || ''
         }));
       }
@@ -348,7 +350,7 @@ class VendorApiService {
           price: frame.price,
           material: frame.material,
           color: frame.color,
-          thumbnailUrl: frame.imageUrl,
+          thumbnailUrl: frame.imageUrl || '',
           description: frame.description || ''
         });
       }
@@ -361,7 +363,7 @@ class VendorApiService {
           price: frame.price,
           material: frame.material,
           color: frame.color,
-          thumbnailUrl: frame.imageUrl,
+          thumbnailUrl: frame.imageUrl || '',
           description: frame.description || ''
         });
       }
@@ -373,6 +375,199 @@ class VendorApiService {
     } catch (error) {
       console.error('Error syncing catalogs to database:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Get current API settings (excluding secrets)
+   */
+  async getSettings(): Promise<Record<string, string | boolean>> {
+    return {
+      larsonApiKey: this.larsonConfig.apiKey || '',
+      larsonApiSecret: !!this.larsonConfig.apiSecret,
+      
+      romaApiKey: this.romaConfig.apiKey || '',
+      romaApiSecret: !!this.romaConfig.apiSecret,
+      
+      bellaApiKey: this.bellaConfig.apiKey || '',
+      bellaApiSecret: !!this.bellaConfig.apiSecret,
+    };
+  }
+
+  /**
+   * Update API settings
+   * @param settings New settings
+   */
+  async updateSettings(settings: Record<string, string>): Promise<void> {
+    // Update configuration
+    if (settings.larsonApiKey !== undefined) {
+      this.larsonConfig.apiKey = settings.larsonApiKey;
+      process.env.LARSON_API_KEY = settings.larsonApiKey;
+    }
+    
+    if (settings.larsonApiSecret !== undefined) {
+      this.larsonConfig.apiSecret = settings.larsonApiSecret;
+      process.env.LARSON_API_SECRET = settings.larsonApiSecret;
+    }
+    
+    if (settings.romaApiKey !== undefined) {
+      this.romaConfig.apiKey = settings.romaApiKey;
+      process.env.ROMA_API_KEY = settings.romaApiKey;
+    }
+    
+    if (settings.romaApiSecret !== undefined) {
+      this.romaConfig.apiSecret = settings.romaApiSecret;
+      process.env.ROMA_API_SECRET = settings.romaApiSecret;
+    }
+    
+    if (settings.bellaApiKey !== undefined) {
+      this.bellaConfig.apiKey = settings.bellaApiKey;
+      process.env.BELLA_API_KEY = settings.bellaApiKey;
+    }
+    
+    if (settings.bellaApiSecret !== undefined) {
+      this.bellaConfig.apiSecret = settings.bellaApiSecret;
+      process.env.BELLA_API_SECRET = settings.bellaApiSecret;
+    }
+    
+    // In a real application, these settings would be saved to a database or config file
+    console.log('API settings updated', { 
+      larsonKeyUpdated: !!settings.larsonApiKey,
+      larsonSecretUpdated: !!settings.larsonApiSecret,
+      romaKeyUpdated: !!settings.romaApiKey,
+      romaSecretUpdated: !!settings.romaApiSecret,
+      bellaKeyUpdated: !!settings.bellaApiKey,
+      bellaSecretUpdated: !!settings.bellaApiSecret
+    });
+  }
+
+  /**
+   * Test connection to Larson Juhl API
+   */
+  async testLarsonConnection(): Promise<{ success: boolean, message: string }> {
+    try {
+      if (!this.larsonConfig.apiKey) {
+        return { 
+          success: false, 
+          message: 'API key not configured. Please enter a valid API key.' 
+        };
+      }
+
+      // Try to fetch a single frame to test the connection
+      const testResponse = await axios.get(
+        `${this.larsonConfig.baseUrl}/catalog/frames?limit=1`,
+        {
+          headers: {
+            'Authorization': `Bearer ${this.larsonConfig.apiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (testResponse.status === 200) {
+        return { 
+          success: true, 
+          message: 'Successfully connected to Larson-Juhl API' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: `Unexpected response status: ${testResponse.status}` 
+        };
+      }
+    } catch (error: any) {
+      console.error('Error testing Larson Juhl connection:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || error.message || 'Connection failed' 
+      };
+    }
+  }
+
+  /**
+   * Test connection to Roma Moulding API
+   */
+  async testRomaConnection(): Promise<{ success: boolean, message: string }> {
+    try {
+      if (!this.romaConfig.apiKey) {
+        return { 
+          success: false, 
+          message: 'API key not configured. Please enter a valid API key.' 
+        };
+      }
+
+      // Try to fetch a single frame to test the connection
+      const testResponse = await axios.get(
+        `${this.romaConfig.baseUrl}/catalog/mouldings?limit=1`,
+        {
+          headers: {
+            'X-Api-Key': this.romaConfig.apiKey,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (testResponse.status === 200) {
+        return { 
+          success: true, 
+          message: 'Successfully connected to Roma Moulding API' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: `Unexpected response status: ${testResponse.status}` 
+        };
+      }
+    } catch (error: any) {
+      console.error('Error testing Roma Moulding connection:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || error.message || 'Connection failed' 
+      };
+    }
+  }
+
+  /**
+   * Test connection to Bella Moulding API
+   */
+  async testBellaConnection(): Promise<{ success: boolean, message: string }> {
+    try {
+      if (!this.bellaConfig.apiKey) {
+        return { 
+          success: false, 
+          message: 'API key not configured. Please enter a valid API key.' 
+        };
+      }
+
+      // Try to fetch a single product to test the connection
+      const testResponse = await axios.get(
+        `${this.bellaConfig.baseUrl}/products?limit=1`,
+        {
+          headers: {
+            'X-API-Key': this.bellaConfig.apiKey,
+            'X-API-Secret': this.bellaConfig.apiSecret || '',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (testResponse.status === 200) {
+        return { 
+          success: true, 
+          message: 'Successfully connected to Bella Moulding API' 
+        };
+      } else {
+        return { 
+          success: false, 
+          message: `Unexpected response status: ${testResponse.status}` 
+        };
+      }
+    } catch (error: any) {
+      console.error('Error testing Bella Moulding connection:', error);
+      return { 
+        success: false, 
+        message: error.response?.data?.message || error.message || 'Connection failed' 
+      };
     }
   }
 
