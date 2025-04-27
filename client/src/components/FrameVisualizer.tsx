@@ -51,6 +51,7 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
     
     // Create a default placeholder image if no artwork is provided
     if (!artworkImage) {
+      console.log('No artwork image provided, creating placeholder');
       const placeholderCanvas = document.createElement('canvas');
       const ctx = placeholderCanvas.getContext('2d');
       if (ctx) {
@@ -65,6 +66,13 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         artworkImg.src = placeholderCanvas.toDataURL();
       }
     } else {
+      console.log('Using provided artwork image, data URL length:', artworkImage.length);
+      // Data URLs can be really long, let's check if it looks valid
+      if (artworkImage.startsWith('data:image')) {
+        console.log('Artwork image appears to be a valid data URL');
+      } else {
+        console.warn('Artwork image does not appear to be a data URL:', artworkImage.substring(0, 50) + '...');
+      }
       artworkImg.src = artworkImage;
     }
 
@@ -140,9 +148,14 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
     // Draw everything once both images are loaded
     Promise.all([
       new Promise<void>(resolve => {
-        artworkImg.onload = () => resolve();
-        artworkImg.onerror = () => {
-          console.error('Failed to load artwork image, using fallback');
+        artworkImg.onload = () => {
+          console.log('Artwork image loaded successfully, dimensions:', artworkImg.width, 'x', artworkImg.height);
+          resolve();
+        };
+        artworkImg.onerror = (e) => {
+          console.error('Failed to load artwork image, error:', e);
+          console.error('Image source that failed:', artworkImg.src.substring(0, 50) + '...');
+          
           // Create a fallback image with text
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
@@ -155,6 +168,7 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
             ctx.font = '16px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('Artwork preview not available', canvas.width/2, canvas.height/2);
+            console.log('Created fallback image for artwork');
             artworkImg.src = canvas.toDataURL();
           }
           resolve();
