@@ -36,8 +36,7 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // We'll create a placeholder at runtime if no artwork is uploaded
-  const artworkSrc = artworkImage;
+  // We'll handle the null case in the useEffect
 
   useEffect(() => {
     if (!frame || !matColor || !canvasRef.current) return;
@@ -49,7 +48,25 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
     // Load the artwork image
     const artworkImg = new Image();
     artworkImg.crossOrigin = "Anonymous";
-    artworkImg.src = artworkSrc;
+    
+    // Create a default placeholder image if no artwork is provided
+    if (!artworkImage) {
+      const placeholderCanvas = document.createElement('canvas');
+      const ctx = placeholderCanvas.getContext('2d');
+      if (ctx) {
+        placeholderCanvas.width = 400;
+        placeholderCanvas.height = 300;
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(0, 0, placeholderCanvas.width, placeholderCanvas.height);
+        ctx.fillStyle = '#888';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Upload an image', placeholderCanvas.width/2, placeholderCanvas.height/2);
+        artworkImg.src = placeholderCanvas.toDataURL();
+      }
+    } else {
+      artworkImg.src = artworkImage;
+    }
 
     // Load the frame image
     const frameImg = new Image();
@@ -263,7 +280,7 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
       );
       ctx.restore();
     });
-  }, [frame, matColor, matWidth, artworkWidth, artworkHeight, artworkSrc]);
+  }, [frame, matColor, matWidth, artworkWidth, artworkHeight, artworkImage]);
 
   if (!frame || !matColor) {
     const missingItem = !frame ? "frame" : "mat color";

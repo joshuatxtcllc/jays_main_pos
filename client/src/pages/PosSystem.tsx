@@ -659,7 +659,6 @@ const PosSystem = () => {
     setMatManufacturerFilter('all');
     setSelectedGlassOption(glassOptionCatalog[0]);
     setSelectedServices([]);
-    setViewMode('2d');
     
     // Turn off webcam if it's on
     if (showWebcam) {
