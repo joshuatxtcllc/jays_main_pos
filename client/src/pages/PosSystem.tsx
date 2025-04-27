@@ -177,24 +177,41 @@ const PosSystem = () => {
         return;
       }
       
+      console.log('Processing image upload:', file.name, file.type, file.size);
+      
       // Convert file to data URL
       const dataUrl = await fileToDataUrl(file);
+      console.log('File converted to data URL, length:', dataUrl.length);
       
       // Resize image if it's too large
       const resizedImage = await resizeImage(dataUrl, 1200, 1200);
+      console.log('Image resized, new data URL length:', resizedImage.length);
       
       // Create an image element to get dimensions
       const img = new Image();
       img.onload = () => {
+        console.log('Image loaded with dimensions:', img.width, 'x', img.height);
         const imgAspectRatio = img.width / img.height;
         setAspectRatio(imgAspectRatio);
         
         // Update width based on the height and aspect ratio
-        setArtworkWidth(parseFloat((artworkHeight * imgAspectRatio).toFixed(2)));
+        const newWidth = parseFloat((artworkHeight * imgAspectRatio).toFixed(2));
+        console.log('Setting artwork width to:', newWidth);
+        setArtworkWidth(newWidth);
       };
+      
+      // IMPORTANT: We need to set the artworkImage state before setting the img.src
+      // This ensures the state is updated immediately
+      setArtworkImage(resizedImage);
+      console.log('Setting artwork image in state');
+      
+      // Now set the image source for dimension calculation
       img.src = resizedImage;
       
-      setArtworkImage(resizedImage);
+      toast({
+        title: "Image Uploaded",
+        description: "Your artwork image has been uploaded and is ready for framing."
+      });
     } catch (error) {
       console.error('Error processing image:', error);
       toast({
@@ -309,21 +326,31 @@ const PosSystem = () => {
   // Process webcam image
   const processWebcamImage = async (dataUrl: string) => {
     try {
+      console.log('Processing webcam image, data URL length:', dataUrl.length);
+      
       // Resize image if it's too large
       const resizedImage = await resizeImage(dataUrl, 1200, 1200);
+      console.log('Webcam image resized, new data URL length:', resizedImage.length);
       
       // Create an image element to get dimensions
       const img = new Image();
       img.onload = () => {
+        console.log('Webcam image loaded with dimensions:', img.width, 'x', img.height);
         const imgAspectRatio = img.width / img.height;
         setAspectRatio(imgAspectRatio);
         
         // Update width based on the height and aspect ratio
-        setArtworkWidth(parseFloat((artworkHeight * imgAspectRatio).toFixed(2)));
+        const newWidth = parseFloat((artworkHeight * imgAspectRatio).toFixed(2));
+        console.log('Setting artwork width to:', newWidth);
+        setArtworkWidth(newWidth);
       };
-      img.src = resizedImage;
       
+      // IMPORTANT: Set the state before setting the img.src
       setArtworkImage(resizedImage);
+      console.log('Setting artwork image from webcam in state');
+      
+      // Now set the image source for dimension calculation
+      img.src = resizedImage;
       
       toast({
         title: "Image Captured",
