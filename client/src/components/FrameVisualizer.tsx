@@ -36,8 +36,8 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // If no artwork is uploaded, use a placeholder
-  const artworkSrc = artworkImage || 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTB8fGFydHdvcmt8ZW58MHx8MHx8fDA%3D';
+  // We'll create a placeholder at runtime if no artwork is uploaded
+  const artworkSrc = artworkImage;
 
   useEffect(() => {
     if (!frame || !matColor || !canvasRef.current) return;

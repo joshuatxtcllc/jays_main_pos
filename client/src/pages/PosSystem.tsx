@@ -14,7 +14,6 @@ import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '
 import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import FrameVisualizer from '@/components/FrameVisualizer';
-import FrameVisualizer3D from '@/components/FrameVisualizer3D';
 import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
 import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
@@ -75,9 +74,6 @@ const PosSystem = () => {
   
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
-  
-  // View Mode
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
   
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
@@ -888,20 +884,6 @@ const PosSystem = () => {
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold header-underline">Frame Selection</h2>
-            <div className="flex space-x-2">
-              <button 
-                className={`px-3 py-1 rounded-md text-sm flex items-center ${viewMode === '2d' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-border text-light-text dark:text-dark-text'}`}
-                onClick={() => setViewMode('2d')}
-              >
-                <span>2D View</span>
-              </button>
-              <button 
-                className={`px-3 py-1 rounded-md text-sm flex items-center ${viewMode === '3d' ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-border text-light-text dark:text-dark-text'}`}
-                onClick={() => setViewMode('3d')}
-              >
-                <span>3D View</span>
-              </button>
-            </div>
           </div>
           
           {/* Frame Search */}
@@ -1270,27 +1252,14 @@ const PosSystem = () => {
           
           {/* Preview Container */}
           <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center">
-            {viewMode === '2d' ? (
-              <FrameVisualizer
-                frame={selectedFrame}
-                matColor={selectedMatColor}
-                matWidth={matWidth}
-                artworkWidth={artworkWidth}
-                artworkHeight={artworkHeight}
-                artworkImage={artworkImage}
-              />
-            ) : (
-              <div className="h-[400px] w-full">
-                <FrameVisualizer3D
-                  frame={selectedFrame}
-                  matColor={selectedMatColor}
-                  matWidth={matWidth}
-                  artworkWidth={artworkWidth}
-                  artworkHeight={artworkHeight}
-                  artworkImage={artworkImage}
-                />
-              </div>
-            )}
+            <FrameVisualizer
+              frame={selectedFrame}
+              matColor={selectedMatColor}
+              matWidth={matWidth}
+              artworkWidth={artworkWidth}
+              artworkHeight={artworkHeight}
+              artworkImage={artworkImage}
+            />
           </div>
           
           {/* Frame Details */}
