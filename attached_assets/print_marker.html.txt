@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Reference Marker - Custom Framing</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        .site-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .marker-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 30px 0;
+        }
+        
+        .marker-image {
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+        }
+        
+        .marker-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .print-notice {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .print-button {
+            margin-top: 20px;
+        }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+            
+            .print-only-marker {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 5cm;
+                height: 5cm;
+            }
+            
+            .marker-size-label {
+                position: absolute;
+                top: 5.2cm;
+                left: 0;
+                width: 5cm;
+                text-align: center;
+                font-size: 10pt;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container no-print">
+        <header class="site-header">
+            <h1>Reference Marker for Artwork Sizing</h1>
+            <p class="lead">Print this marker and place it next to your artwork when taking a photo</p>
+        </header>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="alert alert-info">
+                    <h4>Why use a reference marker?</h4>
+                    <p>A reference marker allows our system to automatically determine the exact size of your artwork from a photo. This means you don't have to measure your artwork manually!</p>
+                </div>
+                
+                <div class="marker-card">
+                    <h3>Your Reference Marker</h3>
+                    <div class="marker-container">
+                        <img src="images/placeholder-marker.png" alt="Reference Marker" class="marker-image" id="marker-preview">
+                        <div>
+                            <button id="print-marker-btn" class="btn btn-primary print-button">Print Marker</button>
+                            <button id="download-marker-btn" class="btn btn-secondary print-button">Download Marker</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="print-notice">
+                    <h4>Important Printing Instructions</h4>
+                    <ol>
+                        <li><strong>Do not scale:</strong> Print at 100% scale to ensure the marker is exactly 5 cm × 5 cm.</li>
+                        <li><strong>Use plain paper:</strong> Print on white paper for best results.</li>
+                        <li><strong>Check size after printing:</strong> Measure the printed marker to verify it's exactly 5 cm × 5 cm.</li>
+                        <li><strong>Cut along the lines:</strong> Carefully cut out the marker along the dotted lines.</li>
+                    </ol>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h4>How to Use the Reference Marker</h4>
+                    </div>
+                    <div class="card-body">
+                        <ol>
+                            <li>Print and cut out the reference marker.</li>
+                            <li>Place the marker next to your artwork on a flat surface.</li>
+                            <li>Take a photo showing both your artwork and the marker clearly.</li>
+                            <li>Make sure the marker is not bent, warped, or partially covered.</li>
+                            <li>Ensure the photo is taken straight-on, not at an angle.</li>
+                            <li>Upload the photo when ordering your custom frame.</li>
+                        </ol>
+                        
+                        <div class="text-center mt-4">
+                            <img src="images/marker-example.jpg" alt="Example of using reference marker" class="img-fluid rounded" style="max-width: 400px;">
+                            <p class="text-muted mt-2">Example of correctly placed reference marker</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-5">
+                    <a href="upload.php" class="btn btn-outline-primary">Ready to Upload Your Artwork</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Print-only version -->
+    <div style="display: none;" id="print-area">
+        <img id="print-marker" class="print-only-marker" src="images/placeholder-marker.png" alt="Reference Marker">
+        <div class="marker-size-label">5 cm × 5 cm | Do not scale when printing</div>
+    </div>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Required libraries for marker generation -->
+    <script src="js/js-aruco2.min.js"></script>
+    <script src="js/artwork-size-detector.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Create marker generator
+                const sizeDetector = new ArtworkSizeDetector({
+                    markerSizeCm: 5,
+                    dictionaryName: 'ARUCO_MIP_36h12'
+                });
+                
+                await sizeDetector.initialize();
+                
+                // Generate marker
+                const markerCanvas = await sizeDetector.generateMarker(0, 500);
+                const markerDataURL = markerCanvas.toDataURL('image/png');
+                
+                // Update marker images
+                document.getElementById('marker-preview').src = markerDataURL;
+                document.getElementById('print-marker').src = markerDataURL;
+                
+                // Print button event
+                document.getElementById('print-marker-btn').addEventListener('click', function() {
+                    // Show only the print area
+                    document.body.innerHTML = document.getElementById('print-area').innerHTML;
+                    window.print();
+                    window.location.reload();
+                });
+                
+                // Download button event
+                document.getElementById('download-marker-btn').addEventListener('click', function() {
+                    const link = document.createElement('a');
+                    link.href = markerDataURL;
+                    link.download = 'reference-marker.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                });
+            } catch (error) {
+                console.error('Error initializing:', error);
+                alert('Failed to generate marker: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

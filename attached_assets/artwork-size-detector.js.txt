@@ -1,0 +1,364 @@
+/**
+ * Artwork Size Detector
+ * 
+ * This module provides functionality to detect the size of artwork in an image
+ * using ArUco markers as reference points for scale.
+ * 
+ * Dependencies:
+ * - OpenCV.js (for image processing and marker detection)
+ * - js-aruco2 (for ArUco marker detection)
+ */
+
+class ArtworkSizeDetector {
+  constructor(options = {}) {
+    this.options = {
+      markerSizeCm: options.markerSizeCm || 5, // Size of ArUco marker in cm
+      dictionaryName: options.dictionaryName || 'ARUCO_MIP_36h12', // More robust dictionary
+      maxHammingDistance: options.maxHammingDistance || 0.4, // Tolerance for marker detection
+      edgeDetectionThreshold: options.edgeDetectionThreshold || 100,
+      minContourArea: options.minContourArea || 1000
+    };
+    
+    // Initialize the detector
+    this.detector = null;
+    this.initialized = false;
+  }
+
+  /**
+   * Initialize the detector with required libraries
+   * @returns {Promise} Resolves when initialization is complete
+   */
+  async initialize() {
+    // Check if OpenCV.js is loaded
+    if (typeof cv === 'undefined') {
+      throw new Error('OpenCV.js is not loaded. Please include it in your project.');
+    }
+    
+    // Check if AR detector is loaded
+    if (typeof AR === 'undefined') {
+      throw new Error('js-aruco2 is not loaded. Please include it in your project.');
+    }
+    
+    // Initialize the ArUco detector
+    this.detector = new AR.Detector({
+      dictionaryName: this.options.dictionaryName,
+      maxHammingDistance: this.options.maxHammingDistance
+    });
+    
+    this.initialized = true;
+    return this;
+  }
+
+  /**
+   * Process an image to detect artwork size
+   * @param {HTMLImageElement|HTMLCanvasElement} imageElement - The image to process
+   * @returns {Object} Dimensions and other metadata
+   */
+  async detectSize(imageElement) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    
+    // Create a canvas and draw the image
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas dimensions to match image
+    canvas.width = imageElement.naturalWidth || imageElement.width;
+    canvas.height = imageElement.naturalHeight || imageElement.height;
+    
+    // Draw the image on the canvas
+    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+    
+    // Get image data for processing
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    
+    // Detect ArUco markers
+    const markers = this.detector.detect(canvas.width, canvas.height, imageData.data);
+    
+    if (markers.length === 0) {
+      throw new Error('No ArUco markers detected in the image. Please ensure a reference marker is visible.');
+    }
+    
+    // Calculate pixel to cm ratio using the first detected marker
+    const pixelToCmRatio = this._calculatePixelToCmRatio(markers[0]);
+    
+    // Detect artwork bounds
+    const artworkBounds = this._detectArtworkBounds(imageData);
+    
+    // Calculate dimensions in cm
+    const dimensions = {
+      widthCm: artworkBounds.width * pixelToCmRatio,
+      heightCm: artworkBounds.height * pixelToCmRatio,
+      widthPx: artworkBounds.width,
+      heightPx: artworkBounds.height,
+      pixelToCmRatio: pixelToCmRatio,
+      markers: markers.map(marker => ({
+        id: marker.id,
+        corners: marker.corners
+      }))
+    };
+    
+    return dimensions;
+  }
+
+  /**
+   * Calculate the pixel to cm ratio using a marker
+   * @param {Object} marker - Detected ArUco marker
+   * @returns {number} Pixel to cm ratio
+   * @private
+   */
+  _calculatePixelToCmRatio(marker) {
+    // Get marker perimeter in pixels
+    const perimeter = this._calculatePerimeter(marker.corners);
+    
+    // Calculate actual side length in pixels (average of all sides)
+    const sides = [
+      this._distance(marker.corners[0], marker.corners[1]),
+      this._distance(marker.corners[1], marker.corners[2]),
+      this._distance(marker.corners[2], marker.corners[3]),
+      this._distance(marker.corners[3], marker.corners[0])
+    ];
+    
+    const avgSideLength = sides.reduce((sum, side) => sum + side, 0) / sides.length;
+    
+    // Calculate pixel to cm ratio (marker size is known)
+    return this.options.markerSizeCm / avgSideLength;
+  }
+
+  /**
+   * Calculate perimeter of a polygon
+   * @param {Array} points - Array of points {x, y}
+   * @returns {number} Perimeter length
+   * @private
+   */
+  _calculatePerimeter(points) {
+    let perimeter = 0;
+    for (let i = 0; i < points.length; i++) {
+      const nextIndex = (i + 1) % points.length;
+      perimeter += this._distance(points[i], points[nextIndex]);
+    }
+    return perimeter;
+  }
+
+  /**
+   * Calculate distance between two points
+   * @param {Object} p1 - Point {x, y}
+   * @param {Object} p2 - Point {x, y}
+   * @returns {number} Distance
+   * @private
+   */
+  _distance(p1, p2) {
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  /**
+   * Detect the bounds of the artwork in the image
+   * @param {ImageData} imageData - Image data
+   * @returns {Object} Artwork bounds {x, y, width, height}
+   * @private
+   */
+  _detectArtworkBounds(imageData) {
+    // Convert ImageData to Mat
+    const src = cv.matFromImageData(imageData);
+    
+    // Create a destination for the processed image
+    const dst = new cv.Mat();
+    
+    // Convert to grayscale
+    cv.cvtColor(src, dst, cv.COLOR_RGBA2GRAY);
+    
+    // Apply Gaussian blur to reduce noise
+    const blurred = new cv.Mat();
+    const ksize = new cv.Size(5, 5);
+    cv.GaussianBlur(dst, blurred, ksize, 0);
+    
+    // Apply Canny edge detection
+    const edges = new cv.Mat();
+    cv.Canny(blurred, edges, this.options.edgeDetectionThreshold / 2, this.options.edgeDetectionThreshold);
+    
+    // Find contours in the edge map
+    const contours = new cv.MatVector();
+    const hierarchy = new cv.Mat();
+    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    
+    // Find the largest contour (assume it's the artwork)
+    let maxArea = 0;
+    let maxContourIndex = -1;
+    
+    for (let i = 0; i < contours.size(); ++i) {
+      const contour = contours.get(i);
+      const area = cv.contourArea(contour);
+      
+      if (area > maxArea && area > this.options.minContourArea) {
+        maxArea = area;
+        maxContourIndex = i;
+      }
+    }
+    
+    let bounds;
+    
+    if (maxContourIndex !== -1) {
+      // Get the bounding rectangle of the largest contour
+      const rect = cv.boundingRect(contours.get(maxContourIndex));
+      bounds = {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height
+      };
+    } else {
+      // Fallback: use the entire image minus a margin
+      const margin = 20;
+      bounds = {
+        x: margin,
+        y: margin,
+        width: src.cols - (margin * 2),
+        height: src.rows - (margin * 2)
+      };
+    }
+    
+    // Clean up
+    src.delete();
+    dst.delete();
+    blurred.delete();
+    edges.delete();
+    contours.delete();
+    hierarchy.delete();
+    
+    return bounds;
+  }
+  
+  /**
+   * Create a visualization of the detection
+   * @param {HTMLImageElement|HTMLCanvasElement} imageElement - The image to visualize
+   * @param {Object} dimensions - Dimensions from detectSize()
+   * @returns {HTMLCanvasElement} Canvas with visualization
+   */
+  createVisualization(imageElement, dimensions) {
+    // Create a canvas for visualization
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas dimensions to match image
+    canvas.width = imageElement.naturalWidth || imageElement.width;
+    canvas.height = imageElement.naturalHeight || imageElement.height;
+    
+    // Draw the image on the canvas
+    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+    
+    // Draw markers
+    dimensions.markers.forEach(marker => {
+      // Draw marker outline
+      ctx.beginPath();
+      ctx.moveTo(marker.corners[0].x, marker.corners[0].y);
+      for (let i = 1; i < marker.corners.length; i++) {
+        ctx.lineTo(marker.corners[i].x, marker.corners[i].y);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(0, 255, 0, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw marker ID
+      const centerX = marker.corners.reduce((sum, corner) => sum + corner.x, 0) / marker.corners.length;
+      const centerY = marker.corners.reduce((sum, corner) => sum + corner.y, 0) / marker.corners.length;
+      ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+      ctx.font = '12px Arial';
+      ctx.fillText(`ID: ${marker.id}`, centerX, centerY);
+    });
+    
+    // Draw artwork bounds
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+      dimensions.x || 0, 
+      dimensions.y || 0, 
+      dimensions.widthPx, 
+      dimensions.heightPx
+    );
+    
+    // Draw dimensions
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillRect(10, 10, 200, 60);
+    ctx.fillStyle = 'black';
+    ctx.font = '14px Arial';
+    ctx.fillText(`Width: ${dimensions.widthCm.toFixed(2)} cm`, 20, 30);
+    ctx.fillText(`Height: ${dimensions.heightCm.toFixed(2)} cm`, 20, 50);
+    
+    return canvas;
+  }
+  
+  /**
+   * Generate an ArUco marker image
+   * @param {number} id - Marker ID
+   * @param {number} size - Image size in pixels
+   * @returns {Promise<HTMLCanvasElement>} Canvas with marker
+   */
+  async generateMarker(id, size = 200) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+    
+    // Get the dictionary
+    const dictionary = AR.DICTIONARIES[this.options.dictionaryName];
+    if (!dictionary) {
+      throw new Error(`Dictionary ${this.options.dictionaryName} not found`);
+    }
+    
+    // Check if the ID is valid
+    if (id < 0 || id >= dictionary.codeList.length) {
+      throw new Error(`Invalid marker ID. Must be between 0 and ${dictionary.codeList.length - 1}`);
+    }
+    
+    // Create a canvas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = size;
+    canvas.height = size;
+    
+    // Generate marker image
+    const code = dictionary.codeList[id];
+    const bits = AR.Utils.createMarkerImage(dictionary.nBits, code);
+    
+    // Calculate the size of each bit
+    const bitSize = size / (dictionary.nBits + 2); // +2 for the border
+    
+    // Draw the marker
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, size, size);
+    
+    // Draw the black border
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, size, bitSize);
+    ctx.fillRect(0, 0, bitSize, size);
+    ctx.fillRect(size - bitSize, 0, bitSize, size);
+    ctx.fillRect(0, size - bitSize, size, bitSize);
+    
+    // Draw the bits
+    for (let y = 0; y < dictionary.nBits; y++) {
+      for (let x = 0; x < dictionary.nBits; x++) {
+        const index = y * dictionary.nBits + x;
+        if (bits[index] === 1) {
+          ctx.fillRect(
+            (x + 1) * bitSize, 
+            (y + 1) * bitSize, 
+            bitSize, 
+            bitSize
+          );
+        }
+      }
+    }
+    
+    return canvas;
+  }
+}
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ArtworkSizeDetector;
+} else {
+  window.ArtworkSizeDetector = ArtworkSizeDetector;
+}

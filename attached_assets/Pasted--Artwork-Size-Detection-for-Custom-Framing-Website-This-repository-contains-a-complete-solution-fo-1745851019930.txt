@@ -1,0 +1,145 @@
+# Artwork Size Detection for Custom Framing Website
+
+This repository contains a complete solution for automatically detecting the size of artwork from uploaded photos. It uses computer vision and ArUco markers as reference points to accurately measure dimensions, eliminating the need for customers to manually enter measurements.
+
+## Benefits
+
+- **Eliminate manual measurement errors**: Customers often make mistakes when measuring artwork
+- **Improve user experience**: Makes ordering custom frames faster and more convenient
+- **Reduce order issues**: Fewer returns and remakes due to incorrect measurements
+- **Professional touch**: Demonstrates technological innovation in your framing business
+- **Seamless integration**: Works with your existing website and POS system
+
+## How It Works
+
+1. Customer downloads and prints a reference marker (a special square pattern)
+2. Customer places the marker next to their artwork and takes a photo
+3. Customer uploads the photo to your website
+4. The system automatically detects the marker and calculates the artwork dimensions
+5. Dimensions are stored and used in your existing framing calculator
+
+## Technical Implementation
+
+The solution uses:
+- **ArUco markers**: Square patterns that can be easily detected in images
+- **Computer vision**: To detect markers and artwork boundaries
+- **OpenCV.js**: For image processing capabilities
+- **js-aruco2**: For robust marker detection
+
+## Installation
+
+### Prerequisites
+
+- Web server with HTTPS support
+- Ability to add JavaScript and CSS files to your website
+- Basic understanding of HTML/JS for integration
+
+### Files
+
+- `artwork-size-detector.js` - Core detection library
+- `artwork-detector-integration.js` - Integration with your website
+- `artwork-detector-styles.css` - UI styling
+- `generate-markers.js` - Utility for generating reference markers
+- `sample-implementation.html` - Example implementation
+- `integration-guide.md` - Detailed integration instructions
+
+### Quick Start
+
+1. Copy the JavaScript and CSS files to your website
+2. Include the required libraries in your HTML header:
+
+```html
+<script src="https://docs.opencv.org/4.6.0/opencv.js"></script>
+<script src="js/js-aruco2.min.js"></script>
+<script src="js/artwork-size-detector.js"></script>
+<script src="js/artwork-detector-integration.js"></script>
+<link rel="stylesheet" href="css/artwork-detector-styles.css">
+```
+
+3. Add necessary HTML elements to your upload form:
+
+```html
+<form id="artwork-upload-form">
+  <input type="file" id="artwork-file-input" accept="image/*">
+  <div id="artwork-preview"></div>
+  <div id="artwork-size-info"></div>
+  <input type="hidden" id="artwork-width" name="width">
+  <input type="hidden" id="artwork-height" name="height">
+  <input type="hidden" id="artwork-unit" name="unit" value="cm">
+</form>
+
+<button id="download-marker-btn">Download Reference Marker</button>
+```
+
+4. Initialize the integration in your JavaScript:
+
+```javascript
+const sizeIntegration = new ArtworkSizeIntegration({
+  selectorUploadForm: '#artwork-upload-form',
+  selectorImagePreview: '#artwork-preview',
+  selectorImageInput: '#artwork-file-input',
+  selectorSizeInfoContainer: '#artwork-size-info',
+  selectorWidthField: '#artwork-width',
+  selectorHeightField: '#artwork-height',
+  selectorUnitField: '#artwork-unit',
+  markerSizeCm: 5,
+  enableAutoDetect: true,
+  allowManualOverride: true
+});
+
+await sizeIntegration.init();
+
+// Set up marker download button
+document.getElementById('download-marker-btn').addEventListener('click', function() {
+  sizeIntegration.downloadMarker(0, 500);
+});
+```
+
+5. Handle the detected dimensions in your form submission or AJAX request
+
+## Implementation Strategy
+
+1. Generate reference markers using `generate-markers.js`
+2. Add download links for markers on your website
+3. Integrate the detector with your upload form
+4. Test thoroughly with various artwork types and lighting conditions
+5. Deploy to your production website
+
+## Advanced Configuration
+
+The detector can be configured with various options:
+
+```javascript
+const detector = new ArtworkSizeDetector({
+  markerSizeCm: 5, // Size of reference marker in cm
+  dictionaryName: 'ARUCO_MIP_36h12', // Marker dictionary to use
+  maxHammingDistance: 0.4, // Tolerance for marker detection
+  edgeDetectionThreshold: 100, // Sensitivity for artwork edge detection
+  minContourArea: 1000 // Minimum size for artwork contour
+});
+```
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **Markers not detected**: Check lighting, ensure marker is clearly visible, and printed at correct size
+2. **Inaccurate measurements**: Verify marker is in the same plane as artwork and not bent/distorted
+3. **Browser compatibility**: Ensure you're using a modern browser (Chrome, Firefox, Edge, Safari)
+4. **Performance issues**: Consider implementing a loading indicator during processing
+
+## Support and Customization
+
+For help integrating this solution or for custom modifications:
+
+1. Refer to the detailed `integration-guide.md`
+2. Adapt the `sample-implementation.html` to your needs
+3. Modify the CSS to match your website's design
+
+## License
+
+This solution is provided for your exclusive use on your framing website.
+
+---
+
+By implementing this technology, you'll streamline the custom framing process for your customers while reducing measurement errors and improving order accuracy.

@@ -1,0 +1,350 @@
+/**
+ * Reference Marker Generator
+ * 
+ * This script generates ArUco markers for printing and using with the 
+ * artwork size detection system. It creates both PNG files and a printable
+ * PDF with calibrated sizes.
+ * 
+ * Usage:
+ * - Run with Node.js: node generate-markers.js
+ * - Use the web interface: Open generate-markers.html in a browser
+ */
+
+// Check environment
+const isNode = typeof window === 'undefined';
+
+// Dependencies to load in Node environment
+if (isNode) {
+  // Node.js dependencies
+  const fs = require('fs');
+  const path = require('path');
+  const { createCanvas } = require('canvas');
+  const PDFDocument = require('pdfkit');
+  const AR = require('./js-aruco2');
+}
+
+/**
+ * Class for generating ArUco markers
+ */
+class MarkerGenerator {
+  constructor(options = {}) {
+    this.options = {
+      dictionaryName: options.dictionaryName || 'ARUCO_MIP_36h12',
+      markerSizeCm: options.markerSizeCm || 5,
+      markersToGenerate: options.markersToGenerate || 10,
+      outputDirectory: options.outputDirectory || './markers',
+      pdfFilename: options.pdfFilename || 'reference-markers.pdf',
+      pixelsPerCm: options.pixelsPerCm || 100, // Resolution for PNG files
+      includeSizeInfo: options.includeSizeInfo !== undefined ? options.includeSizeInfo : true
+    };
+  }
+
+  /**
+   * Initialize the generator
+   * @returns {Promise} Resolves when initialization is complete
+   */
+  async initialize() {
+    // Check if the dictionary exists
+    if (!AR.DICTIONARIES[this.options.dictionaryName]) {
+      throw new Error(`Dictionary ${this.options.dictionaryName} not found`);
+    }
+
+    // Create output directory in Node environment
+    if (isNode && !fs.existsSync(this.options.outputDirectory)) {
+      fs.mkdirSync(this.options.outputDirectory, { recursive: true });
+    }
+
+    return this;
+  }
+
+  /**
+   * Generate a single marker
+   * @param {number} id - Marker ID
+   * @param {number} size - Image size in pixels
+   * @returns {Object} Canvas or canvas context, depending on environment
+   */
+  generateMarker(id, size) {
+    // Get the dictionary
+    const dictionary = AR.DICTIONARIES[this.options.dictionaryName];
+    
+    // Check if the ID is valid
+    if (id < 0 || id >= dictionary.codeList.length) {
+      throw new Error(`Invalid marker ID. Must be between 0 and ${dictionary.codeList.length - 1}`);
+    }
+    
+    // Create a canvas
+    let canvas, ctx;
+    
+    if (isNode) {
+      canvas = createCanvas(size, size);
+      ctx = canvas.getContext('2d');
+    } else {
+      canvas = document.createElement('canvas');
+      canvas.width = size;
+      canvas.height = size;
+      ctx = canvas.getContext('2d');
+    }
+    
+    // Calculate bit size and border size
+    const bitMatrixSize = dictionary.nBits;
+    const borderSize = Math.ceil(bitMatrixSize * 0.2); // Border is ~20% of matrix size
+    const fullSize = bitMatrixSize + (borderSize * 2);
+    const cellSize = size / fullSize;
+    
+    // Generate marker image
+    const code = dictionary.codeList[id];
+    const bits = AR.Utils.createMarkerImage(dictionary.nBits, code);
+    
+    // Draw white background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, size, size);
+    
+    // Draw black border
+    ctx.fillStyle = 'black';
+    for (let i = 0; i < fullSize; i++) {
+      for (let j = 0; j < fullSize; j++) {
+        // If we're in the border region
+        if (i < borderSize || i >= borderSize + bitMatrixSize || 
+            j < borderSize || j >= borderSize + bitMatrixSize) {
+          ctx.fillRect(j * cellSize, i * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    
+    // Draw the bits
+    for (let y = 0; y < bitMatrixSize; y++) {
+      for (let x = 0; x < bitMatrixSize; x++) {
+        const index = y * bitMatrixSize + x;
+        if (bits[index] === 1) {
+          ctx.fillRect(
+            (x + borderSize) * cellSize, 
+            (y + borderSize) * cellSize, 
+            cellSize, 
+            cellSize
+          );
+        }
+      }
+    }
+    
+    // Add size information if requested
+    if (this.options.includeSizeInfo) {
+      const markerSizeText = `${this.options.markerSizeCm} cm × ${this.options.markerSizeCm} cm`;
+      const idText = `ID: ${id}`;
+      
+      // Set text properties
+      ctx.font = `${Math.floor(size/20)}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      
+      // Draw text background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, size - Math.floor(size/10) * 2, size, Math.floor(size/10) * 2);
+      
+      // Draw text
+      ctx.fillStyle = 'black';
+      ctx.fillText(markerSizeText, size/2, size - Math.floor(size/10) * 1.1);
+      ctx.fillText(idText, size/2, size - Math.floor(size/10) * 0.3);
+    }
+    
+    return canvas;
+  }
+
+  /**
+   * Save marker as PNG file (Node.js environment only)
+   * @param {number} id - Marker ID
+   * @param {Object} canvas - Canvas with marker
+   */
+  saveMarkerAsPNG(id, canvas) {
+    if (!isNode) {
+      throw new Error('saveMarkerAsPNG is only available in Node.js environment');
+    }
+    
+    const filename = path.join(this.options.outputDirectory, `marker-${id}.png`);
+    const buffer = canvas.toBuffer('image/png');
+    fs.writeFileSync(filename, buffer);
+    
+    console.log(`Saved marker ${id} to ${filename}`);
+  }
+
+  /**
+   * Generate multiple markers and save as PNG files
+   * @param {number} count - Number of markers to generate
+   */
+  generateMultipleMarkers(count = 10) {
+    const size = this.options.markerSizeCm * this.options.pixelsPerCm;
+    
+    for (let id = 0; id < count; id++) {
+      const canvas = this.generateMarker(id, size);
+      
+      if (isNode) {
+        this.saveMarkerAsPNG(id, canvas);
+      }
+    }
+  }
+
+  /**
+   * Create a printable PDF with multiple markers
+   * @param {number} count - Number of markers to include
+   * @returns {Buffer|Blob} PDF content as Buffer (Node) or Blob (Browser)
+   */
+  async createPrintablePDF(count = 10) {
+    if (isNode) {
+      return this._createPDFNode(count);
+    } else {
+      return this._createPDFBrowser(count);
+    }
+  }
+
+  /**
+   * Create PDF in Node.js environment
+   * @param {number} count - Number of markers to include
+   * @returns {Buffer} PDF content as Buffer
+   * @private
+   */
+  _createPDFNode(count) {
+    return new Promise((resolve, reject) => {
+      try {
+        // Create a PDF document
+        const pdfDoc = new PDFDocument({
+          size: 'A4',
+          margin: 0,
+          info: {
+            Title: 'Reference Markers for Artwork Size Detection',
+            Author: 'Artwork Size Detector'
+          }
+        });
+        
+        // Set up buffer to collect PDF data
+        const buffers = [];
+        pdfDoc.on('data', buffers.push.bind(buffers));
+        pdfDoc.on('end', () => {
+          const pdfBuffer = Buffer.concat(buffers);
+          
+          // Save PDF file
+          const pdfPath = path.join(this.options.outputDirectory, this.options.pdfFilename);
+          fs.writeFileSync(pdfPath, pdfBuffer);
+          console.log(`Saved PDF to ${pdfPath}`);
+          
+          resolve(pdfBuffer);
+        });
+        
+        // A4 size in points (72 points per inch)
+        const pageWidth = 595.28;
+        const pageHeight = 841.89;
+        
+        // Calculate marker size in points (convert cm to points)
+        const cmToPoints = 28.35; // 1 cm = 28.35 points
+        const markerSizePoints = this.options.markerSizeCm * cmToPoints;
+        
+        // Add title and instructions
+        pdfDoc.fontSize(18).text('Reference Markers for Artwork Size Detection', 50, 40);
+        pdfDoc.fontSize(12).text(`Each marker is exactly ${this.options.markerSizeCm} cm × ${this.options.markerSizeCm} cm. Do not scale when printing.`, 50, 65);
+        pdfDoc.fontSize(10).text('Print at 100% scale, cut along the lines, and place next to your artwork when taking a photo.', 50, 85);
+        
+        // Add markers to the PDF
+        const markersPerRow = Math.floor((pageWidth - 100) / (markerSizePoints + 20));
+        const rowHeight = markerSizePoints + 40;
+        let row = 0;
+        let col = 0;
+        
+        for (let id = 0; id < count; id++) {
+          // Check if we need a new page
+          if (120 + row * rowHeight + markerSizePoints > pageHeight) {
+            pdfDoc.addPage();
+            row = 0;
+          }
+          
+          // Generate marker
+          const canvas = this.generateMarker(id, markerSizePoints * 2); // Higher resolution for PDF
+          const buffer = canvas.toBuffer('image/png');
+          
+          // Calculate position
+          const x = 50 + col * (markerSizePoints + 20);
+          const y = 120 + row * rowHeight;
+          
+          // Draw cutting guides
+          pdfDoc.rect(x - 5, y - 5, markerSizePoints + 10, markerSizePoints + 10)
+                .dash(5, { space: 5 })
+                .stroke('#999999');
+          
+          // Add marker image
+          pdfDoc.image(buffer, x, y, { 
+            width: markerSizePoints,
+            height: markerSizePoints 
+          });
+          
+          // Update position for next marker
+          col++;
+          if (col >= markersPerRow) {
+            col = 0;
+            row++;
+          }
+        }
+        
+        // Finalize the PDF
+        pdfDoc.end();
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Create PDF in browser environment
+   * @param {number} count - Number of markers to include
+   * @returns {Promise<Blob>} PDF content as Blob
+   * @private
+   */
+  _createPDFBrowser(count) {
+    // This is a placeholder for browser PDF generation
+    // In a real implementation, you would use a library like PDF.js or jsPDF
+    // Since the full implementation would be quite complex, we're providing 
+    // a simplified version that just returns markers as separate images
+    
+    return new Promise((resolve, reject) => {
+      try {
+        const markers = [];
+        
+        for (let id = 0; id < count; id++) {
+          const size = this.options.markerSizeCm * this.options.pixelsPerCm;
+          const canvas = this.generateMarker(id, size);
+          
+          // Convert canvas to data URL
+          const dataURL = canvas.toDataURL('image/png');
+          markers.push({
+            id: id,
+            dataURL: dataURL
+          });
+        }
+        
+        // In a real implementation, we would create a PDF here
+        // For now, we just return the marker data
+        resolve(markers);
+        
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+}
+
+// If running in Node.js, execute the generator
+if (isNode) {
+  const generator = new MarkerGenerator();
+  
+  generator.initialize()
+    .then(() => {
+      generator.generateMultipleMarkers(10);
+      return generator.createPrintablePDF(10);
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+}
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = MarkerGenerator;
+} else if (typeof window !== 'undefined') {
+  window.MarkerGenerator = MarkerGenerator;
+}

@@ -1,0 +1,461 @@
+/**
+ * Artwork Size Detector - POS Integration
+ * 
+ * This module provides integration between the artwork size detection
+ * functionality and your existing POS/website system.
+ */
+
+class ArtworkSizeIntegration {
+  constructor(options = {}) {
+    this.options = {
+      // Core configuration
+      selectorUploadForm: options.selectorUploadForm || '#artwork-upload-form',
+      selectorImagePreview: options.selectorImagePreview || '#artwork-preview',
+      selectorImageInput: options.selectorImageInput || '#artwork-file-input',
+      selectorSizeInfoContainer: options.selectorSizeInfoContainer || '#artwork-size-info',
+      
+      // Field selectors for storing dimensions
+      selectorWidthField: options.selectorWidthField || '#artwork-width',
+      selectorHeightField: options.selectorHeightField || '#artwork-height',
+      selectorUnitField: options.selectorUnitField || '#artwork-unit',
+      
+      // Options
+      markerSizeCm: options.markerSizeCm || 5,
+      enableAutoDetect: options.enableAutoDetect !== undefined ? options.enableAutoDetect : true,
+      allowManualOverride: options.allowManualOverride !== undefined ? options.allowManualOverride : true,
+      
+      // Callbacks
+      onSizeDetected: options.onSizeDetected || null,
+      onSizeUpdated: options.onSizeUpdated || null,
+      onError: options.onError || null,
+      
+      // Libraries config
+      dictionaryName: options.dictionaryName || 'ARUCO_MIP_36h12',
+      maxHammingDistance: options.maxHammingDistance || 0.4
+    };
+    
+    this.detector = null;
+    this.currentDimensions = null;
+    this.initialized = false;
+    
+    // DOM elements (will be set in init)
+    this.uploadForm = null;
+    this.imagePreview = null;
+    this.imageInput = null;
+    this.sizeInfoContainer = null;
+    this.widthField = null;
+    this.heightField = null;
+    this.unitField = null;
+  }
+  
+  /**
+   * Initialize the integration
+   * @returns {Promise} Resolves when initialization is complete
+   */
+  async init() {
+    // Find DOM elements
+    this.uploadForm = document.querySelector(this.options.selectorUploadForm);
+    this.imagePreview = document.querySelector(this.options.selectorImagePreview);
+    this.imageInput = document.querySelector(this.options.selectorImageInput);
+    this.sizeInfoContainer = document.querySelector(this.options.selectorSizeInfoContainer);
+    this.widthField = document.querySelector(this.options.selectorWidthField);
+    this.heightField = document.querySelector(this.options.selectorHeightField);
+    this.unitField = document.querySelector(this.options.selectorUnitField);
+    
+    if (!this.uploadForm || !this.imageInput) {
+      throw new Error('Required DOM elements not found. Check selectors in options.');
+    }
+    
+    // Initialize detector
+    this.detector = new ArtworkSizeDetector({
+      markerSizeCm: this.options.markerSizeCm,
+      dictionaryName: this.options.dictionaryName,
+      maxHammingDistance: this.options.maxHammingDistance
+    });
+    
+    await this.detector.initialize();
+    
+    // Attach event listeners
+    this.setupEventListeners();
+    
+    // Add UI elements for manual override if allowed
+    if (this.options.allowManualOverride) {
+      this.setupManualOverrideUI();
+    }
+    
+    this.initialized = true;
+    return this;
+  }
+  
+  /**
+   * Set up event listeners
+   */
+  setupEventListeners() {
+    // Listen for file input changes
+    this.imageInput.addEventListener('change', this.handleImageChange.bind(this));
+    
+    // Listen for form submission
+    if (this.uploadForm) {
+      this.uploadForm.addEventListener('submit', this.handleFormSubmit.bind(this));
+    }
+  }
+  
+  /**
+   * Handle image change event
+   * @param {Event} event - Change event
+   */
+  async handleImageChange(event) {
+    const file = event.target.files[0];
+    if (!file || !file.type.startsWith('image/')) {
+      return;
+    }
+    
+    // Update preview if exists
+    if (this.imagePreview) {
+      this.updateImagePreview(file);
+    }
+    
+    // Auto-detect size if enabled
+    if (this.options.enableAutoDetect) {
+      try {
+        await this.detectArtworkSize(file);
+      } catch (error) {
+        console.error('Failed to detect artwork size:', error);
+        this.showError(error.message);
+      }
+    }
+  }
+  
+  /**
+   * Handle form submit event
+   * @param {Event} event - Submit event
+   */
+  handleFormSubmit(event) {
+    // If we have dimensions, ensure they're included in form data
+    if (this.currentDimensions) {
+      this.updateSizeFields(
+        this.currentDimensions.widthCm,
+        this.currentDimensions.heightCm,
+        'cm'
+      );
+    }
+  }
+  
+  /**
+   * Update the image preview
+   * @param {File} file - Image file
+   */
+  updateImagePreview(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (this.imagePreview instanceof HTMLImageElement) {
+        this.imagePreview.src = e.target.result;
+      } else {
+        this.imagePreview.innerHTML = `<img src="${e.target.result}" alt="Artwork Preview">`;
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  /**
+   * Detect artwork size from an image file
+   * @param {File} file - Image file
+   * @returns {Promise<Object>} Dimensions object
+   */
+  async detectArtworkSize(file) {
+    try {
+      this.showLoading();
+      
+      // Create an image element from the file
+      const image = await this.createImageFromFile(file);
+      
+      // Detect artwork size
+      const dimensions = await this.detector.detectSize(image);
+      
+      // Update UI
+      this.updateSizeInfo(dimensions);
+      
+      // Store current dimensions
+      this.currentDimensions = dimensions;
+      
+      // Trigger callback
+      if (typeof this.options.onSizeDetected === 'function') {
+        this.options.onSizeDetected(dimensions);
+      }
+      
+      return dimensions;
+    } catch (error) {
+      this.showError(error.message);
+      throw error;
+    } finally {
+      this.hideLoading();
+    }
+  }
+  
+  /**
+   * Create an image element from a file
+   * @param {File} file - Image file
+   * @returns {Promise<HTMLImageElement>} Image element
+   */
+  createImageFromFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Failed to load image'));
+        image.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  /**
+   * Update size information display
+   * @param {Object} dimensions - Detected dimensions
+   */
+  updateSizeInfo(dimensions) {
+    if (!this.sizeInfoContainer) return;
+    
+    // Create or update size info display
+    this.sizeInfoContainer.innerHTML = `
+      <div class="artwork-size-info">
+        <h4>Detected Artwork Size</h4>
+        <p class="artwork-size-value">
+          ${dimensions.widthCm.toFixed(2)} cm × ${dimensions.heightCm.toFixed(2)} cm
+        </p>
+        <small class="artwork-size-note">
+          These dimensions were automatically detected based on the reference marker in the image.
+        </small>
+      </div>
+    `;
+    
+    // Update form fields
+    this.updateSizeFields(
+      dimensions.widthCm,
+      dimensions.heightCm,
+      'cm'
+    );
+  }
+  
+  /**
+   * Update size fields in the form
+   * @param {number} width - Width value
+   * @param {number} height - Height value
+   * @param {string} unit - Unit (cm, in, etc.)
+   */
+  updateSizeFields(width, height, unit = 'cm') {
+    if (this.widthField && this.widthField instanceof HTMLInputElement) {
+      this.widthField.value = width.toFixed(2);
+    }
+    
+    if (this.heightField && this.heightField instanceof HTMLInputElement) {
+      this.heightField.value = height.toFixed(2);
+    }
+    
+    if (this.unitField && this.unitField instanceof HTMLSelectElement) {
+      this.unitField.value = unit;
+    }
+    
+    // Trigger callback
+    if (typeof this.options.onSizeUpdated === 'function') {
+      this.options.onSizeUpdated({
+        width: width,
+        height: height,
+        unit: unit
+      });
+    }
+  }
+  
+  /**
+   * Set up UI for manual size override
+   */
+  setupManualOverrideUI() {
+    if (!this.sizeInfoContainer) return;
+    
+    // Create toggle button for manual override
+    const toggleButton = document.createElement('button');
+    toggleButton.className = 'btn btn-secondary btn-sm artwork-size-override-toggle';
+    toggleButton.textContent = 'Enter Size Manually';
+    toggleButton.type = 'button';
+    
+    // Create manual input container (initially hidden)
+    const manualInputs = document.createElement('div');
+    manualInputs.className = 'artwork-size-manual-inputs';
+    manualInputs.style.display = 'none';
+    manualInputs.innerHTML = `
+      <div class="artwork-size-manual-row">
+        <div class="artwork-size-input-group">
+          <label for="manual-width">Width:</label>
+          <input type="number" id="manual-width" min="0.1" step="0.01" class="artwork-size-input">
+        </div>
+        <div class="artwork-size-input-group">
+          <label for="manual-height">Height:</label>
+          <input type="number" id="manual-height" min="0.1" step="0.01" class="artwork-size-input">
+        </div>
+        <div class="artwork-size-input-group">
+          <label for="manual-unit">Unit:</label>
+          <select id="manual-unit" class="artwork-size-select">
+            <option value="cm">cm</option>
+            <option value="in">inches</option>
+          </select>
+        </div>
+      </div>
+      <button type="button" class="btn btn-primary btn-sm artwork-size-apply">Apply</button>
+    `;
+    
+    // Add to size info container
+    this.sizeInfoContainer.appendChild(toggleButton);
+    this.sizeInfoContainer.appendChild(manualInputs);
+    
+    // Toggle manual inputs
+    toggleButton.addEventListener('click', () => {
+      const isVisible = manualInputs.style.display === 'block';
+      manualInputs.style.display = isVisible ? 'none' : 'block';
+      toggleButton.textContent = isVisible ? 'Enter Size Manually' : 'Cancel';
+      
+      // Populate with current values if available
+      if (!isVisible && this.currentDimensions) {
+        const manualWidth = manualInputs.querySelector('#manual-width');
+        const manualHeight = manualInputs.querySelector('#manual-height');
+        
+        if (manualWidth && manualHeight) {
+          manualWidth.value = this.currentDimensions.widthCm.toFixed(2);
+          manualHeight.value = this.currentDimensions.heightCm.toFixed(2);
+        }
+      }
+    });
+    
+    // Handle apply button
+    const applyButton = manualInputs.querySelector('.artwork-size-apply');
+    if (applyButton) {
+      applyButton.addEventListener('click', () => {
+        const manualWidth = parseFloat(manualInputs.querySelector('#manual-width').value);
+        const manualHeight = parseFloat(manualInputs.querySelector('#manual-height').value);
+        const manualUnit = manualInputs.querySelector('#manual-unit').value;
+        
+        if (isNaN(manualWidth) || isNaN(manualHeight) || manualWidth <= 0 || manualHeight <= 0) {
+          this.showError('Please enter valid dimensions');
+          return;
+        }
+        
+        // Update fields
+        this.updateSizeFields(manualWidth, manualHeight, manualUnit);
+        
+        // Update current dimensions (convert to cm if needed)
+        const conversionFactor = manualUnit === 'in' ? 2.54 : 1;
+        this.currentDimensions = {
+          widthCm: manualWidth * conversionFactor,
+          heightCm: manualHeight * conversionFactor
+        };
+        
+        // Hide manual inputs
+        manualInputs.style.display = 'none';
+        toggleButton.textContent = 'Enter Size Manually';
+      });
+    }
+  }
+  
+  /**
+   * Show error message
+   * @param {string} message - Error message
+   */
+  showError(message) {
+    // Create error element if it doesn't exist
+    let errorElement = document.querySelector('.artwork-size-error');
+    if (!errorElement) {
+      errorElement = document.createElement('div');
+      errorElement.className = 'artwork-size-error';
+      this.sizeInfoContainer.appendChild(errorElement);
+    }
+    
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    
+    // Trigger callback
+    if (typeof this.options.onError === 'function') {
+      this.options.onError(message);
+    }
+  }
+  
+  /**
+   * Hide error message
+   */
+  hideError() {
+    const errorElement = document.querySelector('.artwork-size-error');
+    if (errorElement) {
+      errorElement.style.display = 'none';
+    }
+  }
+  
+  /**
+   * Show loading indicator
+   */
+  showLoading() {
+    // Create loading element if it doesn't exist
+    let loadingElement = document.querySelector('.artwork-size-loading');
+    if (!loadingElement) {
+      loadingElement = document.createElement('div');
+      loadingElement.className = 'artwork-size-loading';
+      loadingElement.innerHTML = '<div class="artwork-size-spinner"></div><span>Detecting size...</span>';
+      this.sizeInfoContainer.appendChild(loadingElement);
+    }
+    
+    loadingElement.style.display = 'flex';
+  }
+  
+  /**
+   * Hide loading indicator
+   */
+  hideLoading() {
+    const loadingElement = document.querySelector('.artwork-size-loading');
+    if (loadingElement) {
+      loadingElement.style.display = 'none';
+    }
+  }
+  
+  /**
+   * Generate a marker image for printing
+   * @param {number} id - Marker ID
+   * @param {number} size - Image size in pixels
+   * @returns {Promise<string>} Data URL of the marker image
+   */
+  async generateMarkerDataURL(id = 0, size = 500) {
+    if (!this.initialized) {
+      await this.init();
+    }
+    
+    const markerCanvas = await this.detector.generateMarker(id, size);
+    return markerCanvas.toDataURL('image/png');
+  }
+  
+  /**
+   * Download a marker image
+   * @param {number} id - Marker ID
+   * @param {number} size - Image size in pixels
+   */
+  async downloadMarker(id = 0, size = 500) {
+    try {
+      const dataURL = await this.generateMarkerDataURL(id, size);
+      
+      // Create and trigger download link
+      const link = document.createElement('a');
+      link.href = dataURL;
+      link.download = `reference-marker-${id}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Failed to download marker:', error);
+      this.showError(error.message);
+    }
+  }
+}
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ArtworkSizeIntegration;
+} else {
+  window.ArtworkSizeIntegration = ArtworkSizeIntegration;
+}

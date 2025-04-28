@@ -1,0 +1,301 @@
+/**
+ * Artwork Upload Component
+ * 
+ * This component handles the artwork upload and size detection process
+ * for the custom framing website.
+ */
+
+class ArtworkUploadComponent {
+  constructor(options = {}) {
+    this.options = {
+      containerSelector: options.containerSelector || '#artwork-upload-container',
+      uploadButtonText: options.uploadButtonText || 'Upload Your Artwork',
+      markerDownloadText: options.markerDownloadText || 'Download Reference Marker',
+      instructionsText: options.instructionsText || 'For accurate size measurement, please place the printed reference marker next to your artwork.',
+      onSizeDetected: options.onSizeDetected || null,
+      markerId: options.markerId || 0,
+      markerSizeCm: options.markerSizeCm || 5,
+      dictionaryName: options.dictionaryName || 'ARUCO_MIP_36h12'
+    };
+
+    this.container = document.querySelector(this.options.containerSelector);
+    if (!this.container) {
+      throw new Error(`Container element not found: ${this.options.containerSelector}`);
+    }
+
+    this.sizeDetector = new ArtworkSizeDetector({
+      markerSizeCm: this.options.markerSizeCm,
+      dictionaryName: this.options.dictionaryName
+    });
+
+    this.init();
+  }
+
+  /**
+   * Initialize the component
+   */
+  async init() {
+    try {
+      await this.sizeDetector.initialize();
+      this.render();
+      this.attachEventListeners();
+    } catch (error) {
+      console.error('Failed to initialize artwork upload component:', error);
+      this.showError('Failed to initialize: ' + error.message);
+    }
+  }
+
+  /**
+   * Render the component UI
+   */
+  render() {
+    this.container.innerHTML = `
+      <div class="artwork-upload">
+        <div class="artwork-upload__instructions">
+          <h3>Upload Your Artwork for Framing</h3>
+          <p>${this.options.instructionsText}</p>
+          <div class="artwork-upload__marker-download">
+            <button class="btn btn-secondary artwork-upload__marker-download-btn">
+              ${this.options.markerDownloadText}
+            </button>
+            <small>Print this marker at exactly ${this.options.markerSizeCm} cm × ${this.options.markerSizeCm} cm size.</small>
+          </div>
+        </div>
+        
+        <div class="artwork-upload__upload-area">
+          <input type="file" class="artwork-upload__file-input" accept="image/*" style="display: none;">
+          <button class="btn btn-primary artwork-upload__upload-btn">
+            ${this.options.uploadButtonText}
+          </button>
+          <div class="artwork-upload__preview" style="display: none;">
+            <div class="artwork-upload__image-container"></div>
+            <div class="artwork-upload__dimensions">
+              <p class="artwork-upload__dimensions-text"></p>
+              <button class="btn btn-primary artwork-upload__proceed-btn" style="display: none;">
+                Proceed with These Dimensions
+              </button>
+              <button class="btn btn-secondary artwork-upload__retry-btn" style="display: none;">
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="artwork-upload__error" style="display: none;"></div>
+        <div class="artwork-upload__loading" style="display: none;">
+          <div class="artwork-upload__spinner"></div>
+          <p>Processing your image...</p>
+        </div>
+      </div>
+    `;
+
+    // Cache DOM elements
+    this.fileInput = this.container.querySelector('.artwork-upload__file-input');
+    this.uploadButton = this.container.querySelector('.artwork-upload__upload-btn');
+    this.markerDownloadButton = this.container.querySelector('.artwork-upload__marker-download-btn');
+    this.previewContainer = this.container.querySelector('.artwork-upload__preview');
+    this.imageContainer = this.container.querySelector('.artwork-upload__image-container');
+    this.dimensionsText = this.container.querySelector('.artwork-upload__dimensions-text');
+    this.proceedButton = this.container.querySelector('.artwork-upload__proceed-btn');
+    this.retryButton = this.container.querySelector('.artwork-upload__retry-btn');
+    this.errorContainer = this.container.querySelector('.artwork-upload__error');
+    this.loadingContainer = this.container.querySelector('.artwork-upload__loading');
+  }
+
+  /**
+   * Attach event listeners
+   */
+  attachEventListeners() {
+    // Upload button click
+    this.uploadButton.addEventListener('click', () => {
+      this.fileInput.click();
+    });
+
+    // File input change
+    this.fileInput.addEventListener('change', (event) => {
+      if (event.target.files && event.target.files[0]) {
+        this.handleFileUpload(event.target.files[0]);
+      }
+    });
+
+    // Marker download button click
+    this.markerDownloadButton.addEventListener('click', () => {
+      this.downloadMarker();
+    });
+
+    // Proceed button click
+    this.proceedButton.addEventListener('click', () => {
+      this.handleProceed();
+    });
+
+    // Retry button click
+    this.retryButton.addEventListener('click', () => {
+      this.reset();
+    });
+  }
+
+  /**
+   * Handle file upload
+   * @param {File} file - The uploaded file
+   */
+  async handleFileUpload(file) {
+    try {
+      this.showLoading();
+      this.hideError();
+
+      // Create an image element from the file
+      const image = await this.createImageFromFile(file);
+      
+      // Detect artwork size
+      const dimensions = await this.sizeDetector.detectSize(image);
+      
+      // Create visualization
+      const visualization = this.sizeDetector.createVisualization(image, dimensions);
+      
+      // Show results
+      this.showResults(visualization, dimensions);
+    } catch (error) {
+      console.error('Failed to process image:', error);
+      this.showError(error.message);
+    } finally {
+      this.hideLoading();
+    }
+  }
+
+  /**
+   * Create an image element from a file
+   * @param {File} file - The file
+   * @returns {Promise<HTMLImageElement>} The image element
+   */
+  createImageFromFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Failed to load image'));
+        image.src = event.target.result;
+      };
+      
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /**
+   * Show the results
+   * @param {HTMLCanvasElement} visualization - Visualization canvas
+   * @param {Object} dimensions - Detected dimensions
+   */
+  showResults(visualization, dimensions) {
+    // Clear previous results
+    this.imageContainer.innerHTML = '';
+    
+    // Add visualization to the container
+    this.imageContainer.appendChild(visualization);
+    
+    // Update dimensions text
+    this.dimensionsText.textContent = `Detected Size: ${dimensions.widthCm.toFixed(2)} cm × ${dimensions.heightCm.toFixed(2)} cm`;
+    
+    // Show the preview and buttons
+    this.previewContainer.style.display = 'block';
+    this.proceedButton.style.display = 'inline-block';
+    this.retryButton.style.display = 'inline-block';
+    
+    // Save dimensions for later use
+    this.detectedDimensions = dimensions;
+  }
+
+  /**
+   * Handle proceed button click
+   */
+  handleProceed() {
+    if (typeof this.options.onSizeDetected === 'function') {
+      this.options.onSizeDetected(this.detectedDimensions);
+    }
+  }
+
+  /**
+   * Download a marker image
+   */
+  async downloadMarker() {
+    try {
+      this.showLoading();
+      
+      // Generate marker
+      const markerCanvas = await this.sizeDetector.generateMarker(this.options.markerId, 500);
+      
+      // Convert canvas to blob
+      const blob = await new Promise(resolve => {
+        markerCanvas.toBlob(resolve, 'image/png');
+      });
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `reference-marker-${this.options.markerId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download marker:', error);
+      this.showError(error.message);
+    } finally {
+      this.hideLoading();
+    }
+  }
+
+  /**
+   * Reset the component
+   */
+  reset() {
+    this.fileInput.value = '';
+    this.previewContainer.style.display = 'none';
+    this.imageContainer.innerHTML = '';
+    this.dimensionsText.textContent = '';
+    this.proceedButton.style.display = 'none';
+    this.retryButton.style.display = 'none';
+    this.hideError();
+    this.detectedDimensions = null;
+  }
+
+  /**
+   * Show an error message
+   * @param {string} message - The error message
+   */
+  showError(message) {
+    this.errorContainer.textContent = message;
+    this.errorContainer.style.display = 'block';
+  }
+
+  /**
+   * Hide the error message
+   */
+  hideError() {
+    this.errorContainer.style.display = 'none';
+  }
+
+  /**
+   * Show loading indicator
+   */
+  showLoading() {
+    this.loadingContainer.style.display = 'flex';
+  }
+
+  /**
+   * Hide loading indicator
+   */
+  hideLoading() {
+    this.loadingContainer.style.display = 'none';
+  }
+}
+
+// Export
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = ArtworkUploadComponent;
+} else {
+  window.ArtworkUploadComponent = ArtworkUploadComponent;
+}

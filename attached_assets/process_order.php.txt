@@ -1,0 +1,187 @@
+<?php
+/**
+ * Artwork Size Detection - Order Processing
+ * 
+ * This script handles the form submission with artwork dimensions
+ * and processes the order in your system.
+ */
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Check if form was submitted
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Location: index.php');
+    exit;
+}
+
+// Get form data
+$artworkData = [
+    // Artwork dimensions
+    'width' => isset($_POST['width']) ? floatval($_POST['width']) : 0,
+    'height' => isset($_POST['height']) ? floatval($_POST['height']) : 0,
+    'unit' => isset($_POST['unit']) ? $_POST['unit'] : 'cm',
+    
+    // Other form data
+    'title' => isset($_POST['title']) ? trim($_POST['title']) : '',
+    'type' => isset($_POST['type']) ? trim($_POST['type']) : '',
+    'instructions' => isset($_POST['instructions']) ? trim($_POST['instructions']) : '',
+];
+
+// Validate dimensions
+if ($artworkData['width'] <= 0 || $artworkData['height'] <= 0) {
+    $_SESSION['error'] = 'Invalid artwork dimensions. Please try again.';
+    header('Location: upload.php');
+    exit;
+}
+
+// Process image upload
+$uploadedFile = isset($_FILES['artwork']) ? $_FILES['artwork'] : null;
+$imagePath = '';
+
+if ($uploadedFile && $uploadedFile['error'] === UPLOAD_ERR_OK) {
+    // Create unique order ID
+    $orderId = uniqid('order_');
+    
+    // Create upload directory if it doesn't exist
+    $uploadDir = 'uploads/' . $orderId;
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    // Get file extension
+    $fileInfo = pathinfo($uploadedFile['name']);
+    $extension = strtolower($fileInfo['extension']);
+    
+    // Validate file type
+    $allowedTypes = ['jpg', 'jpeg', 'png', 'gif'];
+    if (!in_array($extension, $allowedTypes)) {
+        $_SESSION['error'] = 'Invalid file type. Please upload JPG, PNG, or GIF images.';
+        header('Location: upload.php');
+        exit;
+    }
+    
+    // Generate unique filename
+    $filename = 'artwork_' . time() . '.' . $extension;
+    $imagePath = $uploadDir . '/' . $filename;
+    
+    // Move uploaded file
+    if (!move_uploaded_file($uploadedFile['tmp_name'], $imagePath)) {
+        $_SESSION['error'] = 'Failed to upload image. Please try again.';
+        header('Location: upload.php');
+        exit;
+    }
+} else {
+    // Handle upload errors
+    $errorMessages = [
+        UPLOAD_ERR_INI_SIZE => 'The uploaded file exceeds the upload_max_filesize directive in php.ini.',
+        UPLOAD_ERR_FORM_SIZE => 'The uploaded file exceeds the MAX_FILE_SIZE directive in the HTML form.',
+        UPLOAD_ERR_PARTIAL => 'The uploaded file was only partially uploaded.',
+        UPLOAD_ERR_NO_FILE => 'No file was uploaded.',
+        UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder.',
+        UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
+        UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload.'
+    ];
+    
+    $errorCode = $uploadedFile ? $uploadedFile['error'] : UPLOAD_ERR_NO_FILE;
+    $errorMessage = isset($errorMessages[$errorCode]) ? $errorMessages[$errorCode] : 'Unknown upload error.';
+    
+    $_SESSION['error'] = 'Image upload failed: ' . $errorMessage;
+    header('Location: upload.php');
+    exit;
+}
+
+// Convert dimensions to inches if needed (assuming POS system uses inches)
+if ($artworkData['unit'] === 'cm') {
+    $artworkData['width_in'] = $artworkData['width'] / 2.54;
+    $artworkData['height_in'] = $artworkData['height'] / 2.54;
+} else {
+    $artworkData['width_in'] = $artworkData['width'];
+    $artworkData['height_in'] = $artworkData['height'];
+}
+
+// Create database connection
+$db = new mysqli('localhost', 'username', 'password', 'framing_database');
+
+// Check connection
+if ($db->connect_error) {
+    error_log('Database connection failed: ' . $db->connect_error);
+    $_SESSION['error'] = 'System error. Please try again later.';
+    header('Location: upload.php');
+    exit;
+}
+
+// Prepare order data
+$orderData = [
+    'order_id' => $orderId,
+    'customer_id' => isset($_SESSION['customer_id']) ? $_SESSION['customer_id'] : 0,
+    'artwork_title' => $artworkData['title'],
+    'artwork_type' => $artworkData['type'],
+    'width_cm' => $artworkData['unit'] === 'cm' ? $artworkData['width'] : $artworkData['width'] * 2.54,
+    'height_cm' => $artworkData['unit'] === 'cm' ? $artworkData['height'] : $artworkData['height'] * 2.54,
+    'width_in' => $artworkData['width_in'],
+    'height_in' => $artworkData['height_in'],
+    'special_instructions' => $artworkData['instructions'],
+    'image_path' => $imagePath,
+    'created_at' => date('Y-m-d H:i:s')
+];
+
+// Insert order into database
+$stmt = $db->prepare("
+    INSERT INTO orders (
+        order_id, 
+        customer_id, 
+        artwork_title, 
+        artwork_type, 
+        width_cm, 
+        height_cm, 
+        width_in, 
+        height_in, 
+        special_instructions, 
+        image_path, 
+        created_at
+    ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    )
+");
+
+$stmt->bind_param(
+    'sississsss',
+    $orderData['order_id'],
+    $orderData['customer_id'],
+    $orderData['artwork_title'],
+    $orderData['artwork_type'],
+    $orderData['width_cm'],
+    $orderData['height_cm'],
+    $orderData['width_in'],
+    $orderData['height_in'],
+    $orderData['special_instructions'],
+    $orderData['image_path'],
+    $orderData['created_at']
+);
+
+// Execute query
+if (!$stmt->execute()) {
+    error_log('Error saving order: ' . $stmt->error);
+    $_SESSION['error'] = 'Failed to save order. Please try again.';
+    header('Location: upload.php');
+    exit;
+}
+
+// Store order ID in session for next steps
+$_SESSION['order_id'] = $orderData['order_id'];
+$_SESSION['artwork_dimensions'] = [
+    'width' => $artworkData['width'],
+    'height' => $artworkData['height'],
+    'unit' => $artworkData['unit']
+];
+
+// Close connection
+$stmt->close();
+$db->close();
+
+// Redirect to frame selection page
+header('Location: select_frame.php?order_id=' . $orderData['order_id']);
+exit;
