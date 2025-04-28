@@ -815,97 +815,26 @@ const PosSystem = () => {
             </div>
           </div>
           
-          {/* Webcam UI */}
-          {showWebcam ? (
-            <div className="mb-4">
-              <div className="relative border border-light-border dark:border-dark-border rounded-lg overflow-hidden">
-                <video 
-                  ref={webcamRef}
-                  className="w-full h-auto"
-                  autoPlay
-                  playsInline
-                  muted
-                />
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-                  <button 
-                    className="px-4 py-2 bg-primary text-white rounded-full shadow-lg"
-                    onClick={captureImage}
-                  >
-                    Capture Image
-                  </button>
-                </div>
-              </div>
-              <div className="mt-2 flex justify-end">
-                <button 
-                  className="px-3 py-1 bg-gray-200 dark:bg-dark-border text-light-text dark:text-dark-text rounded-md text-sm"
-                  onClick={handleWebcamToggle}
-                >
-                  Cancel
-                </button>
-              </div>
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
-          ) : (
-            <div>
-              <div className="flex justify-between mb-2">
-                <h3 className="text-md font-medium">Artwork Image</h3>
-                <div className="flex space-x-2">
-                  <button 
-                    className="px-3 py-1 bg-primary text-white rounded-md text-sm flex items-center"
-                    onClick={handleWebcamToggle}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    <span>Use Webcam</span>
-                  </button>
-                </div>
-              </div>
-              
-              <div 
-                className={`border border-dashed ${dragActive ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-4 text-center mb-4`}
-                onDragEnter={handleDrag}
-                onDragOver={handleDrag}
-                onDragLeave={handleDrag}
-                onDrop={handleDrop}
-              >
-                <input 
-                  type="file" 
-                  id="artwork-upload" 
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleFileInputChange}
-                  accept="image/*"
-                />
-                <label htmlFor="artwork-upload" className="block cursor-pointer" onClick={handleButtonClick}>
-                  <div className="flex flex-col items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-primary mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <p className="text-light-textSecondary dark:text-dark-textSecondary mb-1">
-                      {artworkImage ? 'Change artwork image' : 'Upload artwork image for preview'}
-                    </p>
-                    <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
-                      Drag & drop or click to browse
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
-          
-          {artworkImage && !showWebcam && (
-            <div className="mt-2 text-center">
-              <p className="text-sm text-green-600 dark:text-green-400">
-                ✓ Artwork image ready for framing
-              </p>
-              <img 
-                src={artworkImage} 
-                alt="Artwork Preview" 
-                className="max-h-48 mt-2 mx-auto rounded border border-light-border dark:border-dark-border"
-              />
-            </div>
-          )}
+          {/* Artwork Size Detector Component */}
+          <div className="mb-4">
+            <ArtworkSizeDetector 
+              defaultWidth={artworkWidth}
+              defaultHeight={artworkHeight}
+              onDimensionsDetected={(dimensions, imageDataUrl) => {
+                // Update dimensions in the parent component
+                setArtworkWidth(dimensions.width);
+                setArtworkHeight(dimensions.height);
+                setAspectRatio(dimensions.width / dimensions.height);
+                setArtworkImage(imageDataUrl);
+                
+                console.log('Dimensions detected:', dimensions);
+                toast({
+                  title: "Artwork Dimensions Detected",
+                  description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
+                });
+              }}
+            />
+          </div>
         </div>
 
         {/* Frame Customization Section */}
