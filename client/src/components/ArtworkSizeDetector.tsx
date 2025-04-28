@@ -159,7 +159,23 @@ export function ArtworkSizeDetector({
   // Handle webcam access
   const startWebcam = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      // Request access to the environment-facing camera (rear camera on mobile)
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          facingMode: { exact: "environment" },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        } 
+      }).catch(() => {
+        // Fallback to any available camera if environment camera isn't available
+        return navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          } 
+        });
+      });
+      
       if (webcamRef.current) {
         webcamRef.current.srcObject = stream;
         streamRef.current = stream;
@@ -168,7 +184,7 @@ export function ArtworkSizeDetector({
       console.error('Error accessing webcam:', error);
       toast({
         title: 'Webcam Error',
-        description: 'Failed to access webcam. Please check permissions or use file upload instead.',
+        description: 'Failed to access camera. Please check permissions or use file upload instead.',
         variant: 'destructive'
       });
     }
@@ -297,9 +313,9 @@ export function ArtworkSizeDetector({
           <div className="bg-muted p-4 rounded-md">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-sm font-medium mb-1">Reference Marker</h4>
+                <h4 className="text-sm font-medium mb-1">Reference Marker (Required for Accurate Measurement)</h4>
                 <p className="text-sm text-muted-foreground">
-                  For accurate detection, print this marker and place it next to your artwork.
+                  For accurate size detection, download and print this marker, then place it next to your artwork before taking a photo. For best results, make sure the marker is printed at exactly 5cm × 5cm and is clearly visible in the photo.
                 </p>
               </div>
               <Button onClick={downloadMarker} variant="outline" size="sm">
