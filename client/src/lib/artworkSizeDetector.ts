@@ -104,7 +104,7 @@ export class ArtworkSizeDetector {
     // Draw the pattern
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
-        if (pattern[y][x] === 1) {
+        if (pattern[y] && pattern[y][x] === 1) {
           ctx.fillRect(
             borderWidth + (x * cellSize),
             borderWidth + (y * cellSize),
@@ -176,7 +176,8 @@ export class ArtworkSizeDetector {
       
       // Simulate detecting artwork dimensions (this would be much more sophisticated in reality)
       // We're assuming the artwork takes up most of the image and the marker is 5cm×5cm
-      const estimatedWidthCm = Math.round((image.width / 300) * this.options.markerSizeCm * 2);
+      const markerSizeCm = this.options.markerSizeCm || 5; // Provide default if undefined
+      const estimatedWidthCm = Math.round((image.width / 300) * markerSizeCm * 2);
       const estimatedHeightCm = Math.round(estimatedWidthCm / aspectRatio);
       
       // Convert to inches (1 inch = 2.54 cm)
@@ -269,10 +270,15 @@ export function createImageFromFile(file: File): Promise<HTMLImageElement> {
     const reader = new FileReader();
     
     reader.onload = (e) => {
+      if (!e.target || !e.target.result) {
+        reject(new Error('Failed to read file data'));
+        return;
+      }
+      
       const image = new Image();
       image.onload = () => resolve(image);
       image.onerror = () => reject(new Error('Failed to load image'));
-      image.src = e.target.result as string;
+      image.src = e.target!.result as string;
     };
     
     reader.onerror = () => reject(new Error('Failed to read file'));
