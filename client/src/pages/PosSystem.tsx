@@ -20,6 +20,8 @@ import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
 import VendorFrameSearch from '@/components/VendorFrameSearch';
 import { useMatboards } from '@/hooks/use-matboards';
 import { useFrames } from '@/hooks/use-frames';
+import { ArtworkSizeDetector } from '@/components/ArtworkSizeDetector';
+import { ArtworkDimensions } from '@/lib/artworkSizeDetector';
 
 const PosSystem = () => {
   const { toast } = useToast();
