@@ -7,12 +7,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, PackageOpen, CreditCard } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
-import { format } from "date-fns";
+import { 
+  AlertCircle, 
+  Loader2, 
+  User, 
+  ShoppingBag, 
+  Bell, 
+  LayoutDashboard, 
+  Settings, 
+  CreditCard,
+  FileClock
+} from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import CustomerDashboard from "@/components/customer/CustomerDashboard";
+import CustomerInvoicesList from "@/components/customer/CustomerInvoicesList";
+import { Separator } from "@/components/ui/separator";
 
 interface CustomerInfo {
   id: number;
@@ -22,51 +32,6 @@ interface CustomerInfo {
   address: string | null;
   stripeCustomerId?: string | null;
   createdAt: string;
-}
-
-interface Order {
-  id: number;
-  customerId: number;
-  orderGroupId: number;
-  frameId: string;
-  matColorId: string;
-  glassOptionId: string;
-  artworkWidth: string;
-  artworkHeight: string;
-  matWidth: string;
-  artworkDescription?: string | null;
-  artworkType?: string | null;
-  subtotal: string;
-  tax: string;
-  total: string;
-  status: string;
-  createdAt: string;
-  dueDate?: string | null;
-  artworkImage?: string | null;
-}
-
-interface OrderGroup {
-  id: number;
-  customerId: number;
-  subtotal?: string | null;
-  tax?: string | null;
-  total?: string | null;
-  status: string;
-  paymentMethod?: string | null;
-  notes?: string | null;
-  createdAt: string;
-  stripePaymentIntentId?: string | null;
-  stripePaymentStatus?: string | null;
-  paymentDate?: string | null;
-}
-
-interface OrderHistory {
-  orderGroup: OrderGroup;
-  orders: Order[];
-  orderDate: string;
-  paymentDate?: string | null;
-  paymentStatus?: string | null;
-  total?: string | null;
 }
 
 export default function CustomerManagement() {
@@ -83,6 +48,7 @@ export default function CustomerManagement() {
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState<Partial<CustomerInfo>>({});
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // Initialize edit mode if we're on the "new" customer route
   useEffect(() => {
@@ -117,26 +83,6 @@ export default function CustomerManagement() {
     enabled: !isNewCustomerRoute && !!customerId, // Only run query if we have a valid customer ID
   });
 
-  // Fetch customer order history if we have a customerId
-  const { 
-    data: orderHistory, 
-    isLoading: isLoadingHistory, 
-    error: historyError 
-  } = useQuery<OrderHistory[]>({ 
-    queryKey: ['/api/customers', customerId, 'orders'],
-    queryFn: () => {
-      // Skip API call if we're creating a new customer
-      if (isNewCustomerRoute || !customerId) {
-        return Promise.resolve([]);
-      }
-      return fetch(`/api/customers/${customerId}/orders`).then(res => {
-        if (!res.ok) throw new Error('Failed to fetch order history');
-        return res.json();
-      });
-    },
-    enabled: !isNewCustomerRoute && !!customerId, // Only run query if we have a valid customer ID
-  });
-
   // Mutation for updating customer information
   const updateCustomerMutation = useMutation({
     mutationFn: async (customerData: Partial<CustomerInfo>) => {
@@ -148,7 +94,7 @@ export default function CustomerManagement() {
       setEditMode(false);
       toast({
         title: "Customer updated",
-        description: "Your information has been updated successfully.",
+        description: "Customer information has been updated successfully.",
         variant: "default",
       });
     },
@@ -222,47 +168,7 @@ export default function CustomerManagement() {
     }
   };
 
-  // Format date helper function
-  const formatDate = (dateString?: string | null) => {
-    if (!dateString) return "N/A";
-    try {
-      return format(new Date(dateString), "MMM d, yyyy h:mm a");
-    } catch (e) {
-      return "Invalid Date";
-    }
-  };
-
-  // Get status badge color
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'completed':
-      case 'succeeded':
-      case 'paid':
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100";
-      case 'pending':
-      case 'in_progress':
-        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-100";
-      case 'cancelled':
-      case 'failed':
-        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100";
-    }
-  };
-
-  // View an individual order
-  const viewOrder = (orderId: number) => {
-    // Navigate to order details page
-    navigate(`/orders/${orderId}`);
-  };
-
-  // View order group (checkout)
-  const viewOrderGroup = (orderGroupId: number) => {
-    // Navigate to checkout page if the order is still open
-    navigate(`/checkout/${orderGroupId}`);
-  };
-
-  if (isLoadingCustomer || isLoadingHistory) {
+  if (isLoadingCustomer) {
     return (
       <div className="flex items-center justify-center h-40">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -296,8 +202,8 @@ export default function CustomerManagement() {
                 New Customer
               </Button>
             )}
-            <Button variant="outline" onClick={() => navigate("/")}>
-              Back to POS
+            <Button variant="outline" onClick={() => navigate("/customers")}>
+              Back to Customers
             </Button>
           </div>
         </div>
@@ -399,261 +305,226 @@ export default function CustomerManagement() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Customer Account</h1>
         <div className="flex gap-2">
-          <Button variant="default" onClick={() => {
-            // Navigate to the new customer route
-            navigate("/customers/new");
-          }} className="text-white">
+          <Button variant="default" onClick={() => navigate("/customers/new")} className="text-white">
             New Customer
           </Button>
-          <Button variant="outline" onClick={() => navigate("/")}>
-            Back to POS
+          <Button variant="outline" onClick={() => navigate("/customers")}>
+            Back to Customers
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="orders">Order History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer Information</CardTitle>
-              <CardDescription>
-                View and manage your personal information
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {editMode ? (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input 
-                        id="name"
-                        name="name"
-                        value={formData.name || ""}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input 
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={formData.email || ""}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input 
-                        id="phone"
-                        name="phone"
-                        value={formData.phone || ""}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Input 
-                        id="address"
-                        name="address"
-                        value={formData.address || ""}
-                        onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => setEditMode(false)}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      type="submit"
-                      disabled={updateCustomerMutation.isPending || createCustomerMutation.isPending}
-                    >
-                      {(updateCustomerMutation.isPending || createCustomerMutation.isPending) && (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      )}
-                      {customerId && customer ? 'Save Changes' : 'Create Customer'}
-                    </Button>
-                  </div>
-                </form>
-              ) : (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">Full Name</h3>
-                      <p className="mt-1">{customer?.name ?? "Not available"}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">Email Address</h3>
-                      <p className="mt-1">{customer?.email || "Not provided"}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">Phone Number</h3>
-                      <p className="mt-1">{customer?.phone || "Not provided"}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">Address</h3>
-                      <p className="mt-1">{customer?.address || "Not provided"}</p>
-                    </div>
-                    
-                    <div>
-                      <h3 className="text-sm font-medium text-muted-foreground">Customer Since</h3>
-                      <p className="mt-1">{formatDate(customer?.createdAt)}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end pt-4">
-                    <Button onClick={handleEditClick}>
-                      Edit Information
-                    </Button>
-                  </div>
-                </div>
+      <div className="flex flex-col space-y-6">
+        {/* Customer Profile Card */}
+        <Card>
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle className="text-2xl flex items-center">
+                  <User className="h-6 w-6 mr-2 text-primary" />
+                  {customer?.name}
+                </CardTitle>
+                <CardDescription>
+                  Manage customer information
+                </CardDescription>
+              </div>
+              
+              {!editMode && (
+                <Button 
+                  variant="outline" 
+                  onClick={handleEditClick}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Order History</CardTitle>
-              <CardDescription>
-                View your past and current orders
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {historyError ? (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>
-                    {historyError instanceof Error ? historyError.message : "Failed to load order history"}
-                  </AlertDescription>
-                </Alert>
-              ) : orderHistory && orderHistory.length > 0 ? (
-                <div className="space-y-6">
-                  {orderHistory.map((history) => (
-                    <div key={history.orderGroup.id} className="border rounded-lg p-4">
-                      <div className="flex flex-col md:flex-row justify-between mb-4 gap-2">
-                        <div>
-                          <h3 className="text-lg font-medium">Order #{history.orderGroup.id}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Placed on {formatDate(history.orderDate)}
-                          </p>
-                        </div>
-                        
-                        <div className="flex flex-col md:items-end">
-                          <div className="flex items-center">
-                            <span className="mr-2">Status:</span>
-                            <Badge className={getStatusColor(history.orderGroup.status)}>
-                              {history.orderGroup.status.charAt(0).toUpperCase() + history.orderGroup.status.slice(1)}
-                            </Badge>
-                          </div>
-                          
-                          {history.paymentStatus && (
-                            <div className="flex items-center mt-1">
-                              <span className="mr-2">Payment:</span>
-                              <Badge className={getStatusColor(history.paymentStatus)}>
-                                {history.paymentStatus.charAt(0).toUpperCase() + history.paymentStatus.slice(1)}
-                              </Badge>
-                            </div>
-                          )}
-                          
-                          {history.total && (
-                            <p className="text-sm font-medium mt-1">
-                              Total: ${parseFloat(history.total).toFixed(2)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="border-t pt-4">
-                        <h4 className="font-medium mb-2">Items ({history.orders.length})</h4>
-                        <div className="space-y-2">
-                          {history.orders.map((order) => (
-                            <div key={order.id} className="flex justify-between items-center py-2 border-b last:border-0">
-                              <div className="flex items-center">
-                                <PackageOpen className="h-5 w-5 mr-2 text-muted-foreground" />
-                                <div>
-                                  <p className="font-medium">Frame #{order.id}</p>
-                                  <div className="grid grid-cols-1 text-sm text-muted-foreground gap-1">
-                                    <p>
-                                      <span className="font-medium">Image Size:</span> {order.artworkWidth}" x {order.artworkHeight}"
-                                    </p>
-                                    <p>
-                                      <span className="font-medium">Mat Width:</span> {order.matWidth}"
-                                    </p>
-                                    {/* Calculate finished size (image + mat on all sides) */}
-                                    <p>
-                                      <span className="font-medium">Finished Size:</span> {(parseFloat(order.artworkWidth) + parseFloat(order.matWidth) * 2).toFixed(1)}" x {(parseFloat(order.artworkHeight) + parseFloat(order.matWidth) * 2).toFixed(1)}"
-                                    </p>
-                                    {order.artworkDescription && 
-                                      <p><span className="font-medium">Description:</span> {order.artworkDescription}</p>
-                                    }
-                                  </div>
-                                </div>
-                              </div>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => viewOrder(order.id)}
-                              >
-                                View
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-end mt-4">
-                        {history.orderGroup.status === 'open' && (
-                          <Button 
-                            className="ml-2"
-                            onClick={() => viewOrderGroup(history.orderGroup.id)}
-                          >
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Continue to Payment
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {editMode ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input 
+                      id="name"
+                      name="name"
+                      value={formData.name || ""}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input 
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input 
+                      id="phone"
+                      name="phone"
+                      value={formData.phone || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="address">Address</Label>
+                    <Input 
+                      id="address"
+                      name="address"
+                      value={formData.address || ""}
+                      onChange={handleInputChange}
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-10">
-                  <PackageOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium">No Orders Yet</h3>
-                  <p className="text-muted-foreground">You haven't placed any orders yet.</p>
+                
+                <div className="flex justify-end space-x-2 pt-4">
                   <Button 
-                    className="mt-4"
-                    onClick={() => navigate("/")}
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setEditMode(false)}
                   >
-                    Start Shopping
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={updateCustomerMutation.isPending}
+                    className="text-white"
+                  >
+                    {updateCustomerMutation.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Changes
                   </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              </form>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground">Full Name</Label>
+                  <div className="text-lg">{customer?.name}</div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground">Email Address</Label>
+                  <div className="text-lg">{customer?.email || 'Not provided'}</div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground">Phone Number</Label>
+                  <div className="text-lg">{customer?.phone || 'Not provided'}</div>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-muted-foreground">Address</Label>
+                  <div className="text-lg">{customer?.address || 'Not provided'}</div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Tabs for different sections */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="mb-4 grid grid-cols-4 md:w-auto md:grid-cols-4">
+            <TabsTrigger value="dashboard" className="flex items-center">
+              <LayoutDashboard className="h-4 w-4 mr-2" />
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center">
+              <ShoppingBag className="h-4 w-4 mr-2" />
+              Orders
+            </TabsTrigger>
+            <TabsTrigger value="invoices" className="flex items-center">
+              <FileClock className="h-4 w-4 mr-2" />
+              Invoices
+            </TabsTrigger>
+            <TabsTrigger value="payments" className="flex items-center">
+              <CreditCard className="h-4 w-4 mr-2" />
+              Payments
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dashboard">
+            {customer && customerId && <CustomerDashboard customerId={customerId} />}
+          </TabsContent>
+          
+          <TabsContent value="orders">
+            <Card>
+              <CardHeader>
+                <CardTitle>Order History</CardTitle>
+                <CardDescription>
+                  View and manage customer orders and their production status
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center py-10">
+                  <div className="text-center">
+                    <ShoppingBag className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">Orders Tab Under Development</h3>
+                    <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                      This tab will show a detailed list of all orders with production status, due dates, and other important details.
+                    </p>
+                    <Button 
+                      variant="default" 
+                      className="mt-4 text-white"
+                      onClick={() => {
+                        if (customerId) {
+                          navigate(`/pos?customerId=${customerId}`);
+                        }
+                      }}
+                    >
+                      Create New Order
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="invoices">
+            {customer && customerId && <CustomerInvoicesList customerId={customerId} />}
+          </TabsContent>
+          
+          <TabsContent value="payments">
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Methods</CardTitle>
+                <CardDescription>
+                  Manage payment methods and billing information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-center py-10">
+                  <div className="text-center">
+                    <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium">Payments Tab Under Development</h3>
+                    <p className="text-sm text-muted-foreground mt-2 max-w-md">
+                      This tab will show saved payment methods, billing preferences, and payment history.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => setActiveTab("dashboard")}
+                    >
+                      Return to Dashboard
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
