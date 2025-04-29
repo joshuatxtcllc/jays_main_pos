@@ -79,13 +79,19 @@ const PosSystem = () => {
   // Initialize with an empty array and update when matboards load
   useEffect(() => {
     if (matboards && matboards.length > 0 && selectedMatboards.length === 0) {
+      // Default width for primary mat is 2 inches
+      const defaultMatWidth = 2;
+      
       // Initialize with the first matboard in position 1
       setSelectedMatboards([{
         matboard: matboards[0],
         position: 1,
-        width: 2,
+        width: defaultMatWidth,
         offset: 0
       }]);
+      
+      // Also set the primary mat width
+      setPrimaryMatWidth(defaultMatWidth);
     }
   }, [matboards, selectedMatboards.length]);
   const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
@@ -95,6 +101,9 @@ const PosSystem = () => {
   
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
+  
+  // Wholesale Order
+  const [addToWholesaleOrder, setAddToWholesaleOrder] = useState<boolean>(true);
   
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
@@ -468,6 +477,11 @@ const PosSystem = () => {
         width: newWidth
       };
       setSelectedMatboards(updatedMats);
+      
+      // If this is the primary mat (position 1), update the primaryMatWidth state
+      if (activeMatPosition === 1) {
+        setPrimaryMatWidth(newWidth);
+      }
     }
   };
   
@@ -1509,12 +1523,15 @@ const PosSystem = () => {
           glassOption={selectedGlassOption}
           artworkWidth={artworkWidth}
           artworkHeight={artworkHeight}
+          primaryMatWidth={primaryMatWidth}
           specialServices={selectedServices}
           onCreateOrder={handleCreateOrder}
           onSaveQuote={handleSaveQuote}
           onCreateWholesaleOrder={handleCreateWholesaleOrder}
           useMultipleMats={useMultipleMats}
           useMultipleFrames={useMultipleFrames}
+          addToWholesaleOrder={addToWholesaleOrder}
+          setAddToWholesaleOrder={setAddToWholesaleOrder}
         />
       </div>
     </div>

@@ -62,8 +62,14 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   const [localAddToWholesaleOrder, setLocalAddToWholesaleOrder] = useState(false);
   
   // Use either provided props or local state for wholesale order flag
-  const effectiveAddToWholesaleOrder = addToWholesaleOrder !== undefined ? addToWholesaleOrder : localAddToWholesaleOrder;
-  const effectiveSetAddToWholesaleOrder = setAddToWholesaleOrder || setLocalAddToWholesaleOrder;
+  const effectiveAddToWholesaleOrder = typeof addToWholesaleOrder !== 'undefined' ? addToWholesaleOrder : localAddToWholesaleOrder;
+  const effectiveSetAddToWholesaleOrder = (value: boolean) => {
+    if (setAddToWholesaleOrder) {
+      setAddToWholesaleOrder(value);
+    } else {
+      setLocalAddToWholesaleOrder(value);
+    }
+  };
   
   // Calculate prices for each frame
   const framePrices = frames.map(frameItem => 
@@ -303,14 +309,15 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             ))}
           </ul>
           <div className="flex items-center mt-2">
-            <input
-              type="checkbox" 
-              id="addToWholesaleOrder"
-              className="mr-2 h-4 w-4 text-primary border-light-border dark:border-dark-border rounded bg-light-bg dark:bg-dark-bg"
+            <Checkbox
+              id="wholesale-order-add" 
               checked={effectiveAddToWholesaleOrder}
-              onChange={(e) => effectiveSetAddToWholesaleOrder(e.target.checked)}
+              onCheckedChange={(checked) => effectiveSetAddToWholesaleOrder(checked as boolean)}
             />
-            <label htmlFor="addToWholesaleOrder" className="text-xs">
+            <label 
+              htmlFor="wholesale-order-add" 
+              className="text-xs ml-2"
+            >
               Add to Wholesale Order
             </label>
           </div>
