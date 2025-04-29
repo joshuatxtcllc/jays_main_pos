@@ -16,10 +16,11 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Search, RefreshCw } from 'lucide-react';
 
 interface VendorFrameSearchProps {
-  onSelectFrame: (frame: Frame) => void;
+  onSelectFrame: (frame: Frame, position: number) => void;
+  position?: number;
 }
 
-const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) => {
+const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame, position = 1 }) => {
   const { toast } = useToast();
   const [itemNumber, setItemNumber] = useState<string>('');
   const [localSearchResults, setLocalSearchResults] = useState<Frame[]>([]);
@@ -88,10 +89,10 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame }) 
   };
   
   const handleSelectFrame = (frame: Frame) => {
-    onSelectFrame(frame);
+    onSelectFrame(frame, position);
     toast({
       title: "Frame Selected",
-      description: `${frame.name} (${frame.id}) has been selected`,
+      description: `${frame.name} (${frame.id}) has been selected for position ${position}`,
     });
   };
   

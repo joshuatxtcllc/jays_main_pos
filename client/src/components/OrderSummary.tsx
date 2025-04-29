@@ -11,12 +11,20 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 
 interface OrderSummaryProps {
-  frame: Frame | null;
-  matColor: MatColor | null;
+  frames: {
+    frame: Frame;
+    position: number;
+    distance: number;
+  }[];
+  mats: {
+    matboard: MatColor;
+    position: number;
+    width: number;
+    offset: number;
+  }[];
   glassOption: GlassOption | null;
   artworkWidth: number;
   artworkHeight: number;
-  matWidth: number;
   specialServices: SpecialService[];
   onCreateOrder: () => void;
   onSaveQuote: () => void;
@@ -24,31 +32,47 @@ interface OrderSummaryProps {
   onProceedToCheckout?: (orderGroupId: number) => void;
   orderGroupId?: number;
   showCheckoutButton?: boolean;
+  useMultipleMats?: boolean;
+  useMultipleFrames?: boolean;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
-  frame,
-  matColor,
+  frames,
+  mats,
   glassOption,
   artworkWidth,
   artworkHeight,
-  matWidth,
   specialServices,
   onCreateOrder,
   onSaveQuote,
   onCreateWholesaleOrder,
   onProceedToCheckout,
   orderGroupId,
-  showCheckoutButton = false
+  showCheckoutButton = false,
+  useMultipleMats = false,
+  useMultipleFrames = false
 }) => {
   // State for wholesale order checkbox
   const [addToWholesaleOrder, setAddToWholesaleOrder] = useState(false);
   
-  // Calculate prices
-  const framePrice = frame ? calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frame.price)) : 0;
-  const matPrice = matColor ? calculateMatPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth), Number(matColor.price)) : 0;
-  const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth), Number(glassOption.price)) : 0;
-  const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), Number(matWidth));
+  // Get the primary mat width for calculations
+  const primaryMatWidth = mats.length > 0 ? mats[0].width : 2;
+  
+  // Calculate prices for each frame
+  const framePrices = frames.map(frameItem => 
+    calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frameItem.frame.price))
+  );
+  const totalFramePrice = framePrices.reduce((total, price) => total + price, 0);
+  
+  // Calculate prices for each mat
+  const matPrices = mats.map(matItem => 
+    calculateMatPrice(Number(artworkWidth), Number(artworkHeight), Number(matItem.width), Number(matItem.matboard.price))
+  );
+  const totalMatPrice = matPrices.reduce((total, price) => total + price, 0);
+  
+  // Other price calculations
+  const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, Number(glassOption.price)) : 0;
+  const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth);
   const laborPrice = calculateLaborPrice(Number(artworkWidth), Number(artworkHeight));
   
   // Calculate special services price
@@ -56,8 +80,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   
   // Calculate total
   const { subtotal, tax, total } = calculateTotalPrice(
-    framePrice,
-    matPrice,
+    totalFramePrice,
+    totalMatPrice,
     glassPrice,
     backingPrice,
     laborPrice,
@@ -68,21 +92,39 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 header-underline">Order Summary</h2>
       <div className="space-y-3">
-        {frame && (
-          <div className="flex justify-between">
-            <span className="text-light-textSecondary dark:text-dark-textSecondary">
-              Frame ({frame.name})
-            </span>
-            <span>${framePrice.toFixed(2)}</span>
+        {/* Frames */}
+        {frames.length > 0 && (
+          <div>
+            <div className="flex justify-between font-medium">
+              <span>Frames</span>
+              <span>${totalFramePrice.toFixed(2)}</span>
+            </div>
+            {frames.map((frameItem, index) => (
+              <div key={frameItem.frame.id + '-' + frameItem.position} className="flex justify-between text-sm text-light-textSecondary dark:text-dark-textSecondary pl-3">
+                <span>
+                  {frameItem.position === 1 ? 'Inner' : 'Outer'} ({frameItem.frame.name})
+                </span>
+                <span>${framePrices[index].toFixed(2)}</span>
+              </div>
+            ))}
           </div>
         )}
         
-        {matColor && (
-          <div className="flex justify-between">
-            <span className="text-light-textSecondary dark:text-dark-textSecondary">
-              Mat ({matColor.name}, {matWidth}")
-            </span>
-            <span>${matPrice.toFixed(2)}</span>
+        {/* Mats */}
+        {mats.length > 0 && (
+          <div>
+            <div className="flex justify-between font-medium">
+              <span>Mats</span>
+              <span>${totalMatPrice.toFixed(2)}</span>
+            </div>
+            {mats.map((matItem, index) => (
+              <div key={matItem.matboard.id + '-' + matItem.position} className="flex justify-between text-sm text-light-textSecondary dark:text-dark-textSecondary pl-3">
+                <span>
+                  {matItem.position === 1 ? 'Top' : matItem.position === 2 ? 'Middle' : 'Bottom'} ({matItem.matboard.name}, {matItem.width}")
+                </span>
+                <span>${matPrices[index].toFixed(2)}</span>
+              </div>
+            ))}
           </div>
         )}
         
@@ -160,10 +202,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         {!showCheckoutButton ? (
           <>
             <button 
-              className={`w-full py-3 ${!frame || !matColor || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
+              className={`w-full py-3 ${frames.length === 0 || mats.length === 0 || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
               onClick={async () => {
                 console.log('Create Order button clicked in OrderSummary');
-                console.log('Button disabled state:', (!frame || !matColor || !glassOption));
+                console.log('Button disabled state:', (frames.length === 0 || mats.length === 0 || !glassOption));
                 console.log('Add to wholesale order:', addToWholesaleOrder);
                 
                 // First create the actual customer order
@@ -177,7 +219,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                   }, 500);
                 }
               }}
-              disabled={!frame || !matColor || !glassOption}
+              disabled={frames.length === 0 || mats.length === 0 || !glassOption}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -214,7 +256,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       </div>
       
       {/* Wholesale Order Details */}
-      {frame && (
+      {frames.length > 0 && mats.length > 0 && (
         <div className="mt-6 border border-light-border dark:border-dark-border rounded-lg p-3 bg-gray-50 dark:bg-dark-bg/30">
           <h3 className="text-sm font-medium mb-2 flex items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -226,22 +268,32 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             This order will require these materials from your wholesalers:
           </p>
           <ul className="text-xs space-y-1">
-            <li className="flex justify-between">
-              <span>{frame.manufacturer} ({frame.id})</span>
-              <span>{Math.ceil((2 * (artworkWidth + artworkHeight) / 12) + 1)} ft</span>
-            </li>
+            {/* Frame requirements */}
+            {frames.map(frameItem => (
+              <li key={frameItem.frame.id + '-' + frameItem.position} className="flex justify-between">
+                <span>{frameItem.frame.manufacturer || 'Frame'} ({frameItem.frame.id})</span>
+                <span>{Math.ceil((2 * (artworkWidth + artworkHeight) / 12) + 1)} ft</span>
+              </li>
+            ))}
+            
+            {/* Glass requirements */}
             {glassOption && (
               <li className="flex justify-between">
                 <span>{glassOption.name}</span>
-                <span>{artworkWidth + 2 * matWidth}" × {artworkHeight + 2 * matWidth}"</span>
+                <span>{artworkWidth + 2 * primaryMatWidth}" × {artworkHeight + 2 * primaryMatWidth}"</span>
               </li>
             )}
-            {matColor && (
-              <li className="flex justify-between">
-                <span>{matColor.name} Mat Board</span>
-                <span>{artworkWidth + 2 * matWidth + 4}" × {artworkHeight + 2 * matWidth + 4}"</span>
+            
+            {/* Mat requirements */}
+            {mats.map(matItem => (
+              <li key={matItem.matboard.id + '-' + matItem.position} className="flex justify-between">
+                <span>{matItem.matboard.name} Mat Board</span>
+                <span>
+                  {artworkWidth + 2 * matItem.width + (matItem.position === 1 ? 4 : 0)}" × 
+                  {artworkHeight + 2 * matItem.width + (matItem.position === 1 ? 4 : 0)}"
+                </span>
               </li>
-            )}
+            ))}
           </ul>
           <button 
             className="mt-2 w-full py-1.5 text-xs bg-secondary text-white rounded font-medium hover:bg-secondary/90 transition-colors"

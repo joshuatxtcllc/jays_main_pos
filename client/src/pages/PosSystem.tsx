@@ -393,14 +393,60 @@ const PosSystem = () => {
     
     if (matColor) {
       console.log('Found mat color:', matColor);
-      setSelectedMatColor(matColor);
+      
+      // Check if we already have a mat at this position
+      const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
+      
+      if (existingMatIndex >= 0) {
+        // Replace existing mat
+        const updatedMats = [...selectedMatboards];
+        updatedMats[existingMatIndex] = {
+          ...updatedMats[existingMatIndex],
+          matboard: matColor
+        };
+        setSelectedMatboards(updatedMats);
+      } else {
+        // Add new mat
+        setSelectedMatboards([
+          ...selectedMatboards,
+          {
+            matboard: matColor,
+            position: activeMatPosition,
+            width: 2,
+            offset: 0
+          }
+        ]);
+      }
     } else {
       // Fallback to use static data
       console.log('Mat color not found in API data, trying static catalog...');
       const staticMatColor = getMatColorById(id);
       if (staticMatColor) {
         console.log('Found mat color in static catalog:', staticMatColor);
-        setSelectedMatColor(staticMatColor);
+        
+        // Check if we already have a mat at this position
+        const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
+        
+        if (existingMatIndex >= 0) {
+          // Replace existing mat
+          const updatedMats = [...selectedMatboards];
+          updatedMats[existingMatIndex] = {
+            ...updatedMats[existingMatIndex],
+            matboard: staticMatColor
+          };
+          setSelectedMatboards(updatedMats);
+        } else {
+          // Add new mat
+          setSelectedMatboards([
+            ...selectedMatboards,
+            {
+              matboard: staticMatColor,
+              position: activeMatPosition,
+              width: 2,
+              offset: 0
+            }
+          ]);
+        }
       } else {
         console.error('Mat color not found in any catalog:', id);
       }
@@ -409,7 +455,19 @@ const PosSystem = () => {
   
   // Handle mat width change
   const handleMatWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMatWidth(parseFloat(e.target.value));
+    const newWidth = parseFloat(e.target.value);
+    
+    // Update width for the active mat position
+    const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
+    
+    if (existingMatIndex >= 0) {
+      const updatedMats = [...selectedMatboards];
+      updatedMats[existingMatIndex] = {
+        ...updatedMats[existingMatIndex],
+        width: newWidth
+      };
+      setSelectedMatboards(updatedMats);
+    }
   };
   
   // Handle glass option selection
@@ -491,16 +549,16 @@ const PosSystem = () => {
   const handleCreateOrder = async () => {
     console.log("Create Order button clicked");
     
-    if (!selectedFrame || !selectedMatColor || !selectedGlassOption) {
+    if (selectedFrames.length === 0 || selectedMatboards.length === 0 || !selectedGlassOption) {
       console.log("Missing required selections:", { 
-        frame: selectedFrame ? "Selected" : "Missing", 
-        matColor: selectedMatColor ? "Selected" : "Missing", 
+        frame: selectedFrames.length > 0 ? "Selected" : "Missing", 
+        matColor: selectedMatboards.length > 0 ? "Selected" : "Missing", 
         glassOption: selectedGlassOption ? "Selected" : "Missing" 
       });
       
       let missingItems = [];
-      if (!selectedFrame) missingItems.push("frame");
-      if (!selectedMatColor) missingItems.push("mat color");
+      if (selectedFrames.length === 0) missingItems.push("frame");
+      if (selectedMatboards.length === 0) missingItems.push("mat color");
       if (!selectedGlassOption) missingItems.push("glass option");
       
       toast({
@@ -531,20 +589,23 @@ const PosSystem = () => {
       const customerResponse = await createCustomerMutation.mutateAsync(customer);
       console.log("Customer created/retrieved:", customerResponse);
       
-      // Calculate prices for the order
-      const framePrice = selectedFrame.price;
-      const matPrice = selectedMatColor.price;
+      // Calculate prices for the order - using primary frame and mat
+      const primaryFrame = selectedFrames.length > 0 ? selectedFrames[0].frame : null;
+      const primaryMat = selectedMatboards.length > 0 ? selectedMatboards[0].matboard : null;
+      const framePrice = primaryFrame ? primaryFrame.price : '0';
+      const matPrice = primaryMat ? primaryMat.price : '0';
       const glassPrice = selectedGlassOption.price;
       
-      // Prepare order data
+      // Prepare order data - using primary frame, mat and width
+      const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
       const orderData: InsertOrder = {
         customerId: customerResponse.id,
-        frameId: selectedFrame.id,
-        matColorId: selectedMatColor.id,
+        frameId: primaryFrame ? primaryFrame.id : '',
+        matColorId: primaryMat ? primaryMat.id : '',
         glassOptionId: selectedGlassOption.id,
         artworkWidth: artworkWidth.toString(),
         artworkHeight: artworkHeight.toString(),
-        matWidth: matWidth.toString(),
+        matWidth: primaryMatWidth.toString(),
         artworkDescription,
         artworkType,
         subtotal: "0", // Will be calculated on the server
@@ -599,10 +660,10 @@ const PosSystem = () => {
   
   // Handle create wholesale order
   const handleCreateWholesaleOrder = async () => {
-    if (!selectedFrame) {
+    if (selectedFrames.length === 0) {
       toast({
         title: "Frame Required",
-        description: "Please select a frame to create a wholesale order.",
+        description: "Please select at least one frame to create a wholesale order.",
         variant: "destructive"
       });
       return;
@@ -620,36 +681,37 @@ const PosSystem = () => {
         return;
       }
       
-      // Create a real wholesale order
-      const materialOrderData = {
-        materialType: 'frame',
-        materialId: selectedFrame.id,
-        materialName: selectedFrame.name,
-        quantity: Math.ceil((2 * (artworkWidth + artworkHeight) / 12) + 1).toString(), // Frame length in feet
-        status: 'pending',
-        notes: `Wholesale order for ${customer.name}`,
-        vendor: selectedFrame.manufacturer,
-        priority: 'normal'
-      };
-      
-      const response = await apiRequest('POST', '/api/material-orders', materialOrderData);
-      const wholesaleOrder = await response.json();
+      // Create wholesale orders for each frame
+      for (const frameItem of selectedFrames) {
+        const materialOrderData = {
+          materialType: 'frame',
+          materialId: frameItem.frame.id,
+          materialName: frameItem.frame.name,
+          quantity: Math.ceil((2 * (artworkWidth + artworkHeight) / 12) + 1).toString(), // Frame length in feet
+          status: 'pending',
+          notes: `Wholesale order for ${customer.name} (${frameItem.position === 1 ? 'Inner' : 'Outer'} Frame)`,
+          vendor: frameItem.frame.manufacturer || 'Larson Juhl',
+          priority: 'normal'
+        };
+        
+        await apiRequest('POST', '/api/material-orders', materialOrderData);
+      }
       
       toast({
-        title: "Wholesale Order Created",
-        description: `A wholesale order for ${selectedFrame.manufacturer} has been created.`,
+        title: "Frame Orders Created",
+        description: `Wholesale orders for ${selectedFrames.length} frame(s) have been created.`,
       });
       
-      // Also add wholesale orders for mat and glass if selected
-      if (selectedMatColor) {
+      // Create wholesale orders for each mat
+      for (const matItem of selectedMatboards) {
         const matOrderData = {
           materialType: 'mat',
-          materialId: selectedMatColor.id,
-          materialName: selectedMatColor.name,
+          materialId: matItem.matboard.id,
+          materialName: matItem.matboard.name,
           quantity: '1', // One sheet
           status: 'pending',
-          notes: `Mat for ${customer.name}`,
-          vendor: selectedMatColor.manufacturer || 'Crescent',
+          notes: `Mat for ${customer.name} (${matItem.position === 1 ? 'Top' : matItem.position === 2 ? 'Middle' : 'Bottom'} Mat)`,
+          vendor: matItem.matboard.manufacturer || 'Crescent',
           priority: 'normal'
         };
         
@@ -695,17 +757,27 @@ const PosSystem = () => {
     setArtworkDescription('');
     setArtworkType('print');
     setAspectRatio(0.8);
-    setSelectedFrame(null);
+    
+    // Reset frames and mats
+    setSelectedFrames([]);
+    setActiveFramePosition(1);
+    setSelectedMatboards([]);
+    setActiveMatPosition(1);
+    
+    // Reset filters
     setMaterialFilter('all');
     setManufacturerFilter('all');
     setWidthFilter('all');
     setPriceFilter('all');
-    // Use first matboard from API or null if not available yet
-    setSelectedMatColor(matboards && matboards.length > 0 ? matboards[0] : null);
-    setMatWidth(2);
     setMatManufacturerFilter('all');
+    
+    // Reset options
     setSelectedGlassOption(glassOptionCatalog[0]);
     setSelectedServices([]);
+    
+    // Reset multi-options flags
+    setUseMultipleFrames(false);
+    setUseMultipleMats(false);
     
     // Turn off webcam if it's on
     if (showWebcam) {
@@ -914,7 +986,37 @@ const PosSystem = () => {
           
           {/* Vendor Catalog Search */}
           <div className="mb-4">
-            <VendorFrameSearch onSelectFrame={setSelectedFrame} />
+            <VendorFrameSearch 
+              onSelectFrame={(frame, position) => {
+                // Check if we already have a frame at this position
+                const existingFrameIndex = selectedFrames.findIndex(f => f.position === position);
+                
+                if (existingFrameIndex >= 0) {
+                  // Replace existing frame
+                  const updatedFrames = [...selectedFrames];
+                  updatedFrames[existingFrameIndex] = {
+                    frame,
+                    position,
+                    distance: 0
+                  };
+                  setSelectedFrames(updatedFrames);
+                } else {
+                  // Add new frame
+                  setSelectedFrames([
+                    ...selectedFrames,
+                    {
+                      frame,
+                      position,
+                      distance: 0
+                    }
+                  ]);
+                }
+                
+                // Set active frame position to match the newly selected frame
+                setActiveFramePosition(position);
+              }}
+              position={activeFramePosition}
+            />
           </div>
           
           {/* Frame filters */}
@@ -983,6 +1085,40 @@ const PosSystem = () => {
             </div>
           </div>
           
+          {/* Frame Position Selector */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex space-x-2">
+                <button
+                  type="button"
+                  className={`px-3 py-1 text-sm rounded-md ${activeFramePosition === 1 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-cardBg'}`}
+                  onClick={() => setActiveFramePosition(1)}
+                >
+                  Inner Frame
+                </button>
+                {useMultipleFrames && (
+                  <button
+                    type="button"
+                    className={`px-3 py-1 text-sm rounded-md ${activeFramePosition === 2 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-cardBg'}`}
+                    onClick={() => setActiveFramePosition(2)}
+                  >
+                    Outer Frame
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="useMultipleFrames"
+                  checked={useMultipleFrames}
+                  onChange={() => setUseMultipleFrames(!useMultipleFrames)}
+                  className="mr-2"
+                />
+                <label htmlFor="useMultipleFrames" className="text-sm">Use Multiple Frames</label>
+              </div>
+            </div>
+          </div>
+          
           {/* Frame Catalog */}
           <div className="h-64 overflow-y-auto p-2 border border-light-border dark:border-dark-border rounded-lg mb-4">
             {framesLoading ? (
@@ -1010,8 +1146,32 @@ const PosSystem = () => {
                 {filteredFrames.map(frame => (
                 <div 
                   key={frame.id}
-                  className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrame?.id === frame.id ? 'border-2 border-primary' : ''}`}
-                  onClick={() => setSelectedFrame(frame)}
+                  className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrames.some(f => f.frame.id === frame.id) ? 'border-2 border-primary' : ''}`}
+                  onClick={() => {
+                    // Check if we already have a frame at this position
+                    const existingFrameIndex = selectedFrames.findIndex(f => f.position === activeFramePosition);
+                    
+                    if (existingFrameIndex >= 0) {
+                      // Replace existing frame
+                      const updatedFrames = [...selectedFrames];
+                      updatedFrames[existingFrameIndex] = {
+                        frame,
+                        position: activeFramePosition,
+                        distance: 0
+                      };
+                      setSelectedFrames(updatedFrames);
+                    } else {
+                      // Add new frame
+                      setSelectedFrames([
+                        ...selectedFrames,
+                        {
+                          frame,
+                          position: activeFramePosition,
+                          distance: 0
+                        }
+                      ]);
+                    }
+                  }}
                 >
                   <div 
                     className="w-full h-24 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center"
@@ -1031,7 +1191,7 @@ const PosSystem = () => {
                       <span>${frame.price}/ft</span>
                     </div>
                   </div>
-                  {selectedFrame?.id === frame.id && (
+                  {selectedFrames.some(f => f.frame.id === frame.id) && (
                     <div className="absolute top-2 right-2 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
@@ -1048,9 +1208,50 @@ const PosSystem = () => {
           <h3 className="text-lg font-medium mb-3">Mat Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
-                Mat Color
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary">
+                  Mat Color
+                </label>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="useMultipleMats"
+                    checked={useMultipleMats}
+                    onChange={() => setUseMultipleMats(!useMultipleMats)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="useMultipleMats" className="text-sm">Use Multiple Mats</label>
+                </div>
+              </div>
+              
+              {/* Mat Position Selector */}
+              <div className="flex space-x-2 mb-3">
+                <button
+                  type="button"
+                  className={`px-3 py-1 text-sm rounded-md ${activeMatPosition === 1 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-cardBg'}`}
+                  onClick={() => setActiveMatPosition(1)}
+                >
+                  Top Mat
+                </button>
+                {useMultipleMats && (
+                  <>
+                    <button
+                      type="button"
+                      className={`px-3 py-1 text-sm rounded-md ${activeMatPosition === 2 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-cardBg'}`}
+                      onClick={() => setActiveMatPosition(2)}
+                    >
+                      Middle Mat
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-1 text-sm rounded-md ${activeMatPosition === 3 ? 'bg-primary text-white' : 'bg-gray-200 dark:bg-dark-cardBg'}`}
+                      onClick={() => setActiveMatPosition(3)}
+                    >
+                      Bottom Mat
+                    </button>
+                  </>
+                )}
+              </div>
               
               {/* Mat color filter tabs */}
               <div className="flex mb-2 border-b border-light-border dark:border-dark-border">
@@ -1085,7 +1286,7 @@ const PosSystem = () => {
                             {getMatColorsByCategory(category).map(matColor => (
                               <div
                                 key={matColor.id}
-                                className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
+                                className={`mat-color-option ${selectedMatboards.some(m => m.matboard.id === matColor.id) ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-6 w-6 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
                                 onClick={() => handleMatColorChange(matColor.id)}
                                 title={`${matColor.name} (${matColor.code})`}
                               >
@@ -1119,7 +1320,7 @@ const PosSystem = () => {
                       {(matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
                         <div
                           key={matColor.id}
-                          className={`mat-color-option ${selectedMatColor && selectedMatColor.id === matColor.id ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
+                          className={`mat-color-option ${selectedMatboards.some(m => m.matboard.id === matColor.id) ? 'border-2 border-primary' : 'border border-gray-400'} rounded-full h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden`}
                           onClick={() => handleMatColorChange(matColor.id)}
                           title={matColor.name}
                         >
@@ -1138,27 +1339,36 @@ const PosSystem = () => {
               )}
               
               {/* Selected mat color details */}
-              {selectedMatColor && (
+              {selectedMatboards.length > 0 && (
                 <div className="mt-4 text-sm">
-                  <h3 className="font-medium mb-2">Selected Mat</h3>
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-12 h-12 rounded-md inline-block border border-gray-300 shadow-sm" 
-                      style={{ backgroundColor: selectedMatColor.color || '#FFFFFF' }}
-                    ></div>
-                    <div>
-                      <p className="font-semibold text-base">
-                        {selectedMatColor.name}
-                        {selectedMatColor.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary text-sm">({selectedMatColor.code})</span>}
-                      </p>
-                      {selectedMatColor.manufacturer && selectedMatColor.manufacturer !== 'Basic' && (
-                        <p className="text-light-textSecondary dark:text-dark-textSecondary">{selectedMatColor.manufacturer}</p>
-                      )}
-                      {selectedMatColor.category && (
-                        <p className="text-light-textSecondary dark:text-dark-textSecondary text-xs">{selectedMatColor.category}</p>
-                      )}
+                  <h3 className="font-medium mb-2">Selected Mats</h3>
+                  {selectedMatboards.map((matItem, index) => (
+                    <div key={matItem.matboard.id + '-' + matItem.position} className={index > 0 ? 'mt-3 pt-3 border-t border-light-border dark:border-dark-border' : ''}>
+                      <h4 className="text-xs font-medium mb-1">
+                        {matItem.position === 1 ? 'Top' : matItem.position === 2 ? 'Middle' : 'Bottom'} Mat
+                        {useMultipleMats ? ` (Position ${matItem.position})` : ''}
+                      </h4>
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-10 h-10 rounded-md inline-block border border-gray-300 shadow-sm" 
+                          style={{ backgroundColor: matItem.matboard.color || '#FFFFFF' }}
+                        ></div>
+                        <div>
+                          <p className="font-semibold text-sm">
+                            {matItem.matboard.name}
+                            {matItem.matboard.code && <span className="ml-1 text-light-textSecondary dark:text-dark-textSecondary text-xs">({matItem.matboard.code})</span>}
+                          </p>
+                          {matItem.matboard.manufacturer && matItem.matboard.manufacturer !== 'Basic' && (
+                            <p className="text-light-textSecondary dark:text-dark-textSecondary text-xs">{matItem.matboard.manufacturer}</p>
+                          )}
+                          {matItem.matboard.category && (
+                            <p className="text-light-textSecondary dark:text-dark-textSecondary text-xs">{matItem.matboard.category}</p>
+                          )}
+                          <p className="text-xs mt-1">Width: {matItem.width}"</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -1172,12 +1382,19 @@ const PosSystem = () => {
                   min="0" 
                   max="6" 
                   step="0.25" 
-                  value={matWidth} 
+                  value={selectedMatboards.find(m => m.position === activeMatPosition)?.width || 2} 
                   onChange={handleMatWidthChange}
                   className="w-full h-2 bg-gray-200 dark:bg-dark-border rounded-lg appearance-none cursor-pointer"
                 />
-                <span className="ml-2 min-w-[40px] text-center">{matWidth}"</span>
+                <span className="ml-2 min-w-[40px] text-center">
+                  {selectedMatboards.find(m => m.position === activeMatPosition)?.width || 2}"
+                </span>
               </div>
+              {useMultipleMats && (
+                <div className="mt-2 text-xs text-light-textSecondary dark:text-dark-textSecondary">
+                  Adjusting width for {activeMatPosition === 1 ? 'Top' : activeMatPosition === 2 ? 'Middle' : 'Bottom'} Mat (Position {activeMatPosition})
+                </div>
+              )}
             </div>
           </div>
           
@@ -1228,59 +1445,69 @@ const PosSystem = () => {
           {/* Preview Container */}
           <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center">
             <FrameVisualizer
-              frame={selectedFrame}
-              matColor={selectedMatColor}
-              matWidth={matWidth}
+              frames={selectedFrames}
+              mats={selectedMatboards}
               artworkWidth={artworkWidth}
               artworkHeight={artworkHeight}
               artworkImage={artworkImage}
+              useMultipleMats={useMultipleMats}
+              useMultipleFrames={useMultipleFrames}
             />
           </div>
           
           {/* Frame Details */}
-          {selectedFrame && (
+          {selectedFrames.length > 0 && (
             <div className="mt-4">
               <h3 className="text-lg font-medium mb-2">Selected Frame Details</h3>
-              <table className="w-full text-sm">
-                <tbody>
-                  <tr>
-                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Name:</td>
-                    <td className="py-1 font-medium">{selectedFrame.name}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Material:</td>
-                    <td className="py-1">{selectedFrame.material}</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Width:</td>
-                    <td className="py-1">{selectedFrame.width} inches</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Depth:</td>
-                    <td className="py-1">{selectedFrame.depth} inches</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Wholesale Price:</td>
-                    <td className="py-1">${selectedFrame.price} per foot</td>
-                  </tr>
-                </tbody>
-              </table>
+              {selectedFrames.map((frameItem, index) => (
+                <div key={frameItem.frame.id + '-' + frameItem.position} className={index > 0 ? 'mt-4 pt-4 border-t border-light-border dark:border-dark-border' : ''}>
+                  <h4 className="text-md font-medium mb-2">
+                    {frameItem.position === 1 ? 'Inner Frame' : 'Outer Frame'} 
+                    {useMultipleFrames ? ` (Position ${frameItem.position})` : ''}
+                  </h4>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <tr>
+                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Name:</td>
+                        <td className="py-1 font-medium">{frameItem.frame.name}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Material:</td>
+                        <td className="py-1">{frameItem.frame.material}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Width:</td>
+                        <td className="py-1">{frameItem.frame.width} inches</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Depth:</td>
+                        <td className="py-1">{frameItem.frame.depth} inches</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Wholesale Price:</td>
+                        <td className="py-1">${frameItem.frame.price} per foot</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
           )}
         </div>
         
         {/* Price Summary */}
         <OrderSummary
-          frame={selectedFrame}
-          matColor={selectedMatColor}
+          frames={selectedFrames}
+          mats={selectedMatboards}
           glassOption={selectedGlassOption}
           artworkWidth={artworkWidth}
           artworkHeight={artworkHeight}
-          matWidth={matWidth}
           specialServices={selectedServices}
           onCreateOrder={handleCreateOrder}
           onSaveQuote={handleSaveQuote}
           onCreateWholesaleOrder={handleCreateWholesaleOrder}
+          useMultipleMats={useMultipleMats}
+          useMultipleFrames={useMultipleFrames}
         />
       </div>
     </div>
