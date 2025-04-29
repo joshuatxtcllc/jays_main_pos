@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAllMatboards } from '@/hooks/use-all-matboards';
+import { useAllMatboards } from '@/hooks/use-all-matboards.tsx';
 import { MatColor } from '@shared/schema';
 import { 
   Tabs, 
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Search, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 
 interface MatboardSelectorProps {
   selectedMatboards: {
