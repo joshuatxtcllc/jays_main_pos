@@ -128,10 +128,12 @@ export const orders = pgTable("orders", {
   customerId: integer("customer_id").references(() => customers.id),
   orderGroupId: integer("order_group_id").references(() => orderGroups.id),
   frameId: text("frame_id").references(() => frames.id),
+  // matColorId retained for backward compatibility
   matColorId: text("mat_color_id").references(() => matColors.id),
   glassOptionId: text("glass_option_id").references(() => glassOptions.id),
   artworkWidth: numeric("artwork_width").notNull(), // in inches
   artworkHeight: numeric("artwork_height").notNull(), // in inches
+  // matWidth retained for backward compatibility with single mat
   matWidth: numeric("mat_width").notNull(), // in inches
   artworkDescription: text("artwork_description"),
   artworkType: text("artwork_type"),
@@ -149,7 +151,10 @@ export const orders = pgTable("orders", {
   estimatedCompletionDays: integer("estimated_completion_days"),
   addToWholesaleOrder: boolean("add_to_wholesale_order").default(false),
   lastStatusChange: timestamp("last_status_change").defaultNow(),
-  notificationsEnabled: boolean("notifications_enabled").default(true)
+  notificationsEnabled: boolean("notifications_enabled").default(true),
+  // New fields for multiple mat/frame support
+  useMultipleMats: boolean("use_multiple_mats").default(false),
+  useMultipleFrames: boolean("use_multiple_frames").default(false)
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });
@@ -167,6 +172,35 @@ export const orderSpecialServices = pgTable("order_special_services", {
 export const insertOrderSpecialServiceSchema = createInsertSchema(orderSpecialServices);
 export type InsertOrderSpecialService = z.infer<typeof insertOrderSpecialServiceSchema>;
 export type OrderSpecialService = typeof orderSpecialServices.$inferSelect;
+
+// Order Mats table for multiple mat support
+export const orderMats = pgTable("order_mats", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  matColorId: text("mat_color_id").references(() => matColors.id).notNull(),
+  position: integer("position").notNull(), // 1, 2, 3 for top, middle, bottom mats
+  width: numeric("width").notNull(), // Width of mat in inches
+  offset: numeric("offset").notNull().default("0"), // Offset from previous mat in inches
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertOrderMatSchema = createInsertSchema(orderMats).omit({ id: true, createdAt: true });
+export type InsertOrderMat = z.infer<typeof insertOrderMatSchema>;
+export type OrderMat = typeof orderMats.$inferSelect;
+
+// Order Frames table for multiple frame support
+export const orderFrames = pgTable("order_frames", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id).notNull(),
+  frameId: text("frame_id").references(() => frames.id).notNull(),
+  position: integer("position").notNull(), // 1, 2 for inner and outer frames
+  distance: numeric("distance").notNull().default("0"), // Distance from artwork in inches
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const insertOrderFrameSchema = createInsertSchema(orderFrames).omit({ id: true, createdAt: true });
+export type InsertOrderFrame = z.infer<typeof insertOrderFrameSchema>;
+export type OrderFrame = typeof orderFrames.$inferSelect;
 
 // Wholesale order model
 export const wholesaleOrders = pgTable("wholesale_orders", {
@@ -194,20 +228,28 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// Larson Juhl catalog model for matboards
+// Larson Juhl catalog model for matboards and frames
 export const larsonJuhlCatalog = pgTable("larson_juhl_catalog", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  hex_color: text("hex_color").notNull(),
+  hex_color: text("hex_color"),
   price: numeric("price", { precision: 10, scale: 6 }).notNull(),
   code: text("code").notNull(),
   crescent_code: text("crescent_code"),
   description: text("description"),
   category: text("category"),
-  manufacturer: text("manufacturer").notNull()
+  manufacturer: text("manufacturer").notNull(),
+  type: text("type").notNull().default('matboard'), // 'matboard' or 'frame'
+  material: text("material"), // For frames
+  width: numeric("width"), // For frames (in inches)
+  depth: numeric("depth"), // For frames (in inches)
+  edge_texture: text("edge_texture"), // For frames
+  corner: text("corner"), // For frames
+  catalog_image: text("catalog_image"), // URL to manufacturer catalog image
+  createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertLarsonJuhlCatalogSchema = createInsertSchema(larsonJuhlCatalog);
+export const insertLarsonJuhlCatalogSchema = createInsertSchema(larsonJuhlCatalog).omit({ createdAt: true });
 export type InsertLarsonJuhlCatalog = z.infer<typeof insertLarsonJuhlCatalogSchema>;
 export type LarsonJuhlCatalog = typeof larsonJuhlCatalog.$inferSelect;
 
