@@ -50,7 +50,13 @@ const PosSystem = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   // Frame Selection
-  const [selectedFrame, setSelectedFrame] = useState<Frame | null>(null);
+  const [selectedFrames, setSelectedFrames] = useState<{
+    frame: Frame;
+    position: number;
+    distance: number;
+  }[]>([]);
+  const [activeFramePosition, setActiveFramePosition] = useState<number>(1);
+  const [useMultipleFrames, setUseMultipleFrames] = useState<boolean>(false);
   const [materialFilter, setMaterialFilter] = useState<string>('all');
   const [manufacturerFilter, setManufacturerFilter] = useState<string>('all');
   const [widthFilter, setWidthFilter] = useState<string>('all');
@@ -59,16 +65,28 @@ const PosSystem = () => {
   
   // Mat Options
   const { matboards, crescentMatboards, loading: matboardsLoading, getMatboardById } = useMatboards();
-  // Initialize with null and update when matboards load
-  const [selectedMatColor, setSelectedMatColor] = useState<MatColor | null>(null);
   
-  // Update selectedMatColor when matboards loads
+  const [selectedMatboards, setSelectedMatboards] = useState<{
+    matboard: MatColor;
+    position: number;
+    width: number;
+    offset: number;
+  }[]>([]);
+  const [activeMatPosition, setActiveMatPosition] = useState<number>(1);
+  const [useMultipleMats, setUseMultipleMats] = useState<boolean>(false);
+  
+  // Initialize with an empty array and update when matboards load
   useEffect(() => {
-    if (matboards && matboards.length > 0 && !selectedMatColor) {
-      setSelectedMatColor(matboards[0]);
+    if (matboards && matboards.length > 0 && selectedMatboards.length === 0) {
+      // Initialize with the first matboard in position 1
+      setSelectedMatboards([{
+        matboard: matboards[0],
+        position: 1,
+        width: 2,
+        offset: 0
+      }]);
     }
-  }, [matboards, selectedMatColor]);
-  const [matWidth, setMatWidth] = useState<number>(2);
+  }, [matboards, selectedMatboards.length]);
   const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
   
   // Glass Options - Set Museum glass as default (index 1)
