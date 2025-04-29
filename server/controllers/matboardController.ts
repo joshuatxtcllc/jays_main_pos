@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { larsonJuhlCatalog, matColors } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 
 /**
@@ -9,11 +9,31 @@ import { eq } from 'drizzle-orm';
  */
 export async function getAllLarsonMatboards(req: Request, res: Response) {
   try {
-    const matboards = await db.select().from(larsonJuhlCatalog);
+    // With the updated schema, filter to only return matboards (not frames)
+    const matboards = await db.select()
+      .from(larsonJuhlCatalog)
+      .where(eq(larsonJuhlCatalog.type, 'matboard'));
+    
     return res.status(200).json(matboards);
   } catch (error) {
     console.error('Error fetching matboards:', error);
     return res.status(500).json({ error: 'Failed to fetch matboards' });
+  }
+}
+
+/**
+ * Fetches all frames from the Larson Juhl catalog
+ */
+export async function getAllLarsonFrames(req: Request, res: Response) {
+  try {
+    const frames = await db.select()
+      .from(larsonJuhlCatalog)
+      .where(eq(larsonJuhlCatalog.type, 'frame'));
+    
+    return res.status(200).json(frames);
+  } catch (error) {
+    console.error('Error fetching frames:', error);
+    return res.status(500).json({ error: 'Failed to fetch frames' });
   }
 }
 
@@ -24,7 +44,12 @@ export async function getCrescentMatboards(req: Request, res: Response) {
   try {
     const matboards = await db.select()
       .from(larsonJuhlCatalog)
-      .where(eq(larsonJuhlCatalog.manufacturer, 'Crescent'));
+      .where(
+        and(
+          eq(larsonJuhlCatalog.manufacturer, 'Crescent'),
+          eq(larsonJuhlCatalog.type, 'matboard')
+        )
+      );
     
     return res.status(200).json(matboards);
   } catch (error) {
@@ -41,8 +66,11 @@ export async function syncMatboardsToMatColors(req: Request, res: Response) {
   try {
     console.log('Syncing matboards from Larson Juhl catalog to mat_colors table');
     
-    // Get all matboards from the Larson Juhl catalog
-    const catalogMatboards = await db.select().from(larsonJuhlCatalog);
+    // Get all matboards from the Larson Juhl catalog (type=matboard)
+    const catalogMatboards = await db.select()
+      .from(larsonJuhlCatalog)
+      .where(eq(larsonJuhlCatalog.type, 'matboard'));
+      
     console.log(`Found ${catalogMatboards.length} matboards in the Larson Juhl catalog`);
     
     // Get existing mat_colors to avoid duplicates
@@ -66,12 +94,12 @@ export async function syncMatboardsToMatColors(req: Request, res: Response) {
     const matColorsToInsert = newMatboards.map(mb => ({
       id: mb.id,
       name: mb.name,
-      color: mb.hex_color,
+      color: mb.hex_color || '#CCCCCC', // Default color if hex_color is null
       price: mb.price,
       manufacturer: mb.manufacturer,
       code: mb.code,
-      description: mb.description || null,
-      category: mb.category || null
+      description: mb.description || '',
+      category: mb.category || ''
     }));
     
     // Insert new mat colors
