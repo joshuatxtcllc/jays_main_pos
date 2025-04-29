@@ -14,6 +14,7 @@ interface PricingResult {
   framePrice: number;
   matPrice: number;
   glassPrice: number;
+  backingPrice: number;
   laborCost: number;
   materialCost: number;
   subtotal: number;
@@ -22,6 +23,7 @@ interface PricingResult {
     frame?: string;
     mat?: string;
     glass?: string;
+    backing?: string;
   };
   laborRates?: {
     baseRate: number;
@@ -33,6 +35,13 @@ interface PricingResult {
       fitting: number;
       finishing: number;
     };
+  };
+  profitability?: {
+    totalWholesaleCost: number;
+    overheadCost: number;
+    grossProfit: number;
+    grossProfitMargin: number;
+    markupMultiplier: number;
   };
 }
 
@@ -111,7 +120,7 @@ const PriceCalculator = () => {
         artworkHeight,
         matWidth,
         quantity,
-        include_wholesale_prices: includeWholesalePrices
+        includeWholesalePrices: includeWholesalePrices
       });
       
       const result = await res.json();
@@ -347,6 +356,13 @@ const PriceCalculator = () => {
                     )}
                   </TableRow>
                   <TableRow>
+                    <TableCell>Backing</TableCell>
+                    <TableCell className="text-right">${pricingResult.backingPrice.toFixed(2)}</TableCell>
+                    {pricingResult.wholesalePrices && (
+                      <TableCell className="text-right">${pricingResult.wholesalePrices.backing || '0.00'}</TableCell>
+                    )}
+                  </TableRow>
+                  <TableRow>
                     <TableCell>Labor</TableCell>
                     <TableCell className="text-right">${pricingResult.laborCost.toFixed(2)}</TableCell>
                     {pricingResult.wholesalePrices && <TableCell className="text-right">-</TableCell>}
@@ -376,11 +392,59 @@ const PriceCalculator = () => {
                     <div>Base Rate: ${pricingResult.laborRates.baseRate.toFixed(2)}/hr</div>
                     <div>Regional Factor: {pricingResult.laborRates.regionalFactor.toFixed(2)}x</div>
                     <div className="mt-2">Estimated Hours:</div>
-                    <div className="ml-4">Frame Assembly: {pricingResult.laborRates.estimates.frameAssembly} hr</div>
-                    <div className="ml-4">Mat Cutting: {pricingResult.laborRates.estimates.matCutting} hr</div>
-                    <div className="ml-4">Glass Cutting: {pricingResult.laborRates.estimates.glassCutting} hr</div>
-                    <div className="ml-4">Fitting: {pricingResult.laborRates.estimates.fitting} hr</div>
-                    <div className="ml-4">Finishing: {pricingResult.laborRates.estimates.finishing} hr</div>
+                    <div className="ml-4">Frame Assembly: {pricingResult.laborRates.estimates.frameAssembly.toFixed(2)} hr</div>
+                    <div className="ml-4">Mat Cutting: {pricingResult.laborRates.estimates.matCutting.toFixed(2)} hr</div>
+                    <div className="ml-4">Glass Cutting: {pricingResult.laborRates.estimates.glassCutting.toFixed(2)} hr</div>
+                    <div className="ml-4">Fitting: {pricingResult.laborRates.estimates.fitting.toFixed(2)} hr</div>
+                    <div className="ml-4">Finishing: {pricingResult.laborRates.estimates.finishing.toFixed(2)} hr</div>
+                  </div>
+                </div>
+              )}
+              
+              {pricingResult.profitability && (
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-md font-medium mb-2">Profitability Analysis</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Wholesale Cost</div>
+                      <div className="text-xl font-bold">${pricingResult.profitability.totalWholesaleCost.toFixed(2)}</div>
+                    </div>
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Overhead Cost</div>
+                      <div className="text-xl font-bold">${pricingResult.profitability.overheadCost.toFixed(2)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Gross Profit</div>
+                      <div className="text-xl font-bold">${pricingResult.profitability.grossProfit.toFixed(2)}</div>
+                    </div>
+                    <div className={`border rounded-md p-3 ${
+                      pricingResult.profitability.grossProfitMargin < 0.25 ? 'bg-red-50 dark:bg-red-900/10' : 
+                      pricingResult.profitability.grossProfitMargin > 0.4 ? 'bg-green-50 dark:bg-green-900/10' : ''
+                    }`}>
+                      <div className="text-sm text-muted-foreground">Profit Margin</div>
+                      <div className="text-xl font-bold">
+                        {(pricingResult.profitability.grossProfitMargin * 100).toFixed(1)}%
+                        {pricingResult.profitability.grossProfitMargin < 0.25 && 
+                          <span className="ml-2 text-sm text-red-500">(Low)</span>
+                        }
+                        {pricingResult.profitability.grossProfitMargin > 0.4 && 
+                          <span className="ml-2 text-sm text-green-500">(Good)</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4">
+                    <div className="border rounded-md p-3">
+                      <div className="text-sm text-muted-foreground">Markup Multiplier</div>
+                      <div className="text-xl font-bold">{pricingResult.profitability.markupMultiplier.toFixed(2)}x</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        (Retail price is {pricingResult.profitability.markupMultiplier.toFixed(2)} times wholesale)
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

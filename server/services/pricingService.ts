@@ -116,6 +116,13 @@ export interface PricingResult {
       finishing: number;
     };
   };
+  profitability?: {
+    totalWholesaleCost: number;
+    overheadCost: number;
+    grossProfit: number;
+    grossProfitMargin: number;
+    markupMultiplier: number;
+  };
 }
 
 // Houston-specific markup values
@@ -125,6 +132,11 @@ const MAT_BASE_PRICE = 6.5; // Base price per square inch for matting in Houston
 const BACKING_MARKUP_FACTOR = 1.2; // Slightly increase backing price by 20%
 const HOUSTON_REGIONAL_FACTOR = 1.25; // Houston Heights area regional labor rate factor
 const BASE_LABOR_RATE = 35; // Base hourly labor rate
+
+// Business overhead and profitability settings
+const OVERHEAD_PERCENTAGE = 0.30; // 30% overhead allocation for utilities, rent, etc.
+const TARGET_PROFIT_MARGIN = 0.40; // 40% target profit margin
+const MIN_PROFIT_MARGIN = 0.25; // 25% minimum acceptable profit margin
 
 /**
  * Calculate sliding scale markup for frame pricing
@@ -327,6 +339,33 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
   const materialCost = framePrice + matPrice + glassPrice + backingPrice;
   const subtotal = materialCost + laborCost;
   const totalPrice = subtotal * quantity;
+  
+  // Calculate profitability metrics
+  let profitability;
+  
+  if (includeWholesalePrices && wholesalePrices) {
+    // Calculate total wholesale cost
+    const frameWholesaleCost = frame ? parseFloat(frame.price) * frameLength / 12 : 0;
+    const matWholesaleCost = matColor ? parseFloat(wholesalePrices.mat) : 0;
+    const glassWholesaleCost = glassOption ? 
+      (glassOption.price ? parseFloat(glassOption.price) * finishedWidth * finishedHeight / 144 : 0) : 0;
+    const backingWholesaleCost = parseFloat(wholesalePrices.backing);
+    
+    const totalWholesaleCost = frameWholesaleCost + matWholesaleCost + glassWholesaleCost + backingWholesaleCost;
+    const overheadCost = totalWholesaleCost * OVERHEAD_PERCENTAGE;
+    const totalCost = totalWholesaleCost + overheadCost + laborCost;
+    const grossProfit = subtotal - totalCost;
+    const grossProfitMargin = grossProfit / subtotal;
+    const markupMultiplier = subtotal / totalWholesaleCost;
+    
+    profitability = {
+      totalWholesaleCost,
+      overheadCost,
+      grossProfit,
+      grossProfitMargin,
+      markupMultiplier
+    };
+  }
 
   return {
     framePrice,
@@ -342,6 +381,7 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
       baseRate: BASE_LABOR_RATE,
       regionalFactor: HOUSTON_REGIONAL_FACTOR,
       estimates: laborEstimates
-    }
+    },
+    profitability
   };
 }
