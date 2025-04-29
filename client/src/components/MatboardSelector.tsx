@@ -16,14 +16,37 @@ import { Loader2, Search, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MatboardSelectorProps {
-  selectedMatboard: MatColor | null;
-  onSelectMatboard: (matboard: MatColor) => void;
+  selectedMatboards: {
+    matboard: MatColor;
+    position: number;
+    width: number;
+    offset: number;
+  }[];
+  onSelectMatboard: (matboard: MatColor, position: number) => void;
+  onUpdateMatWidth: (width: number, position: number) => void;
+  onUpdateMatOffset: (offset: number, position: number) => void;
+  activePosition: number;
+  maxMats?: number;
+  useMultipleMats: boolean;
+  onToggleMultipleMats: () => void;
 }
 
-export function MatboardSelector({ selectedMatboard, onSelectMatboard }: MatboardSelectorProps) {
+export function MatboardSelector({ 
+  selectedMatboards, 
+  onSelectMatboard, 
+  onUpdateMatWidth,
+  onUpdateMatOffset,
+  activePosition,
+  maxMats = 3,
+  useMultipleMats,
+  onToggleMultipleMats
+}: MatboardSelectorProps) {
   const { matboards, isLoading, error, categories } = useAllMatboards();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<string>("all");
+  
+  // Get the currently active matboard
+  const activeMatboard = selectedMatboards.find(m => m.position === activePosition)?.matboard || null;
 
   // Filter matboards by search query
   const filteredMatboards = searchQuery 
@@ -98,23 +121,104 @@ export function MatboardSelector({ selectedMatboard, onSelectMatboard }: Matboar
         )}
       </div>
 
+      {/* Multiple Mats Toggle */}
+      <div className="mb-3 pb-3 border-b">
+        <div className="flex items-center justify-between">
+          <Label htmlFor="use-multiple-mats" className="font-medium">Use Multiple Mats</Label>
+          <Switch 
+            id="use-multiple-mats" 
+            checked={useMultipleMats}
+            onCheckedChange={onToggleMultipleMats}
+          />
+        </div>
+        {useMultipleMats && (
+          <p className="text-xs text-muted-foreground mt-1">
+            You can select up to {maxMats} mats for layering. Each mat can have a different width and offset.
+          </p>
+        )}
+      </div>
+      
+      {/* Mat Position Tabs */}
+      {useMultipleMats && (
+        <div className="mb-3">
+          <Tabs 
+            value={activePosition.toString()} 
+            onValueChange={(value) => {
+              // Position tabs are 1-based (1, 2, 3)
+              const position = parseInt(value);
+              const existingMat = selectedMatboards.find(m => m.position === position);
+              if (!existingMat && matboards.length > 0) {
+                // If this position doesn't have a mat yet, select the first available mat
+                onSelectMatboard(matboards[0], position);
+              }
+            }}
+          >
+            <TabsList className="w-full">
+              {Array.from({length: maxMats}, (_, i) => i + 1).map(pos => (
+                <TabsTrigger 
+                  key={pos} 
+                  value={pos.toString()}
+                  disabled={pos > 1 && !selectedMatboards.some(m => m.position === pos - 1)}
+                  className="flex-1"
+                >
+                  {pos === 1 ? 'Top Mat' : pos === 2 ? 'Middle Mat' : 'Bottom Mat'}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
+      )}
+      
       {/* Selected Matboard Display */}
-      {selectedMatboard && (
+      {activeMatboard && (
         <div className="mb-3 p-2 border rounded-md">
           <div className="flex items-center space-x-3">
             <div 
               className="w-12 h-12 rounded-md border" 
               style={{ 
-                backgroundColor: selectedMatboard.color,
+                backgroundColor: activeMatboard.color,
                 boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.1)' 
               }} 
             />
             <div>
-              <p className="font-semibold">{selectedMatboard.name}</p>
+              <p className="font-semibold">{activeMatboard.name}</p>
               <p className="text-sm text-muted-foreground">
-                {selectedMatboard.code} - {selectedMatboard.manufacturer}
+                {activeMatboard.code} - {activeMatboard.manufacturer}
               </p>
             </div>
+          </div>
+          
+          {/* Mat Width and Offset Controls */}
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <div>
+              <Label htmlFor="mat-width" className="text-xs">Mat Width (inches)</Label>
+              <Input 
+                id="mat-width"
+                type="number"
+                min={1}
+                max={8}
+                step={0.25}
+                value={selectedMatboards.find(m => m.position === activePosition)?.width || 2}
+                onChange={(e) => onUpdateMatWidth(parseFloat(e.target.value), activePosition)}
+                className="mt-1"
+              />
+            </div>
+            
+            {useMultipleMats && activePosition > 1 && (
+              <div>
+                <Label htmlFor="mat-offset" className="text-xs">Mat Offset (inches)</Label>
+                <Input 
+                  id="mat-offset"
+                  type="number"
+                  min={0}
+                  max={2}
+                  step={0.125}
+                  value={selectedMatboards.find(m => m.position === activePosition)?.offset || 0}
+                  onChange={(e) => onUpdateMatOffset(parseFloat(e.target.value), activePosition)}
+                  className="mt-1"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -139,10 +243,10 @@ export function MatboardSelector({ selectedMatboard, onSelectMatboard }: Matboar
         <TabsContent value="all" className="mt-0">
           <ScrollArea className="h-[400px]">
             <RadioGroup 
-              value={selectedMatboard?.id} 
+              value={activeMatboard?.id || ""} 
               onValueChange={(value) => {
                 const mat = matboards.find(m => m.id === value);
-                if (mat) onSelectMatboard(mat);
+                if (mat) onSelectMatboard(mat, activePosition);
               }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
             >
@@ -180,10 +284,10 @@ export function MatboardSelector({ selectedMatboard, onSelectMatboard }: Matboar
           <TabsContent key={category} value={category} className="mt-0">
             <ScrollArea className="h-[400px]">
               <RadioGroup 
-                value={selectedMatboard?.id} 
+                value={activeMatboard?.id || ""} 
                 onValueChange={(value) => {
                   const mat = matboards.find(m => m.id === value);
-                  if (mat) onSelectMatboard(mat);
+                  if (mat) onSelectMatboard(mat, activePosition);
                 }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
               >
