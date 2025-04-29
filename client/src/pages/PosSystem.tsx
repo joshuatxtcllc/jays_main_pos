@@ -74,6 +74,7 @@ const PosSystem = () => {
   }[]>([]);
   const [activeMatPosition, setActiveMatPosition] = useState<number>(1);
   const [useMultipleMats, setUseMultipleMats] = useState<boolean>(false);
+  const [primaryMatWidth, setPrimaryMatWidth] = useState<number>(2); // Default mat width for primary mat
   
   // Initialize with an empty array and update when matboards load
   useEffect(() => {
@@ -758,7 +759,7 @@ const PosSystem = () => {
     setArtworkType('print');
     setAspectRatio(0.8);
     
-    // Reset frames and mats
+    // Reset frames and mats - remove previous declarations that referenced deprecated variables
     setSelectedFrames([]);
     setActiveFramePosition(1);
     setSelectedMatboards([]);
@@ -775,9 +776,15 @@ const PosSystem = () => {
     setSelectedGlassOption(glassOptionCatalog[0]);
     setSelectedServices([]);
     
+    // Reset mat width indicator variables
+    setPrimaryMatWidth(2);  // Default mat width
+    
     // Reset multi-options flags
     setUseMultipleFrames(false);
     setUseMultipleMats(false);
+    
+    // Reset frame search
+    setFrameSearch('');
     
     // Turn off webcam if it's on
     if (showWebcam) {

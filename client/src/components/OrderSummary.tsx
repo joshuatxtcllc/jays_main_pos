@@ -25,6 +25,7 @@ interface OrderSummaryProps {
   glassOption: GlassOption | null;
   artworkWidth: number;
   artworkHeight: number;
+  primaryMatWidth: number; // Added property for primary mat width
   specialServices: SpecialService[];
   onCreateOrder: () => void;
   onSaveQuote: () => void;
@@ -34,6 +35,8 @@ interface OrderSummaryProps {
   showCheckoutButton?: boolean;
   useMultipleMats?: boolean;
   useMultipleFrames?: boolean;
+  addToWholesaleOrder?: boolean;
+  setAddToWholesaleOrder?: (value: boolean) => void;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -42,6 +45,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   glassOption,
   artworkWidth,
   artworkHeight,
+  primaryMatWidth,
   specialServices,
   onCreateOrder,
   onSaveQuote,
@@ -50,13 +54,16 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   orderGroupId,
   showCheckoutButton = false,
   useMultipleMats = false,
-  useMultipleFrames = false
+  useMultipleFrames = false,
+  addToWholesaleOrder = false,
+  setAddToWholesaleOrder
 }) => {
-  // State for wholesale order checkbox
-  const [addToWholesaleOrder, setAddToWholesaleOrder] = useState(false);
+  // Local state for wholesale order checkbox if not provided through props
+  const [localAddToWholesaleOrder, setLocalAddToWholesaleOrder] = useState(false);
   
-  // Get the primary mat width for calculations
-  const primaryMatWidth = mats.length > 0 ? mats[0].width : 2;
+  // Use either provided props or local state for wholesale order flag
+  const effectiveAddToWholesaleOrder = addToWholesaleOrder !== undefined ? addToWholesaleOrder : localAddToWholesaleOrder;
+  const effectiveSetAddToWholesaleOrder = setAddToWholesaleOrder || setLocalAddToWholesaleOrder;
   
   // Calculate prices for each frame
   const framePrices = frames.map(frameItem => 
@@ -185,8 +192,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         <div className="flex items-center space-x-2 mt-4">
           <Checkbox 
             id="add-to-wholesale" 
-            checked={addToWholesaleOrder}
-            onCheckedChange={(checked) => setAddToWholesaleOrder(checked as boolean)}
+            checked={effectiveAddToWholesaleOrder}
+            onCheckedChange={(checked) => effectiveSetAddToWholesaleOrder(checked as boolean)}
           />
           <label 
             htmlFor="add-to-wholesale" 
@@ -206,13 +213,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               onClick={async () => {
                 console.log('Create Order button clicked in OrderSummary');
                 console.log('Button disabled state:', (frames.length === 0 || mats.length === 0 || !glassOption));
-                console.log('Add to wholesale order:', addToWholesaleOrder);
+                console.log('Add to wholesale order:', effectiveAddToWholesaleOrder);
                 
                 // First create the actual customer order
                 onCreateOrder();
                 
                 // Only create wholesale order if requested - this will now handle its own validation
-                if (addToWholesaleOrder) {
+                if (effectiveAddToWholesaleOrder) {
                   // Small delay to make sure the order creation completes first
                   setTimeout(() => {
                     onCreateWholesaleOrder();
@@ -295,12 +302,18 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               </li>
             ))}
           </ul>
-          <button 
-            className="mt-2 w-full py-1.5 text-xs bg-secondary text-white rounded font-medium hover:bg-secondary/90 transition-colors"
-            onClick={onCreateWholesaleOrder}
-          >
-            Create Wholesale Order
-          </button>
+          <div className="flex items-center mt-2">
+            <input
+              type="checkbox" 
+              id="addToWholesaleOrder"
+              className="mr-2 h-4 w-4 text-primary border-light-border dark:border-dark-border rounded bg-light-bg dark:bg-dark-bg"
+              checked={effectiveAddToWholesaleOrder}
+              onChange={(e) => effectiveSetAddToWholesaleOrder(e.target.checked)}
+            />
+            <label htmlFor="addToWholesaleOrder" className="text-xs">
+              Add to Wholesale Order
+            </label>
+          </div>
         </div>
       )}
     </div>
