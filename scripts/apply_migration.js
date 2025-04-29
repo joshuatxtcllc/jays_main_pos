@@ -5,10 +5,14 @@
  * Usage: node scripts/apply_migration.js migrations/002_add_multiple_mat_frame_support.sql
  */
 
-const fs = require('fs');
-const path = require('path');
-const { Pool } = require('@neondatabase/serverless');
-const { config } = require('dotenv');
+import fs from 'fs';
+import path from 'path';
+import { Pool } from '@neondatabase/serverless';
+import { config } from 'dotenv';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 config();

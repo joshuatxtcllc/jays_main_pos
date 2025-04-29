@@ -5,10 +5,15 @@
  * with appropriate categorization and metadata.
  */
 
-const fs = require('fs');
-const path = require('path');
-const { Pool } = require('@neondatabase/serverless');
-const { config } = require('dotenv');
+import fs from 'fs';
+import path from 'path';
+import { Pool } from '@neondatabase/serverless';
+import { config } from 'dotenv';
+import { fileURLToPath } from 'url';
+import { spawnSync } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 config();
@@ -251,7 +256,6 @@ async function main() {
       console.log(`Applying migration: ${migrationPath}`);
       
       // Execute migration script
-      const { spawnSync } = require('child_process');
       const result = spawnSync('node', ['scripts/apply_migration.js', migrationPath], { stdio: 'inherit' });
       
       if (result.status !== 0) {
