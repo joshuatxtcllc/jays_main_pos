@@ -224,10 +224,10 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
       
       {/* Mobile menu */}
       <div className={cn(
-        "md:hidden overflow-hidden transition-all duration-300",
-        isMobileMenuOpen ? "max-h-60" : "max-h-0"
+        "md:hidden transition-all duration-300",
+        isMobileMenuOpen ? "max-h-[70vh]" : "max-h-0"
       )}>
-        <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg">
+        <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg overflow-y-auto max-h-[70vh]">
           <Link href="/">
             <span className={cn(
               "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
