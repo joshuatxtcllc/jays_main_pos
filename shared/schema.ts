@@ -262,7 +262,8 @@ export const notificationTypes = [
   "completion_reminder", 
   "order_complete", 
   "payment_reminder",
-  "delay_notification"
+  "delay_notification",
+  "payment_link"
 ] as const;
 
 export type NotificationType = typeof notificationTypes[number];
@@ -289,7 +290,8 @@ export const customerNotifications = pgTable("customer_notifications", {
   successful: boolean("successful").notNull(),
   responseData: jsonb("response_data"),
   previousStatus: text("previous_status"),
-  newStatus: text("new_status")
+  newStatus: text("new_status"),
+  paymentLinkId: integer("payment_link_id")
 });
 
 export const insertCustomerNotificationSchema = createInsertSchema(customerNotifications).omit({ id: true, sentAt: true });
@@ -596,6 +598,32 @@ export const insertInventoryCountItemSchema = createInsertSchema(inventoryCountI
 });
 export type InsertInventoryCountItem = z.infer<typeof insertInventoryCountItemSchema>;
 export type InventoryCountItem = typeof inventoryCountItems.$inferSelect;
+
+// Payment links for custom amounts
+export const paymentLinks = pgTable("payment_links", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
+  description: text("description"),
+  customerId: integer("customer_id").references(() => customers.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  used: boolean("used").default(false),
+  paymentIntentId: text("payment_intent_id"),
+  paymentStatus: text("payment_status").default('pending')
+});
+
+export const insertPaymentLinkSchema = createInsertSchema(paymentLinks).omit({ 
+  id: true, 
+  createdAt: true,
+  usedAt: true, 
+  used: true, 
+  paymentIntentId: true, 
+  paymentStatus: true 
+});
+export type InsertPaymentLink = z.infer<typeof insertPaymentLinkSchema>;
+export type PaymentLink = typeof paymentLinks.$inferSelect;
 
 // QR Code Tracking System
 export const qrCodeTypes = [
