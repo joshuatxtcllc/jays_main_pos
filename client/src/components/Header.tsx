@@ -105,6 +105,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Inventory
             </span>
           </Link>
+          <Link href="/inventory-tracking">
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/inventory-tracking" && "text-primary"
+            )}>
+              QR Tracking
+            </span>
+          </Link>
           <Link href="/hub">
             <span className={cn(
               "font-medium hover:text-primary transition-colors cursor-pointer",
@@ -274,6 +282,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               location === "/inventory" && "text-primary"
             )}>
               Inventory
+            </span>
+          </Link>
+          <Link href="/inventory-tracking">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/inventory-tracking" && "text-primary"
+            )}>
+              QR Tracking
             </span>
           </Link>
           <Link href="/hub">

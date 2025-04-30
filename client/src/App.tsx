@@ -95,6 +95,7 @@ function App() {
                   <Route path="/materials" component={MaterialOrdersPage} />
                   <Route path="/materials-pick-list" component={MaterialsPickListPage} />
                   <Route path="/inventory" component={InventoryPage} />
+                  <Route path="/inventory-tracking" component={InventoryTrackingPage} />
                   <Route path="/hub" component={HubIntegrationPage} />
                   <Route path="/pricing" component={PricingPage} />
                   <Route path="/vendor-settings" component={VendorSettings} />
