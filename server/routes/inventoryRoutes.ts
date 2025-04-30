@@ -1,49 +1,29 @@
-import express from 'express';
-import multer from 'multer';
-import * as inventoryController from '../controllers/inventoryController';
+import { Router } from 'express';
+import {
+  getAllInventoryLocations,
+  getInventoryLocationById,
+  createInventoryLocation,
+  updateInventoryLocation,
+  deleteInventoryLocation,
+  getAllInventoryItems,
+  getLowStockItems,
+  getAllSuppliers
+} from '../controllers/inventoryController';
 
-const router = express.Router();
-const upload = multer({ dest: 'uploads/' });
+const router = Router();
 
-// Inventory Items routes
-router.get('/items', inventoryController.getAllInventoryItems);
-router.get('/items/low-stock', inventoryController.getLowStockItems);
-router.get('/items/:id', inventoryController.getInventoryItemById);
-router.post('/items', inventoryController.createInventoryItem);
-router.patch('/items/:id', inventoryController.updateInventoryItem);
-router.delete('/items/:id', inventoryController.deleteInventoryItem);
+// Inventory location routes
+router.get('/inventory/locations', getAllInventoryLocations);
+router.get('/inventory/locations/:id', getInventoryLocationById);
+router.post('/inventory/locations', createInventoryLocation);
+router.put('/inventory/locations/:id', updateInventoryLocation);
+router.delete('/inventory/locations/:id', deleteInventoryLocation);
 
-// Suppliers routes
-router.get('/suppliers', inventoryController.getAllSuppliers);
-router.get('/suppliers/:id', inventoryController.getSupplierById);
-router.post('/suppliers', inventoryController.createSupplier);
-router.patch('/suppliers/:id', inventoryController.updateSupplier);
-router.delete('/suppliers/:id', inventoryController.deleteSupplier);
+// Inventory item routes
+router.get('/inventory/items', getAllInventoryItems);
+router.get('/inventory/items/low-stock', getLowStockItems);
 
-// Locations routes
-router.get('/locations', inventoryController.getAllLocations);
-router.get('/locations/:id', inventoryController.getLocationById);
-router.post('/locations', inventoryController.createLocation);
-
-// Purchase Orders routes
-router.get('/purchase-orders', inventoryController.getAllPurchaseOrders);
-router.get('/purchase-orders/:id', inventoryController.getPurchaseOrderById);
-router.post('/purchase-orders', inventoryController.createPurchaseOrder);
-
-// Inventory Transactions route
-router.post('/transactions', inventoryController.createInventoryTransaction);
-
-// Barcode lookup
-router.get('/barcode/:barcode', inventoryController.lookupItemByBarcode);
-
-// Inventory valuation
-router.get('/valuation', inventoryController.getInventoryValuation);
-
-// Recommended purchase orders
-router.get('/recommended-orders', inventoryController.generateRecommendedPurchaseOrders);
-
-// CSV Import/Export
-router.post('/import', upload.single('csvFile'), inventoryController.importInventoryFromCSV);
-router.get('/export', inventoryController.exportInventoryToCSV);
+// Supplier routes
+router.get('/inventory/suppliers', getAllSuppliers);
 
 export default router;
