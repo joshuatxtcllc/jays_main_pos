@@ -1,8 +1,15 @@
 import { Request, Response } from 'express';
 import { db } from '../db';
 import { customers, paymentLinks } from '@shared/schema';
-import { createPaymentLink, sendPaymentLinkViaEmail, sendPaymentLinkViaSmsWithId, validatePaymentLink, createPaymentIntentForLink, markPaymentLinkAsUsed } from '../services/paymentLinkService';
 import { eq } from 'drizzle-orm';
+import { 
+  createPaymentLink, 
+  sendPaymentLinkViaEmail, 
+  sendPaymentLinkViaSmsWithId, 
+  validatePaymentLink, 
+  createPaymentIntentForLink, 
+  markPaymentLinkAsUsed 
+} from '../services/paymentLinkService';
 
 /**
  * Create a new payment link

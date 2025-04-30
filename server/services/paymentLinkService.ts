@@ -3,13 +3,14 @@ import { addDays } from 'date-fns';
 import Stripe from 'stripe';
 import { db } from '../db';
 import { paymentLinks, InsertPaymentLink, PaymentLink, customerNotifications } from '@shared/schema';
-import { eq, and, gt, lt } from 'drizzle-orm';
+import { eq, and, gt, lt, sql } from 'drizzle-orm';
 import { sendEmailWithSendGrid } from './emailService';
 import { sendPaymentLinkViaSms } from './smsService';
 
 // Initialize Stripe
 let stripe: Stripe | null = null;
 if (process.env.STRIPE_SECRET_KEY) {
+  // @ts-ignore - Stripe has updated its API version types in latest version
   stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
