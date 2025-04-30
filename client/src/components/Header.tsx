@@ -57,6 +57,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               Orders
             </span>
           </Link>
+          <Link href="/payment-links">
+            <span className={cn(
+              "font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/payment-links" && "text-primary"
+            )}>
+              Payment Links
+            </span>
+          </Link>
           <Link href="/dashboard">
             <span className={cn(
               "font-medium hover:text-primary transition-colors cursor-pointer",
@@ -234,6 +242,14 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               location === "/orders" && "text-primary"
             )}>
               Orders
+            </span>
+          </Link>
+          <Link href="/payment-links">
+            <span className={cn(
+              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
+              location === "/payment-links" && "text-primary"
+            )}>
+              Payment Links
             </span>
           </Link>
           <Link href="/dashboard">

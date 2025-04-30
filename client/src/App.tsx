@@ -21,6 +21,8 @@ import InventoryTrackingPage from "./pages/InventoryTrackingPage";
 import PricingPage from "./pages/PricingPage";
 import VendorSettings from "./pages/VendorSettings";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
+import PaymentLinks from "./pages/PaymentLinks";
+import Payment from "./pages/Payment";
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -106,6 +108,8 @@ function App() {
                   <Route path="/orders/:orderId" component={OrderDetailsPage} />
                   <Route path="/customers/:id" component={CustomerManagement} />
                   <Route path="/customers" component={CustomerManagement} />
+                  <Route path="/payment-links" component={PaymentLinks} />
+                  <Route path="/payment/:token" component={Payment} />
                   <Route component={NotFound} />
                 </Switch>
               </main>
