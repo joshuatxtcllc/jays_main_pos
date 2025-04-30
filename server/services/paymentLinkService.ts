@@ -3,15 +3,14 @@ import { addDays } from 'date-fns';
 import Stripe from 'stripe';
 import { db } from '../db';
 import { paymentLinks, InsertPaymentLink, PaymentLink, customerNotifications } from '@shared/schema';
+import { eq, and, gt, lt } from 'drizzle-orm';
 import { sendEmailWithSendGrid } from './emailService';
 import { sendPaymentLinkViaSms } from './smsService';
 
 // Initialize Stripe
 let stripe: Stripe | null = null;
 if (process.env.STRIPE_SECRET_KEY) {
-  stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: '2023-10-16',
-  });
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 }
 
 /**
@@ -72,7 +71,7 @@ export async function sendPaymentLinkViaEmail(
   const [paymentLink] = await db
     .select()
     .from(paymentLinks)
-    .where((link) => link.id === paymentLinkId);
+    .where(eq(paymentLinks.id, paymentLinkId));
   
   if (!paymentLink) {
     throw new Error(`Payment link with ID ${paymentLinkId} not found`);
@@ -165,7 +164,7 @@ export async function sendPaymentLinkViaSmsWithId(
   const [paymentLink] = await db
     .select()
     .from(paymentLinks)
-    .where((link) => link.id === paymentLinkId);
+    .where(eq(paymentLinks.id, paymentLinkId));
   
   if (!paymentLink) {
     throw new Error(`Payment link with ID ${paymentLinkId} not found`);
@@ -222,13 +221,17 @@ export async function sendPaymentLinkViaSmsWithId(
  * @returns The payment link if valid, null otherwise
  */
 export async function validatePaymentLink(token: string): Promise<PaymentLink | null> {
+  const now = new Date();
+  
   const [paymentLink] = await db
     .select()
     .from(paymentLinks)
-    .where((link) => 
-      link.token === token && 
-      link.used === false && 
-      link.expiresAt > new Date()
+    .where(
+      and(
+        eq(paymentLinks.token, token),
+        eq(paymentLinks.used, false),
+        gt(paymentLinks.expiresAt, now)
+      )
     );
   
   return paymentLink || null;
@@ -249,7 +252,7 @@ export async function createPaymentIntentForLink(paymentLinkId: number): Promise
   const [paymentLink] = await db
     .select()
     .from(paymentLinks)
-    .where((link) => link.id === paymentLinkId);
+    .where(eq(paymentLinks.id, paymentLinkId));
   
   if (!paymentLink) {
     throw new Error(`Payment link with ID ${paymentLinkId} not found`);
@@ -276,7 +279,7 @@ export async function createPaymentIntentForLink(paymentLinkId: number): Promise
       .set({
         paymentIntentId: paymentIntent.id
       })
-      .where((link) => link.id === paymentLinkId);
+      .where(eq(paymentLinks.id, paymentLinkId));
     
     return paymentIntent.client_secret;
   } catch (error) {
@@ -302,7 +305,7 @@ export async function markPaymentLinkAsUsed(
       usedAt: new Date(),
       paymentStatus: status
     })
-    .where((link) => link.id === paymentLinkId)
+    .where(eq(paymentLinks.id, paymentLinkId))
     .returning();
   
   return paymentLink || null;

@@ -8,6 +8,14 @@ import { getAllLarsonMatboards, getCrescentMatboards, syncMatboardsToMatColors }
 import { importCrescentSelect, getCrescentSelect } from "./controllers/crescentSelectController";
 import { getAllFrames, getFrameById, getFramesByManufacturer } from "./controllers/frameController";
 import { 
+  createNewPaymentLink, 
+  getAllPaymentLinks, 
+  getPaymentLinkById, 
+  sendPaymentLinkNotification, 
+  validatePaymentLinkByToken, 
+  completePaymentForLink 
+} from './controllers/paymentLinkController';
+import { 
   calculatePrice
 } from './controllers/pricingController';
 import { 
@@ -1536,6 +1544,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/materials/suppliers', getMaterialSuppliers);
   app.patch('/api/materials/:id', updateMaterial);
   app.post('/api/purchase-orders', createPurchaseOrder);
+
+  // Payment Link Routes
+  app.post('/api/payment-links', createNewPaymentLink);
+  app.get('/api/payment-links', getAllPaymentLinks);
+  app.get('/api/payment-links/:id', getPaymentLinkById);
+  app.post('/api/payment-links/:id/notify', sendPaymentLinkNotification);
+  app.get('/api/payment/:token', validatePaymentLinkByToken);
+  app.post('/api/payment/:token/complete', completePaymentForLink);
 
   const httpServer = createServer(app);
   return httpServer;
