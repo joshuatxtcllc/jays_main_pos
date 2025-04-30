@@ -339,10 +339,11 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         }
       }
       
-      // Draw mats from bottom to top (lowest mat to highest mat)
+      // Draw mats from top to bottom (outermost to innermost)
+      // The bottom mat (position=bottom) should be closest to the artwork (innermost)
       if (useMultipleMats) {
-        // Draw all mats in order
-        for (let i = 0; i < sortedMats.length; i++) {
+        // Draw all mats in reverse order (outermost to innermost)
+        for (let i = sortedMats.length - 1; i >= 0; i--) {
           const mat = sortedMats[i];
           const matWidthPx = mat.width * scaleFactor;
           
@@ -365,9 +366,9 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
           currentHeight -= (matWidthPx + offsetPx) * 2;
         }
       } else {
-        // Draw only the topmost mat
+        // Draw only the innermost mat (bottom position, closest to artwork)
         if (sortedMats.length > 0) {
-          const mat = sortedMats[0];
+          const mat = sortedMats[sortedMats.length - 1];
           const matWidthPx = mat.width * scaleFactor;
           
           // Draw mat
