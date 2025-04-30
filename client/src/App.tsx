@@ -17,6 +17,7 @@ import MaterialsPickListPage from "./pages/MaterialsPickListPage";
 import HubIntegrationPage from "./pages/HubIntegrationPage";
 import MatOptionPage from "./pages/MatOptionPage";
 import InventoryPage from "./pages/InventoryPage";
+import InventoryTrackingPage from "./pages/InventoryTrackingPage";
 import PricingPage from "./pages/PricingPage";
 import VendorSettings from "./pages/VendorSettings";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
