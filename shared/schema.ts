@@ -596,3 +596,75 @@ export const insertInventoryCountItemSchema = createInsertSchema(inventoryCountI
 });
 export type InsertInventoryCountItem = z.infer<typeof insertInventoryCountItemSchema>;
 export type InventoryCountItem = typeof inventoryCountItems.$inferSelect;
+
+// QR Code Tracking System
+export const qrCodeTypes = [
+  "inventory_location",
+  "inventory_item",
+  "material_order", 
+  "customer_order",
+  "production_status"
+] as const;
+
+export type QrCodeType = typeof qrCodeTypes[number];
+
+export const qrCodes = pgTable("qr_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(), // Unique identifier for the QR code
+  type: text("type").$type<QrCodeType>().notNull(),
+  entityId: text("entity_id").notNull(), // ID of the related entity (inventoryLocationId, itemId, orderId, etc.)
+  title: text("title").notNull(), // Human-readable title for the QR code
+  description: text("description"),
+  metadata: jsonb("metadata"), // Additional data specific to the QR code type
+  createdAt: timestamp("created_at").defaultNow(),
+  lastScanned: timestamp("last_scanned"),
+  scanCount: integer("scan_count").default(0),
+  active: boolean("active").default(true)
+});
+
+export const insertQrCodeSchema = createInsertSchema(qrCodes).omit({ 
+  id: true, 
+  createdAt: true,
+  lastScanned: true,
+  scanCount: true
+});
+export type InsertQrCode = z.infer<typeof insertQrCodeSchema>;
+export type QrCode = typeof qrCodes.$inferSelect;
+
+// QR Code Scan History
+export const qrCodeScans = pgTable("qr_code_scans", {
+  id: serial("id").primaryKey(),
+  qrCodeId: integer("qr_code_id").references(() => qrCodes.id).notNull(),
+  userId: integer("user_id").references(() => users.id), // User who scanned the code (if authenticated)
+  scannedAt: timestamp("scanned_at").defaultNow(),
+  location: text("location"), // Optional location data
+  action: text("action"), // Action performed during this scan
+  metadata: jsonb("metadata") // Additional scan-specific data
+});
+
+export const insertQrCodeScanSchema = createInsertSchema(qrCodeScans).omit({ 
+  id: true, 
+  scannedAt: true 
+});
+export type InsertQrCodeScan = z.infer<typeof insertQrCodeScanSchema>;
+export type QrCodeScan = typeof qrCodeScans.$inferSelect;
+
+// QR Code Material Location Mapping
+export const materialLocations = pgTable("material_locations", {
+  id: serial("id").primaryKey(),
+  materialType: text("material_type").$type<MaterialType>().notNull(),
+  materialId: text("material_id").notNull(), // frameId, matColorId, etc.
+  locationId: integer("location_id").references(() => inventoryLocations.id).notNull(),
+  qrCodeId: integer("qr_code_id").references(() => qrCodes.id),
+  quantity: numeric("quantity").notNull().default("1"),
+  notes: text("notes"),
+  lastUpdated: timestamp("last_updated").defaultNow(),
+  active: boolean("active").default(true)
+});
+
+export const insertMaterialLocationSchema = createInsertSchema(materialLocations).omit({ 
+  id: true, 
+  lastUpdated: true 
+});
+export type InsertMaterialLocation = z.infer<typeof insertMaterialLocationSchema>;
+export type MaterialLocation = typeof materialLocations.$inferSelect;
