@@ -51,20 +51,37 @@ const PaymentForm = ({ token, amount, description }: { token: string; amount: st
       }
       
       if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Payment succeeded, mark the payment link as used
-        await apiRequest('POST', `/api/payment/${token}/complete`, {
-          paymentIntentId: paymentIntent.id,
-          status: paymentIntent.status,
-        });
-        
-        // Show success toast and redirect
-        toast({
-          title: 'Payment Successful',
-          description: 'Your payment has been processed successfully.',
-        });
-        
-        // Redirect to payment status page
-        window.location.href = `/payment-status?status=success&token=${token}`;
+        try {
+          // Payment succeeded, mark the payment link as used
+          console.log('Payment succeeded, marking payment link as used');
+          const completeResponse = await apiRequest('POST', `/api/payment/${token}/complete`, {
+            paymentIntentId: paymentIntent.id,
+            status: paymentIntent.status,
+          });
+          
+          if (!completeResponse.ok) {
+            console.error('Error completing payment:', await completeResponse.text());
+          } else {
+            console.log('Payment completion successful');
+          }
+          
+          // Show success toast and redirect
+          toast({
+            title: 'Payment Successful',
+            description: 'Your payment has been processed successfully.',
+          });
+          
+          // Redirect to payment status page
+          window.location.href = `/payment-status?status=success&token=${token}`;
+        } catch (err) {
+          console.error('Error completing payment:', err);
+          toast({
+            title: 'Payment Status Update Failed',
+            description: 'Your payment processed, but we had trouble updating our records.',
+            variant: 'destructive',
+          });
+          window.location.href = `/payment-status?status=success&token=${token}`;
+        }
       } else {
         window.location.href = `/payment-status?status=processing&token=${token}`;
       }
@@ -118,8 +135,18 @@ const Payment = () => {
   useEffect(() => {
     const validatePaymentLink = async () => {
       try {
+        console.log(`Attempting to validate token: ${token}`);
         const response = await apiRequest('GET', `/api/payment/${token}/validate`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Validation response not OK:', errorText);
+          setError('This payment link is invalid or has expired.');
+          setIsLoading(false);
+          return;
+        }
+        
         const data = await response.json();
+        console.log('Validation response:', data);
         
         if (!data.valid) {
           setError(data.message || 'This payment link is invalid or has expired.');
@@ -137,6 +164,7 @@ const Payment = () => {
         setPaymentDetails(data.paymentLink);
         setIsLoading(false);
       } catch (err: any) {
+        console.error('Error validating payment link:', err);
         setError('Failed to validate payment link. Please try again later.');
         setIsLoading(false);
       }
