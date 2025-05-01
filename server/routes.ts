@@ -1546,11 +1546,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/purchase-orders', createPurchaseOrder);
 
   // Payment Link Routes
-  app.post('/api/payment-links', createNewPaymentLink);
   app.get('/api/payment-links', getAllPaymentLinks);
+  app.post('/api/payment-links', createNewPaymentLink);
   app.get('/api/payment-links/:id', getPaymentLinkById);
   app.post('/api/payment-links/:id/notify', sendPaymentLinkNotification);
-  app.get('/api/payment/:token', validatePaymentLinkByToken);
+  app.get('/api/payment/:token/validate', validatePaymentLinkByToken);
   app.post('/api/payment/:token/complete', completePaymentForLink);
 
   const httpServer = createServer(app);
