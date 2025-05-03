@@ -21,16 +21,16 @@ const PaymentForm = ({ token, amount, description }: { token: string; amount: st
   const elements = useElements();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!stripe || !elements) {
       return;
     }
-    
+
     setIsProcessing(true);
-    
+
     try {
       const { paymentIntent, error } = await stripe.confirmPayment({
         elements,
@@ -39,7 +39,7 @@ const PaymentForm = ({ token, amount, description }: { token: string; amount: st
         },
         redirect: 'if_required',
       });
-      
+
       if (error) {
         toast({
           title: 'Payment Failed',
@@ -49,7 +49,7 @@ const PaymentForm = ({ token, amount, description }: { token: string; amount: st
         setIsProcessing(false);
         return;
       }
-      
+
       if (paymentIntent && paymentIntent.status === 'succeeded') {
         try {
           // Payment succeeded, mark the payment link as used
@@ -58,19 +58,19 @@ const PaymentForm = ({ token, amount, description }: { token: string; amount: st
             paymentIntentId: paymentIntent.id,
             status: paymentIntent.status,
           });
-          
+
           if (!completeResponse.ok) {
             console.error('Error completing payment:', await completeResponse.text());
           } else {
             console.log('Payment completion successful');
           }
-          
+
           // Show success toast and redirect
           toast({
             title: 'Payment Successful',
             description: 'Your payment has been processed successfully.',
           });
-          
+
           // Redirect to payment status page
           window.location.href = `/payment-status?status=success&token=${token}`;
         } catch (err) {
@@ -94,7 +94,7 @@ const PaymentForm = ({ token, amount, description }: { token: string; amount: st
       setIsProcessing(false);
     }
   };
-  
+
   return (
     <form onSubmit={handleSubmit} className="mt-4">
       <PaymentElement className="mb-6" />
@@ -121,7 +121,7 @@ const Payment = () => {
   const [, params] = useRoute('/payment/:token');
   const { toast } = useToast();
   const token = params?.token || '';
-  
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -130,7 +130,7 @@ const Payment = () => {
     description: string | null;
     expiresAt: string;
   } | null>(null);
-  
+
   // Validate the payment link and get the payment intent client secret
   useEffect(() => {
     const validatePaymentLink = async () => {
@@ -144,22 +144,22 @@ const Payment = () => {
           setIsLoading(false);
           return;
         }
-        
+
         const data = await response.json();
         console.log('Validation response:', data);
-        
+
         if (!data.valid) {
           setError(data.message || 'This payment link is invalid or has expired.');
           setIsLoading(false);
           return;
         }
-        
+
         if (!data.canProcess) {
           setError(data.message || 'Unable to process this payment at the moment.');
           setIsLoading(false);
           return;
         }
-        
+
         setClientSecret(data.clientSecret);
         setPaymentDetails(data.paymentLink);
         setIsLoading(false);
@@ -169,10 +169,10 @@ const Payment = () => {
         setIsLoading(false);
       }
     };
-    
+
     validatePaymentLink();
   }, [token, toast]);
-  
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -180,7 +180,7 @@ const Payment = () => {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <div className="container mx-auto py-12 max-w-md">
@@ -207,7 +207,7 @@ const Payment = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto py-12 max-w-md">
       <Card>
@@ -226,21 +226,21 @@ const Payment = () => {
                   {formatCurrency(parseFloat(paymentDetails.amount))}
                 </span>
               </div>
-              
+
               {paymentDetails.description && (
                 <div>
                   <span className="font-medium">Description:</span>
                   <p className="mt-1">{paymentDetails.description}</p>
                 </div>
               )}
-              
+
               <div>
                 <span className="font-medium">Expires:</span>
                 <p className="mt-1">{new Date(paymentDetails.expiresAt).toLocaleDateString()}</p>
               </div>
             </div>
           )}
-          
+
           {clientSecret && paymentDetails && (
             <Elements
               stripe={stripePromise}
