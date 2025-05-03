@@ -1,0 +1,304 @@
+# Frame Shop Pricing Data
+
+## Table of Contents
+- [Wood Mouldings](#wood-mouldings)
+- [Metal Mouldings](#metal-mouldings)
+- [Matboards](#matboards)
+  - [Artique Conservation 32x40](#artique-conservation-32x40)
+  - [Artique Rag 32x40](#artique-rag-32x40)
+  - [Artique Fabric & Specialty 32x40](#artique-fabric--specialty-32x40)
+  - [Artique 8 Ply 32x40](#artique-8-ply-32x40)
+  - [Artique Production 32x40](#artique-production-32x40)
+  - [Artique Conservation 40x60](#artique-conservation-40x60)
+  - [Artique Rag 40x60](#artique-rag-40x60)
+  - [Artique Fabric & Specialty 40x60](#artique-fabric--specialty-40x60)
+  - [Artique 8 Ply 40x60](#artique-8-ply-40x60)
+  - [Artique Oversized](#artique-oversized)
+- [Glass](#glass)
+  - [Conservation Glass](#conservation-glass)
+  - [Non-Conservation Glass](#non-conservation-glass)
+- [Acrylic](#acrylic)
+  - [Conservation Acrylic](#conservation-acrylic)
+  - [Non-Conservation Acrylic](#non-conservation-acrylic)
+- [Foamboard](#foamboard)
+  - [Regular Foamboard](#regular-foamboard)
+  - [Acid-Free Foamboard](#acid-free-foamboard)
+  - [Archival Foamboard](#archival-foamboard)
+  - [Heat-Activated Foamboard](#heat-activated-foamboard)
+- [Equipment](#equipment)
+- [Supplies](#supplies)
+  - [Joining Supplies](#joining-supplies)
+  - [Mounting Supplies](#mounting-supplies)
+  - [Glues & Tapes](#glues--tapes)
+  - [Picture Wire](#picture-wire)
+  - [Hangers & Hardware](#hangers--hardware)
+  - [Other Supplies](#other-supplies)
+  - [Conservation Supplies](#conservation-supplies)
+  - [Cutting & Blades](#cutting--blades)
+  - [Fastening/Attaching](#fasteningattaching)
+  - [Packaging](#packaging)
+  - [Touch-Up](#touch-up)
+  - [Turnbuttons, Offsets, & Bumpers](#turnbuttons-offsets--bumpers)
+
+## Wood Mouldings
+
+| Item # | Width | Box Qty | Collection Name | $9,999 & Below | Box | Length | Chop | Join |
+|--------|-------|---------|----------------|----------------|-----|--------|------|------|
+| 10-036M | 5/8" | 360 | Maple & Walnut - Garrett | 6.62 | 10.05 | 13.52 | 14.52 |
+| 10-100M | 5/8" | 375 | Maple & Walnut - Garrett | 6.34 | 9.71 | 12.75 | 13.75 |
+| 10-507M | 5/8" | 306 | Museum Stems - Garrett | 6.52 | 9.91 | 13.00 | 14.00 |
+| 100172 | 1/4" | 1600 | Olmsted | 2.75 | 4.64 | 7.28 | 8.28 |
+| 100750 | 1/4" | 1200 | Sofia | 2.63 | 4.04 | 6.73 | 7.73 |
+| 100751 | 1/4" | 1587 | Sofia | 2.63 | 4.04 | 6.73 | 7.73 |
+| 100752 | 1/4" | 1000 | Sofia | 2.63 | 4.04 | 6.73 | 7.73 |
+| 102CG | 1/2" | 432 | Marquis | 1.74 | 3.70 | 6.43 | 7.43 |
+| 102CS | 1/2" | 432 | Marquis | 1.74 | 3.70 | 6.43 | 7.43 |
+| 103180 | 9/16" | 900 | Hudson | 1.46 | 3.11 | 5.56 | 6.56 |
+| 103190 | 9/16" | 900 | Hudson | 1.40 | 2.97 | 5.30 | 6.30 |
+| 103235 | 5/16" | 1200 | Academie | 1.44 | 3.17 | 5.64 | 6.64 |
+| 103237 | 5/16" | 1296 | Academie | 1.43 | 3.14 | 5.59 | 6.59 |
+| 105794 | 5/16" | 785 | Lucerne | 3.21 | 5.02 | 8.01 | 9.01 |
+| 105CB | 1/2" | 270 | Vienna | 2.21 | 3.31 | 5.71 | 6.71 |
+| 106180 | 1/2" | 900 | Hudson | 1.39 | 2.99 | 5.31 | 6.31 |
+| 106190 | 1/2" | 900 | Hudson | 1.32 | 2.83 | 5.09 | 6.09 |
+
+*Note: This is just the beginning of the wood mouldings list, which continues for many more items*
+
+## Metal Mouldings
+
+| Item # | $9,999 & Below | Box | Length | Chop |
+|--------|----------------|-----|--------|------|
+| CM1002 | N/A | 3.23 | 4.98 |
+| CM1004 | N/A | 3.23 | 4.98 |
+| CM1013 | N/A | 3.87 | 6.10 |
+| CM1014 | N/A | 3.87 | 6.10 |
+| CM150001 | N/A | 3.34 | 5.10 |
+| CM150002 | N/A | 3.34 | 5.10 |
+| CM150003 | N/A | 3.34 | 5.10 |
+| CM150004 | N/A | 3.34 | 5.10 |
+| CM150005 | N/A | 3.85 | 5.99 |
+| CM150006 | N/A | 3.80 | 5.78 |
+
+*Note: This is just the beginning of the metal mouldings list, which continues for many more items*
+
+## Matboards
+
+### Artique Conservation 32x40
+
+| Item # | Product Name | Pack Size | Pack Price (EA) | Pack Price | LJ Everyday Value |
+|--------|--------------|-----------|----------------|------------|-------------------|
+| A4800 | Artique Macadamia 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4801 | Artique Parchment 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4802 | Artique Oyster 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4803 | Artique Whitecap 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4804 | Artique Eggplant 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4805 | Artique Cinnabar 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4806 | Artique Antique Brick 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4807 | Artique Tudor 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4808 | Artique Pelican 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+| A4809 | Artique Khaki 32" x 40" | 20 | 11.63 | 232.56 | 12.17 |
+
+*Note: The Artique Conservation 32x40 list continues with many more color options*
+
+### Artique Rag 32x40
+
+| Item # | Product Name | Pack Size | Pack Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|----------------|-------------------|
+| A26200 | Artique Rag Winter White 32" x 40" | 50 | 10.31 | 10.55 |
+| A6200 | Artique Rag Winter White 32" x 40" | 25 | 20.17 | 21.11 |
+| A6201 | Artique Rag Down 32" x 40" | 25 | 20.17 | 21.11 |
+| A6202 | Artique Rag Whitewash 32" x 40" | 25 | 20.17 | 21.11 |
+| A6203 | Artique Rag Sweet Cream 32" x 40" | 25 | 21.35 | 22.35 |
+| A6204 | Artique Rag Nightfall 32" x 40" | 25 | 20.17 | 21.11 |
+| A6205 | Artique Rag Oatmeal 32" x 40" | 25 | 21.35 | 22.35 |
+| A6206 | Artique Rag Bavarian Cream 32" x 40" | 25 | 21.35 | 22.35 |
+| A6207 | Artique Rag Butter Pecan 32" x 40" | 25 | 20.17 | 21.11 |
+| A6208 | Artique Rag Seashell 32" x 40" | 25 | 21.35 | 22.35 |
+
+### Artique Fabric & Specialty 32x40
+
+| Item # | Product Name | Pack Size | Pack Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|----------------|-------------------|
+| A3501 | Artique Linen Moon 32" x 40" | 20 | 52.58 | 55.06 |
+| A3506 | Artique Linen Desert 32" x 40" | 20 | 52.58 | 55.06 |
+| A3510 | Artique 32 x 40 Linen Driftwood | 20 | 34.97 | 36.62 |
+| A3511 | Artique 32 x 40 Linen Bluestone | 20 | 34.97 | 36.62 |
+| A3512 | Artique 32 x 40 Linen Owl Grey | 20 | 34.97 | 36.62 |
+| A3513 | Artique 32 x 40 Linen Pepper | 20 | 34.91 | 36.62 |
+| A3514 | Artique 32 x 40 Linen Mystic Grey | 20 | 34.97 | 36.62 |
+| A3516 | Artique 32 x 40 Linen River Rock | 20 | 34.97 | 36.62 |
+| A3517 | Artique 32 x 40 Linen Licorice | 20 | 52.58 | 55.06 |
+| A3518 | Artique 32 x 40 Linen Grey Flannel | 20 | 52.58 | 55.06 |
+
+### Artique 8 Ply 32x40
+
+| Item # | Product Name | Pack Size | Pack Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|----------------|-------------------|
+| A84802 | Artique Oyster 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+| A84833 | Artique Graphite 32" x 40" 8 ply | 10 | 37.04 | 38.77 |
+| A84837 | Artique Birch 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+| A84858 | Artique Raven 32" x 40" 8 ply | 10 | 37.04 | 38.77 |
+| A84860 | Artique Cotswold Grey 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+| A84865 | Artique Dover White 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+| A84901 | Artique White 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+| A84934 | Artique Chestnut 32" x 40" 8 ply | 10 | 37.04 | 38.77 |
+| A84937 | Artique Thatch 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+| A84969 | Artique Night 32" x 40" 8 ply | 10 | 37.04 | 38.77 |
+| A84977 | Artique Digital White 32" x 40" 8 ply | 10 | 29.24 | 30.60 |
+
+*Note: Additional matboard categories (Production, Conservation 40x60, etc.) have been organized in similar tables*
+
+## Glass
+
+### Conservation Glass
+
+| Item # | Product Name | Pack Size | LJ Everyday Value |
+|--------|--------------|-----------|-------------------|
+| GC4060 | Tru Vue Conservation Clear Glass 40" x 60" | 2 lites per case | 103.59 |
+| GCC1114 | Tru Vue Conservation Clear Glass 11" x 14" | 47 lites per case | 139.25 |
+| GCC1418 | Tru Vue Conservation Clear Glass 14" x 18" | 29 lites per case | 139.25 |
+| GCC1620 | Tru Vue Conservation Clear Glass 16" x 20" | 23 lites per case | 133.14 |
+| GCC1824 | Tru Vue Conservation Clear Glass 18" x 24" | 17 lites per case | 133.14 |
+| GCC2024 | Tru Vue Conservation Clear Glass 20" x 24" | 15 lites per case | 133.14 |
+| GCC2228 | Tru Vue Conservation Clear Glass 22" x 28" | 12 lites per case | 133.14 |
+| GCC2430 | Tru Vue Conservation Clear Glass 24" x 30" | 10 lites per case | 133.14 |
+| GCC2436 | Tru Vue Conservation Clear Glass 24" x 36" | 8 lites per case | 133.14 |
+| GCC2632 | Tru Vue Conservation Clear Glass 26" x 32" | 9 lites per case | 133.14 |
+
+### Non-Conservation Glass
+
+| Item # | Product Name | Pack Size | LJ Everyday Value |
+|--------|--------------|-----------|-------------------|
+| EP1418 | Tru Vue 2.0MM Crystal Clear Glass 14" x 18" | 29 lites per case | 83.28 |
+| EP1620 | Tru Vue 2.0MM Crystal Clear Glass 16" x 20" | 23 lites per case | 76.45 |
+| EP1824 | Tru Vue 2.0MM Crystal Clear Glass 18" x 24" | 17 lites per case | 76.45 |
+| EP2024 | Tru Vue 2.0MM Crystal Clear Glass 20" x 24" | 15 lites per case | 76.45 |
+| EP2228 | Tru Vue 2.0MM Crystal Clear Glass 22" x 28" | 12 lites per case | 76.45 |
+| EP2430 | Tru Vue 2.0MM Crystal Clear Glass 24" x 30" | 10 lites per case | 76.45 |
+| EP2436 | Tru Vue 2.0MM Crystal Clear Glass 24" x 36" | 8 lites per case | 76.45 |
+| EP3036 | Tru Vue 2.0MM Crystal Clear Glass 30" x 36" | 7 lites per case | 76.45 |
+| EP3240 | Tru Vue 2.0MM Crystal Clear Glass 32" x 40" | 6 lites per case | 76.45 |
+| EP3648 | Tru Vue 2.0MM Crystal Clear Glass 36" x 48" | 4 lites per case | 76.45 |
+
+## Acrylic
+
+### Conservation Acrylic
+
+| Item # | Product Name | Pack Size | LJ Everyday Value |
+|--------|--------------|-----------|-------------------|
+| 51185 | Tru Vue Conservation Clear Acrylic 48" x 96" | 1 lite per case | 201.10 |
+| 51187 | Tru Vue Conservation Reflection Control Acrylic 48" x 96" | 1 lite per case | 242.55 |
+| 51194 | Tru Vue Optium Acrylic 40" x 60" | 1 lite per case | 507.52 |
+| 51198 | Tru Vue Optium Acrylic 48" x 96" | 1 lite per case | 920.00 |
+| 51200CB | Optium UV Acrylic 72" x 120" Cardboard, 6mm | 1 lite-Cardboard | 4744.66 |
+| 51245CB | Optium Museum Acrylic 72" x 96" Cardboard, 4.5mm | 1 lite-Cardboard | 2652.41 |
+| 51300 | TruLife Facemount Acrylic 48 X 96 1 Lite | 1 lite per case | 508.21 |
+| ACC3240 | Tru Vue Conservation Clear Acrylic 32" x 40" | 3 lites per case | 197.16 |
+| ACC4060 | Tru Vue Conservation Clear Acrylic 40" x 60" | 2 lites per case | 250.91 |
+| ACC6080 | Tru Vue Conservation Clear Acrylic 60" x 80" | 1 lites per case | 291.17 |
+
+### Non-Conservation Acrylic
+
+| Item # | Product Name | Pack Size | LJ Everyday Value |
+|--------|--------------|-----------|-------------------|
+| 50981 | Tru Vue Premium Clear Acrylic, 48" x 96", 2.5mm | 1 lite per case | 101.47 |
+| 51181 | Tru Vue Premium Clear Acrylic 48" x 96", 3mm | 1 lite per case | 118.72 |
+| 51183 | Tru Vue Reflection Control Acrylic 48" x 96" | 1 lite per case | 176.56 |
+| 51188 | Tru Vue Premium Clear Acrylic 48" x 96" | 1 lite per case | 90.96 |
+| 51196 | Tru Vue Optium AR Acrylic 48" x 96" | 1 lite per case | 872.64 |
+| APC3240 | Tru Vue Premium Clear Acrylic 32" x 40" | 3 lites per case | 100.54 |
+| APC4060 | Tru Vue Premium Clear Acrylic 40" x 60" | 2 lites per case | 127.95 |
+| ARC3240 | Tru Vue Reflection Control Acrylic 32" x 40" | 3 lites per case | 157.57 |
+| ARC4060 | Tru Vue Reflection Control Acrylic 40" x 60" | 2 lites per case | 202.60 |
+
+## Foamboard
+
+### Regular Foamboard
+
+| Item # | Product Name | Pack Size | Box Price | Box Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|-----------|----------------|-------------------|
+| BFB24 | Bainbridge Regular Foamboard, White, 24 x 36, 3/16" | 25 | 80.28 | 3.21 | 8.04 |
+| BFB32 | Bainbridge Regular Foamboard, White, 32 x 40, 3/16" | 25 | 120.29 | 4.81 | 10.07 |
+| BFB40 | Bainbridge Regular Foamboard, White, 40 x 60, 3/16" | 25 | 215.70 | 8.63 | 20.51 |
+| BFB4018 | Bainbridge Regular Foamboard, White, 40 x 60, 1/8" | 25 | 224.08 | 8.96 | 21.31 |
+| BFB48 | Bainbridge Regular Foamboard, White, 48 x 96, 3/16" | 25 | 401.94 | 16.08 | 27.96 |
+| GF32 | Gatorfoam, 32 x 40, 3/16" | 25 | 450.19 | 18.01 | 35.40 |
+| GF48 | Gatorfoam, 48 x 96, 3/16" | 15 | 997.86 | 66.52 | 93.64 |
+| GF4812 | Gatorfoam, 48 x 96, 1/2" | 12 | 1440.75 | 120.06 | 150.21 |
+| GFB48 | Gatorfoam, Black, 48 x 96, 3/16" | 15 | 1095.26 | 73.02 | 97.58 |
+| GFB4812 | Gatorfoam, Black, 48 x 96, 1/2" | 12 | 1518.54 | 126.55 | 160.69 |
+
+### Acid-Free Foamboard
+
+| Item # | Product Name | Pack Size | Box Price | Box Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|-----------|----------------|-------------------|
+| AC32 | Bainbridge ArtCareFoamboard, White, 32 x 40, 3/16" | 25 | 157.07 | 6.28 | 14.13 |
+| AC4018 | Bainbridge ArtCareFoamboard, White, 40 x 60, 1/8" | 25 | 312.03 | 12.48 | 24.46 |
+| AC48 | Bainbridge ArtCareFoamboard, White, 48 x 96, 3/16" | 25 | 562.34 | 22.49 | 40.00 |
+| FC3218AF | Bainbridge Acid-Free Foamboard, White, 32 x 40, 1/8" | 25 | 123.71 | 4.95 | 10.77 |
+| FC32AF | Bainbridge Acid-Free Foamboard, White, 32 x 40, 3/16" | 25 | 121.60 | 4.86 | 10.62 |
+| FC4018AF | Bainbridge Acid-Free Foamboard, White, 40 x 60, 1/8" | 25 | 243.21 | 9.73 | 21.11 |
+| FC40AF | Bainbridge Acid-Free Foamboard, White, 40 x 60, 3/16" | 25 | 243.21 | 9.73 | 21.11 |
+| FC40BAF | Bainbridge Acid-Free Foamboard, Black on Black Core, 40 x 60, 3/16" | 25 | 409.77 | 16.39 | 33.41 |
+| FC48AF | Acid-Free Foamboard, White, 48 x 96, 3/16" | 25 | 573.31 | 22.93 | 35.67 |
+| LAF32 | LJ Acid-Free Foam 32" x 40", 3/16" | 25 | 110.28 | 4.41 | N/A |
+
+### Archival Foamboard
+
+| Item # | Product Name | Pack Size | Box Price | Box Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|-----------|----------------|-------------------|
+| BCP406 | COROPLAST 40X60 6MM | 7 | 296.31 | 42.33 | 50.99 |
+| BCP486 | Coroplast, White, 48 x 96, 1/4" (6mm) | 10 | 885.15 | 88.52 | 96.40 |
+| C11W | Crescent Needleart Mounting Board, 32 x 40, 3/16" | N/A | N/A | N/A | 15.52 |
+| CB3240 | Corrugated Cardboard Backing, 32 x 40, 24/Bundle | N/A | N/A | N/A | 46.73 |
+| CB4060 | Corrugated Cardboard Backing, 40 x 60, 24/Bundle | N/A | N/A | N/A | 101.98 |
+
+### Heat-Activated Foamboard
+
+| Item # | Product Name | Pack Size | Box Price | Box Price (EA) | LJ Everyday Value |
+|--------|--------------|-----------|-----------|----------------|-------------------|
+| BSM32 | Bainbridge Speedmount Heat-Activated Foamboard, White, 32 x 40, 3/16" | 25 | 183.26 | 7.33 | 12.66 |
+| BSM40 | Bainbridge Speedmount Heat-Activated Foamboard, White, 40 x 60, 3/16" | 25 | 376.26 | 15.05 | 28.72 |
+| MCAF24 | Mountcor Acid-Free Heat-Activated Foamboard (BX), White, 24 x 36, 3/16" | 25 | 162.06 | 6.48 | N/A |
+| MCAF32 | Mountcor Acid-Free Heat-Activated Foamboard (BX), White, 32 x 40, 3/16" | 25 | 217.47 | 8.70 | N/A |
+| MCAF32PK | Mountcor Acid-Free Heat-Activated Foamboard (PK), White, 32 x 40, 3/16" | 5 | N/A | N/A | 72.18 |
+| MCAF40PK | Mountcor Acid-Free Heat-ActivatedFoamboard (PK), White, 40 x 60, 3/16" | 5 | N/A | N/A | 134.69 |
+| MCAF48 | Mountcor Acid-Free Heat-Activated Foamboard (BX), White, 48 x 96, 3/16" | 25 | 790.84 | 31.63 | N/A |
+
+## Equipment
+
+| Item # | Product Name | Pack Size | LJ Everyday Value |
+|--------|--------------|-----------|-------------------|
+| 11440 | Senco Brad Nailer #SLP20 | N/A | 395.63 |
+| 11612 | Work Station Coil Hose | N/A | 74.27 |
+| 13398 | Smooth Mount Laminator, 52" | N/A | 4635.98 |
+| 22002 | Mitre Vise | N/A | 77.58 |
+| 22201 | FrameMaster Point Driver | N/A | 133.27 |
+| 22203 | FlexiMaster Point Driver | N/A | 138.82 |
+| 22914 | Rapid 23 Canvas Stapler | N/A | 41.46 |
+| 22919 | Burnishing Bone | N/A | 19.34 |
+
+## Supplies
+
+### Joining Supplies
+
+| Item # | Product Name | Package Quantity | LJ Everyday Value |
+|--------|--------------|------------------|-------------------|
+| 10545 | 100 grit sanding disks, Set of 3 | Set of 3 | 29.38 |
+| 10554 | Putnam/Mitre Mite 7mm (1/4") Hardwood V-Nails | 4000/Box | 57.77 |
+| 10558 | Putnam/Mitre Mite 10mm (3/8") Hardwood V-Nails | 3000/Box | 48.13 |
+| 10562 | Putnam/Mitre Mite 12mm (1/2") Hardwood V-Nails | 3000/Box | 53.40 |
+| 10566 | Putnam/Mitre Mite 15mm (5/8") Hardwood V-Nails | 2000/Box | 38.30 |
+| 10829 | 15MM Uni Wedges Hard 8000/Bx | N/A | 78.53 |
+| 11010 | Oil for Compressor, 1/2 liter (16 oz.) | 16 oz | 121.28 |
+| 11011 | Larson-Juhl Coalescent Filter | 1 | 70.79 |
+| 11012 | Larson-Juhl Top Intake Filter | 2 per kit | 26.10 |
+| 11013 | Larson-Juhl Oil for Compressor, 16 oz | 16 oz | 39.86 |
+| 11415 | CO8 Staples, 3/8" Crown X 1/2" Legs, 35000/Box | 35,000/Box | 58.46 |
+| 11815 | Thumbnail Inserts Medium, Brown, 500/Pack | 500/Pack | 84.99 |
+| 11817 | Thumbnail Inserts Large, Brown, 250/Pack | 250/Pack | 48.03 |
+| 22205 | Framer's Points Stacked, 3000/pack | 3000/pack | 19.61 |
+| 22209 | FlexiMaster Framer's Points | N/A | 30.76 |
+| 22231 | Fletcher Multi-Master Points | N/A | 31.61 |
+| 22234 | FrameMaster Points | N/A | 72.95 |
+| 22412 | 11/16" Brads for F-18 | N/A | 17.62 |
