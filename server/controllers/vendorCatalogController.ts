@@ -4,7 +4,11 @@ import { vendorApiService } from '../services/vendorApiService';
 import { storage } from '../storage';
 import { db } from '../db';
 import { frames } from '@shared/schema';
-import { larsonJuhlWholesalePrices, getLarsonJuhlCollections, getLarsonJuhlWholesalePricesByCollection } from '../services/larsonJuhlWholesalePricing';
+import { 
+  larsonJuhlWholesalePrices, 
+  getLarsonJuhlCollections, 
+  getLarsonJuhlWholesalePricesByCollection 
+} from '../services/larsonJuhlWholesalePricing';
 
 /**
  * Fetches frames from Larson-Juhl's catalog API
