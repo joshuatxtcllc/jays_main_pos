@@ -4,6 +4,7 @@ import { vendorApiService } from '../services/vendorApiService';
 import { storage } from '../storage';
 import { db } from '../db';
 import { frames } from '@shared/schema';
+import { larsonJuhlWholesalePrices, getLarsonJuhlCollections, getLarsonJuhlWholesalePricesByCollection } from '../services/larsonJuhlWholesalePricing';
 
 /**
  * Fetches frames from Larson-Juhl's catalog API
@@ -25,6 +26,56 @@ export async function getLarsonJuhlFrames(req: Request, res: Response) {
   } catch (error: any) {
     console.error('Error fetching Larson-Juhl frames:', error);
     res.status(500).json({ message: 'Failed to fetch Larson-Juhl frames', error: error.message });
+  }
+}
+
+/**
+ * Fetches Larson-Juhl wholesale pricing data
+ */
+export async function getLarsonJuhlWholesalePricing(req: Request, res: Response) {
+  try {
+    console.log('Fetching Larson-Juhl wholesale pricing data...');
+    res.json(larsonJuhlWholesalePrices);
+  } catch (error: any) {
+    console.error('Error fetching Larson-Juhl wholesale pricing:', error);
+    res.status(500).json({ message: 'Failed to fetch Larson-Juhl wholesale pricing', error: error.message });
+  }
+}
+
+/**
+ * Fetches Larson-Juhl wholesale pricing data for a specific collection
+ */
+export async function getLarsonJuhlWholesalePricingByCollection(req: Request, res: Response) {
+  try {
+    const collection = req.params.collection;
+    console.log(`Fetching Larson-Juhl wholesale pricing data for collection: ${collection}`);
+    
+    if (!collection) {
+      return res.status(400).json({ message: 'Collection name is required' });
+    }
+    
+    const prices = getLarsonJuhlWholesalePricesByCollection(collection);
+    res.json(prices);
+  } catch (error: any) {
+    console.error('Error fetching Larson-Juhl wholesale pricing by collection:', error);
+    res.status(500).json({ 
+      message: 'Failed to fetch Larson-Juhl wholesale pricing by collection', 
+      error: error.message 
+    });
+  }
+}
+
+/**
+ * Fetches all available Larson-Juhl collections
+ */
+export async function getLarsonJuhlCollectionsList(req: Request, res: Response) {
+  try {
+    console.log('Fetching Larson-Juhl collections list...');
+    const collections = getLarsonJuhlCollections();
+    res.json(collections);
+  } catch (error: any) {
+    console.error('Error fetching Larson-Juhl collections:', error);
+    res.status(500).json({ message: 'Failed to fetch Larson-Juhl collections', error: error.message });
   }
 }
 

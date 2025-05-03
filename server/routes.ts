@@ -670,6 +670,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Vendor Catalog API Routes
   app.get('/api/vendor-catalog/larson', getLarsonJuhlFrames);
+  app.get('/api/vendor-catalog/larson/wholesale', getLarsonJuhlWholesalePricing);
+  app.get('/api/vendor-catalog/larson/collections', getLarsonJuhlCollectionsList);
+  app.get('/api/vendor-catalog/larson/wholesale/:collection', getLarsonJuhlWholesalePricingByCollection);
   app.get('/api/vendor-catalog/nielsen', getNielsenFrames);
   app.get('/api/vendor-catalog/roma', getRomaFrames);
   app.get('/api/vendor-catalog/all', getAllVendorFrames);

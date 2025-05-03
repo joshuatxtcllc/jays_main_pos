@@ -44,15 +44,27 @@ interface PricingResult {
   laborRates?: LaborRates;
 }
 
+// Import Larson-Juhl wholesale pricing service
+import { getLarsonJuhlWholesalePrice } from './larsonJuhlWholesalePricing';
+
 /**
  * Helper function to fetch real-time wholesale pricing from vendor APIs
  * @param frameId The frame's unique ID to get wholesale price 
  * @returns The wholesale price per foot
  */
 export async function getFrameWholesalePrice(frameId: string): Promise<number | null> {
-  // In a real implementation, this would connect to the vendor API
-  // For now, we'll use the existing price in the database as the wholesale price
   try {
+    // Check if this is a Larson-Juhl frame
+    if (frameId.startsWith('larson-')) {
+      // Use the official Larson-Juhl wholesale pricing
+      const larsonPrice = getLarsonJuhlWholesalePrice(frameId);
+      if (larsonPrice) {
+        console.log(`Using official Larson-Juhl wholesale price for ${frameId}: $${larsonPrice.basePricePerFoot}/ft`);
+        return larsonPrice.basePricePerFoot;
+      }
+    }
+    
+    // For non-Larson frames or if Larson frame not found in the catalog
     const [frame] = await db.select().from(frames).where(eq(frames.id, frameId));
     if (!frame) return null;
     
