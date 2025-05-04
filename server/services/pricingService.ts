@@ -12,6 +12,10 @@ import { storage } from '../storage';
 /**
  * Calculate frame price based on wholesale price and perimeter
  * @param wholesalePrice The wholesale price per foot
+
+// Reduced markup factor for more reasonable frame pricing
+const REDUCED_MARKUP_FACTOR = 1.2; // This replaces the higher FRAME_MARKUP_FACTOR
+
  * @param perimeter The perimeter in feet
  * @returns The retail price
  */
@@ -22,8 +26,11 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
   // Get markup based on united inches
   const markup = calculateFrameMarkup(unitedInches);
   
-  // Apply Houston-specific frame pricing factor
-  return wholesalePrice * perimeter * markup * FRAME_MARKUP_FACTOR;
+  // Apply a more reasonable pricing factor (reduced from original FRAME_MARKUP_FACTOR)
+  // This prevents astronomical pricing
+  const adjustedMarkupFactor = 1.2; // Reduced from original value
+  
+  return wholesalePrice * perimeter * markup * adjustedMarkupFactor;
 }
 
 /**
@@ -266,8 +273,9 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
   if (frame) {
     const frameWholesalePrice = parseFloat(frame.price);
     const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
-    // Apply Houston-specific frame pricing factor
-    framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * FRAME_MARKUP_FACTOR;
+    // Apply a more reasonable markup factor to prevent excessive pricing
+    const adjustedMarkupFactor = 1.2; // Reduced from original FRAME_MARKUP_FACTOR
+    framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * adjustedMarkupFactor;
   }
 
   // Calculate mat price

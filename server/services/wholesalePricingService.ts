@@ -59,8 +59,14 @@ export async function getFrameWholesalePrice(frameId: string): Promise<number | 
       // Use the official Larson-Juhl wholesale pricing
       const larsonPrice = getLarsonJuhlWholesalePrice(frameId);
       if (larsonPrice) {
-        console.log(`Using official Larson-Juhl wholesale price for ${frameId}: $${larsonPrice.basePricePerFoot}/ft`);
-        return larsonPrice.basePricePerFoot;
+        // Use chopPrice for retail pricing, which is a more reasonable starting point
+        // If chopPrice isn't available, use a more reasonable markup from basePricePerFoot
+        const wholesalePrice = larsonPrice.chopPrice 
+          ? larsonPrice.chopPrice / 2.2 
+          : larsonPrice.basePricePerFoot;
+        
+        console.log(`Using official Larson-Juhl wholesale price for ${frameId}: $${wholesalePrice}/ft (from base: $${larsonPrice.basePricePerFoot}/ft)`);
+        return wholesalePrice;
       }
     }
     
