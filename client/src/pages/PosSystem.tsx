@@ -25,7 +25,7 @@ import { ArtworkDimensions } from '@/lib/artworkSizeDetector';
 
 const PosSystem = () => {
   const { toast } = useToast();
-  
+
   // Customer Information
   const [customer, setCustomer] = useState<InsertCustomer>({
     name: '',
@@ -33,7 +33,7 @@ const PosSystem = () => {
     phone: '',
     address: ''
   });
-  
+
   // Artwork Details
   const [artworkWidth, setArtworkWidth] = useState<number>(16);
   const [artworkHeight, setArtworkHeight] = useState<number>(20);
@@ -43,17 +43,18 @@ const PosSystem = () => {
   const [aspectRatio, setAspectRatio] = useState<number>(0.8); // Default 4:5
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
-  
+
   // Webcam states
   const [showWebcam, setShowWebcam] = useState<boolean>(false);
   const webcamRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  
+
   // Frame Selection
   const [selectedFrames, setSelectedFrames] = useState<{
     frame: Frame;
     position: number;
     distance: number;
+    pricingMethod: string;
   }[]>([]);
   const [activeFramePosition, setActiveFramePosition] = useState<number>(1);
   const [useMultipleFrames, setUseMultipleFrames] = useState<boolean>(false);
@@ -62,10 +63,10 @@ const PosSystem = () => {
   const [widthFilter, setWidthFilter] = useState<string>('all');
   const [priceFilter, setPriceFilter] = useState<string>('all');
   const [frameSearch, setFrameSearch] = useState<string>('');
-  
+
   // Mat Options
   const { matboards, crescentMatboards, loading: matboardsLoading, getMatboardById } = useMatboards();
-  
+
   const [selectedMatboards, setSelectedMatboards] = useState<{
     matboard: MatColor;
     position: number;
@@ -75,13 +76,13 @@ const PosSystem = () => {
   const [activeMatPosition, setActiveMatPosition] = useState<number>(1);
   const [useMultipleMats, setUseMultipleMats] = useState<boolean>(false);
   const [primaryMatWidth, setPrimaryMatWidth] = useState<number>(2); // Default mat width for primary mat
-  
+
   // Initialize with an empty array and update when matboards load
   useEffect(() => {
     if (matboards && matboards.length > 0 && selectedMatboards.length === 0) {
       // Default width for primary mat is 2 inches
       const defaultMatWidth = 2;
-      
+
       // Initialize with the first matboard in position 1
       setSelectedMatboards([{
         matboard: matboards[0],
@@ -89,63 +90,63 @@ const PosSystem = () => {
         width: defaultMatWidth,
         offset: 0
       }]);
-      
+
       // Also set the primary mat width
       setPrimaryMatWidth(defaultMatWidth);
     }
   }, [matboards, selectedMatboards.length]);
   const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
-  
+
   // Glass Options - Set Museum glass as default (index 1)
   const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[1]);
-  
+
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
-  
+
   // Wholesale Order
   const [addToWholesaleOrder, setAddToWholesaleOrder] = useState<boolean>(true);
-  
+
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
-  
+
   // Filtered Frames
   const filteredFrames = React.useMemo(() => {
     if (!frames) return [];
-    
+
     return frames.filter(frame => {
       // Search filter
       if (frameSearch.trim() !== '') {
         const searchLower = frameSearch.trim().toLowerCase();
-        
+
         // Get item number from frame.id (e.g., "larson-4512" -> "4512")
         const frameItemNumber = frame.id.split('-')[1] || '';
-        
+
         // Prioritize exact item number match
         if (frameItemNumber === searchLower) {
           return true;
         }
-        
+
         // Check if search matches any of the following:
         const idMatch = frame.id.toLowerCase().includes(searchLower);
         const itemNumberMatch = frameItemNumber.toLowerCase().includes(searchLower);
         const nameMatch = frame.name.toLowerCase().includes(searchLower);
         const manufacturerMatch = frame.manufacturer.toLowerCase().includes(searchLower);
-        
+
         if (!(idMatch || itemNumberMatch || nameMatch || manufacturerMatch)) {
           return false;
         }
       }
-      
+
       // Material filter
       if (materialFilter !== 'all' && frame.material !== materialFilter) {
         return false;
       }
-      
+
       // Manufacturer filter
       if (manufacturerFilter !== 'all' && frame.manufacturer !== manufacturerFilter) {
         return false;
       }
-      
+
       // Width filter
       if (widthFilter !== 'all') {
         const width = parseFloat(frame.width);
@@ -161,7 +162,7 @@ const PosSystem = () => {
             break;
         }
       }
-      
+
       // Price filter
       if (priceFilter !== 'all') {
         const price = parseFloat(frame.price);
@@ -177,24 +178,24 @@ const PosSystem = () => {
             break;
         }
       }
-      
+
       return true;
     });
   }, [frames, materialFilter, manufacturerFilter, widthFilter, priceFilter, frameSearch]);
-  
+
   // Manufacturers and Materials for filters
   const manufacturers = React.useMemo(() => {
     if (!frames) return [];
     const uniqueManufacturers = Array.from(new Set(frames.map(frame => frame.manufacturer)));
     return uniqueManufacturers;
   }, [frames]);
-  
+
   const materials = React.useMemo(() => {
     if (!frames) return [];
     const uniqueMaterials = Array.from(new Set(frames.map(frame => frame.material)));
     return uniqueMaterials;
   }, [frames]);
-  
+
   // Handle file upload
   const handleFileUpload = async (file: File) => {
     try {
@@ -206,38 +207,38 @@ const PosSystem = () => {
         });
         return;
       }
-      
+
       console.log('Processing image upload:', file.name, file.type, file.size);
-      
+
       // Convert file to data URL
       const dataUrl = await fileToDataUrl(file);
       console.log('File converted to data URL, length:', dataUrl.length);
-      
+
       // Resize image if it's too large
       const resizedImage = await resizeImage(dataUrl, 1200, 1200);
       console.log('Image resized, new data URL length:', resizedImage.length);
-      
+
       // Create an image element to get dimensions
       const img = new Image();
       img.onload = () => {
         console.log('Image loaded with dimensions:', img.width, 'x', img.height);
         const imgAspectRatio = img.width / img.height;
         setAspectRatio(imgAspectRatio);
-        
+
         // Update width based on the height and aspect ratio
         const newWidth = parseFloat((artworkHeight * imgAspectRatio).toFixed(2));
         console.log('Setting artwork width to:', newWidth);
         setArtworkWidth(newWidth);
       };
-      
+
       // IMPORTANT: We need to set the artworkImage state before setting the img.src
       // This ensures the state is updated immediately
       setArtworkImage(resizedImage);
       console.log('Setting artwork image in state');
-      
+
       // Now set the image source for dimension calculation
       img.src = resizedImage;
-      
+
       toast({
         title: "Image Uploaded",
         description: "Your artwork image has been uploaded and is ready for framing."
@@ -251,42 +252,42 @@ const PosSystem = () => {
       });
     }
   };
-  
+
   // Handle drag events
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
     } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
   };
-  
+
   // Handle drop event
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFileUpload(e.dataTransfer.files[0]);
     }
   };
-  
+
   // Handle file input change
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       handleFileUpload(e.target.files[0]);
     }
   };
-  
+
   // Handle button click for file input
   const handleButtonClick = () => {
     fileInputRef.current?.click();
   };
-  
+
   // Handle webcam toggle
   const handleWebcamToggle = () => {
     if (showWebcam) {
@@ -304,14 +305,14 @@ const PosSystem = () => {
       startWebcam();
     }
   };
-  
+
   // Start webcam
   const startWebcam = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { width: 1280, height: 720 } 
       });
-      
+
       if (webcamRef.current) {
         webcamRef.current.srcObject = stream;
       }
@@ -325,63 +326,63 @@ const PosSystem = () => {
       setShowWebcam(false);
     }
   };
-  
+
   // Capture image from webcam
   const captureImage = () => {
     if (webcamRef.current && canvasRef.current) {
       const video = webcamRef.current;
       const canvas = canvasRef.current;
-      
+
       // Set canvas size to match video dimensions
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
+
       // Draw video frame to canvas
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
+
         // Convert canvas to data URL
         const dataUrl = canvas.toDataURL('image/jpeg');
-        
+
         // Process captured image
         processWebcamImage(dataUrl);
-        
+
         // Turn off webcam
         handleWebcamToggle();
       }
     }
   };
-  
+
   // Process webcam image
   const processWebcamImage = async (dataUrl: string) => {
     try {
       console.log('Processing webcam image, data URL length:', dataUrl.length);
-      
+
       // Resize image if it's too large
       const resizedImage = await resizeImage(dataUrl, 1200, 1200);
       console.log('Webcam image resized, new data URL length:', resizedImage.length);
-      
+
       // Create an image element to get dimensions
       const img = new Image();
       img.onload = () => {
         console.log('Webcam image loaded with dimensions:', img.width, 'x', img.height);
         const imgAspectRatio = img.width / img.height;
         setAspectRatio(imgAspectRatio);
-        
+
         // Update width based on the height and aspect ratio
         const newWidth = parseFloat((artworkHeight * imgAspectRatio).toFixed(2));
         console.log('Setting artwork width to:', newWidth);
         setArtworkWidth(newWidth);
       };
-      
+
       // IMPORTANT: Set the state before setting the img.src
       setArtworkImage(resizedImage);
       console.log('Setting artwork image from webcam in state');
-      
+
       // Now set the image source for dimension calculation
       img.src = resizedImage;
-      
+
       toast({
         title: "Image Captured",
         description: "Artwork image has been captured from webcam.",
@@ -395,18 +396,18 @@ const PosSystem = () => {
       });
     }
   };
-  
+
   // Handle mat color selection
   const handleMatColorChange = (id: string) => {
     console.log('Changing mat color to ID:', id);
     const matColor = getMatboardById(id);
-    
+
     if (matColor) {
       console.log('Found mat color:', matColor);
-      
+
       // Check if we already have a mat at this position
       const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
-      
+
       if (existingMatIndex >= 0) {
         // Replace existing mat
         const updatedMats = [...selectedMatboards];
@@ -433,10 +434,10 @@ const PosSystem = () => {
       const staticMatColor = getMatColorById(id);
       if (staticMatColor) {
         console.log('Found mat color in static catalog:', staticMatColor);
-        
+
         // Check if we already have a mat at this position
         const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
-        
+
         if (existingMatIndex >= 0) {
           // Replace existing mat
           const updatedMats = [...selectedMatboards];
@@ -462,14 +463,14 @@ const PosSystem = () => {
       }
     }
   };
-  
+
   // Handle mat width change
   const handleMatWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newWidth = parseFloat(e.target.value);
-    
+
     // Update width for the active mat position
     const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
-    
+
     if (existingMatIndex >= 0) {
       const updatedMats = [...selectedMatboards];
       updatedMats[existingMatIndex] = {
@@ -477,14 +478,14 @@ const PosSystem = () => {
         width: newWidth
       };
       setSelectedMatboards(updatedMats);
-      
+
       // If this is the primary mat (position 1), update the primaryMatWidth state
       if (activeMatPosition === 1) {
         setPrimaryMatWidth(newWidth);
       }
     }
   };
-  
+
   // Handle glass option selection
   const handleGlassOptionChange = (id: string) => {
     const glassOption = getGlassOptionById(id);
@@ -492,11 +493,11 @@ const PosSystem = () => {
       setSelectedGlassOption(glassOption);
     }
   };
-  
+
   // Handle dimension changes
   const handleDimensionChange = (dimension: 'width' | 'height', value: number) => {
     if (value <= 0) return;
-    
+
     if (dimension === 'width') {
       setArtworkWidth(value);
       setArtworkHeight(parseFloat((value / aspectRatio).toFixed(2)));
@@ -505,7 +506,7 @@ const PosSystem = () => {
       setArtworkWidth(parseFloat((value * aspectRatio).toFixed(2)));
     }
   };
-  
+
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: InsertOrder) => {
@@ -516,7 +517,7 @@ const PosSystem = () => {
       // Invalidate the orders and order groups queries to refresh the cart
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/order-groups'] });
-      
+
       toast({
         title: "Order Created",
         description: "The order has been successfully created and added to your cart.",
@@ -530,7 +531,7 @@ const PosSystem = () => {
       });
     }
   });
-  
+
   // Create wholesale order mutation
   const createWholesaleOrderMutation = useMutation({
     mutationFn: async (orderId: number) => {
@@ -551,7 +552,7 @@ const PosSystem = () => {
       });
     }
   });
-  
+
   // Create customer mutation
   const createCustomerMutation = useMutation({
     mutationFn: async (customerData: InsertCustomer) => {
@@ -559,23 +560,23 @@ const PosSystem = () => {
       return response.json();
     }
   });
-  
+
   // Handle create order
   const handleCreateOrder = async () => {
     console.log("Create Order button clicked");
-    
+
     if (selectedFrames.length === 0 || selectedMatboards.length === 0 || !selectedGlassOption) {
       console.log("Missing required selections:", { 
         frame: selectedFrames.length > 0 ? "Selected" : "Missing", 
         matColor: selectedMatboards.length > 0 ? "Selected" : "Missing", 
         glassOption: selectedGlassOption ? "Selected" : "Missing" 
       });
-      
+
       let missingItems = [];
       if (selectedFrames.length === 0) missingItems.push("frame");
       if (selectedMatboards.length === 0) missingItems.push("mat color");
       if (!selectedGlassOption) missingItems.push("glass option");
-      
+
       toast({
         title: "Incomplete Order",
         description: `Please select a ${missingItems.join(", ")}.`,
@@ -583,10 +584,10 @@ const PosSystem = () => {
       });
       return;
     }
-    
+
     if (!customer.name) {
       console.log("Missing customer name");
-      
+
       toast({
         title: "Customer Information Required",
         description: "Please enter customer name.",
@@ -594,23 +595,23 @@ const PosSystem = () => {
       });
       return;
     }
-    
+
     console.log("Customer data:", customer);
-    
+
     try {
       console.log("Creating customer with data:", customer);
-      
+
       // First create or get customer
       const customerResponse = await createCustomerMutation.mutateAsync(customer);
       console.log("Customer created/retrieved:", customerResponse);
-      
+
       // Calculate prices for the order - using primary frame and mat
       const primaryFrame = selectedFrames.length > 0 ? selectedFrames[0].frame : null;
       const primaryMat = selectedMatboards.length > 0 ? selectedMatboards[0].matboard : null;
       const framePrice = primaryFrame ? primaryFrame.price : '0';
       const matPrice = primaryMat ? primaryMat.price : '0';
       const glassPrice = selectedGlassOption.price;
-      
+
       // Prepare order data - using primary frame, mat and width
       const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
       const orderData: InsertOrder = {
@@ -628,17 +629,17 @@ const PosSystem = () => {
         total: "0", // Will be calculated on the server
         artworkImage
       };
-      
+
       console.log("Creating order with data:", orderData);
-      
+
       // Create the order
       const orderResponse = await createOrderMutation.mutateAsync(orderData);
       console.log("Order created successfully:", orderResponse);
-      
+
       // Create special service relationships
       if (selectedServices.length > 0) {
         console.log("Adding special services:", selectedServices);
-        
+
         await Promise.all(selectedServices.map(service => 
           apiRequest('POST', '/api/order-special-services', {
             orderId: orderResponse.id,
@@ -646,15 +647,15 @@ const PosSystem = () => {
           })
         ));
       }
-      
+
       toast({
         title: "Order Created Successfully",
         description: `Order #${orderResponse.id} has been created.`,
       });
-      
+
       // Reset form
       resetForm();
-      
+
     } catch (error) {
       console.error('Error creating order:', error);
       toast({
@@ -664,7 +665,7 @@ const PosSystem = () => {
       });
     }
   };
-  
+
   // Handle save quote
   const handleSaveQuote = () => {
     toast({
@@ -672,7 +673,7 @@ const PosSystem = () => {
       description: "The quote has been saved for future reference.",
     });
   };
-  
+
   // Handle create wholesale order
   const handleCreateWholesaleOrder = async () => {
     if (selectedFrames.length === 0) {
@@ -683,7 +684,7 @@ const PosSystem = () => {
       });
       return;
     }
-    
+
     try {
       // This should only run AFTER the actual order has been created
       // So we'll check if we have completed the actual order creation
@@ -695,7 +696,7 @@ const PosSystem = () => {
         });
         return;
       }
-      
+
       // Create wholesale orders for each frame
       for (const frameItem of selectedFrames) {
         const materialOrderData = {
@@ -708,15 +709,15 @@ const PosSystem = () => {
           vendor: frameItem.frame.manufacturer || 'Larson Juhl',
           priority: 'normal'
         };
-        
+
         await apiRequest('POST', '/api/material-orders', materialOrderData);
       }
-      
+
       toast({
         title: "Frame Orders Created",
         description: `Wholesale orders for ${selectedFrames.length} frame(s) have been created.`,
       });
-      
+
       // Create wholesale orders for each mat
       for (const matItem of selectedMatboards) {
         const matOrderData = {
@@ -729,10 +730,10 @@ const PosSystem = () => {
           vendor: matItem.matboard.manufacturer || 'Crescent',
           priority: 'normal'
         };
-        
+
         await apiRequest('POST', '/api/material-orders', matOrderData);
       }
-      
+
       if (selectedGlassOption) {
         const glassOrderData = {
           materialType: 'glass',
@@ -744,10 +745,10 @@ const PosSystem = () => {
           vendor: 'TruVue',
           priority: 'normal'
         };
-        
+
         await apiRequest('POST', '/api/material-orders', glassOrderData);
       }
-      
+
     } catch (error) {
       console.error('Error creating wholesale order:', error);
       toast({
@@ -757,7 +758,7 @@ const PosSystem = () => {
       });
     }
   };
-  
+
   // Reset form
   const resetForm = () => {
     setCustomer({
@@ -772,40 +773,62 @@ const PosSystem = () => {
     setArtworkDescription('');
     setArtworkType('print');
     setAspectRatio(0.8);
-    
+
     // Reset frames and mats - remove previous declarations that referenced deprecated variables
     setSelectedFrames([]);
     setActiveFramePosition(1);
     setSelectedMatboards([]);
     setActiveMatPosition(1);
-    
+
     // Reset filters
     setMaterialFilter('all');
     setManufacturerFilter('all');
     setWidthFilter('all');
     setPriceFilter('all');
     setMatManufacturerFilter('all');
-    
+
     // Reset options
     setSelectedGlassOption(glassOptionCatalog[0]);
     setSelectedServices([]);
-    
+
     // Reset mat width indicator variables
     setPrimaryMatWidth(2);  // Default mat width
-    
+
     // Reset multi-options flags
     setUseMultipleFrames(false);
     setUseMultipleMats(false);
-    
+
     // Reset frame search
     setFrameSearch('');
-    
+
     // Turn off webcam if it's on
     if (showWebcam) {
       handleWebcamToggle();
     }
   };
-  
+
+  const handleSelectFrame = (frame: Frame, position: number, pricingMethod: string = 'chop') => {
+    // Check if we already have a frame at this position
+    const existingFrameIndex = selectedFrames.findIndex(f => f.position === position);
+
+    if (existingFrameIndex !== -1) {
+      // Update existing frame
+      const updatedFrames = [...selectedFrames];
+      updatedFrames[existingFrameIndex] = {
+        ...updatedFrames[existingFrameIndex],
+        frame,
+        pricingMethod
+      };
+      setSelectedFrames(updatedFrames);
+    } else {
+      // Add new frame
+      setSelectedFrames([
+        ...selectedFrames, 
+        { frame, position, distance: 0, pricingMethod }
+      ]);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Left Column - Frame Selection & Customization */}
@@ -892,8 +915,7 @@ const PosSystem = () => {
                 min="0.125"
                 value={artworkHeight}
                 onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
-              />
-            </div>
+              />div>
             <div>
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
                 Art Type
@@ -925,7 +947,7 @@ const PosSystem = () => {
               />
             </div>
           </div>
-          
+
           {/* Artwork Size Detector Component */}
           <div className="mb-4">
             <ArtworkSizeDetector 
@@ -937,7 +959,7 @@ const PosSystem = () => {
                 setArtworkHeight(dimensions.height);
                 setAspectRatio(dimensions.width / dimensions.height);
                 setArtworkImage(imageDataUrl);
-                
+
                 console.log('Dimensions detected:', dimensions);
                 toast({
                   title: "Artwork Dimensions Detected",
@@ -953,7 +975,7 @@ const PosSystem = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold header-underline">Frame Selection</h2>
           </div>
-          
+
           {/* Frame Search */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
@@ -1004,42 +1026,17 @@ const PosSystem = () => {
               )}
             </div>
           </div>
-          
+
           {/* Vendor Catalog Search */}
           <div className="mb-4">
             <VendorFrameSearch 
-              onSelectFrame={(frame, position) => {
-                // Check if we already have a frame at this position
-                const existingFrameIndex = selectedFrames.findIndex(f => f.position === position);
-                
-                if (existingFrameIndex >= 0) {
-                  // Replace existing frame
-                  const updatedFrames = [...selectedFrames];
-                  updatedFrames[existingFrameIndex] = {
-                    frame,
-                    position,
-                    distance: 0
-                  };
-                  setSelectedFrames(updatedFrames);
-                } else {
-                  // Add new frame
-                  setSelectedFrames([
-                    ...selectedFrames,
-                    {
-                      frame,
-                      position,
-                      distance: 0
-                    }
-                  ]);
-                }
-                
-                // Set active frame position to match the newly selected frame
-                setActiveFramePosition(position);
+              onSelectFrame={(frame, position, pricingMethod) => {
+                handleSelectFrame(frame, position, pricingMethod);
               }}
               position={activeFramePosition}
             />
           </div>
-          
+
           {/* Frame filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
             <div>
@@ -1105,7 +1102,7 @@ const PosSystem = () => {
               </select>
             </div>
           </div>
-          
+
           {/* Frame Position Selector */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
@@ -1139,7 +1136,7 @@ const PosSystem = () => {
               </div>
             </div>
           </div>
-          
+
           {/* Frame Catalog */}
           <div className="h-64 overflow-y-auto p-2 border border-light-border dark:border-dark-border rounded-lg mb-4">
             {framesLoading ? (
@@ -1169,29 +1166,7 @@ const PosSystem = () => {
                   key={frame.id}
                   className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrames.some(f => f.frame.id === frame.id) ? 'border-2 border-primary' : ''}`}
                   onClick={() => {
-                    // Check if we already have a frame at this position
-                    const existingFrameIndex = selectedFrames.findIndex(f => f.position === activeFramePosition);
-                    
-                    if (existingFrameIndex >= 0) {
-                      // Replace existing frame
-                      const updatedFrames = [...selectedFrames];
-                      updatedFrames[existingFrameIndex] = {
-                        frame,
-                        position: activeFramePosition,
-                        distance: 0
-                      };
-                      setSelectedFrames(updatedFrames);
-                    } else {
-                      // Add new frame
-                      setSelectedFrames([
-                        ...selectedFrames,
-                        {
-                          frame,
-                          position: activeFramePosition,
-                          distance: 0
-                        }
-                      ]);
-                    }
+                    handleSelectFrame(frame, activeFramePosition, 'chop'); // Default pricing method
                   }}
                 >
                   <div 
@@ -1224,7 +1199,7 @@ const PosSystem = () => {
               </div>
             )}
           </div>
-          
+
           {/* Mat Options */}
           <h3 className="text-lg font-medium mb-3">Mat Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -1244,7 +1219,7 @@ const PosSystem = () => {
                   <label htmlFor="useMultipleMats" className="text-sm">Use Multiple Mats</label>
                 </div>
               </div>
-              
+
               {/* Mat Position Selector */}
               <div className="flex space-x-2 mb-3">
                 <button
@@ -1273,7 +1248,7 @@ const PosSystem = () => {
                   </>
                 )}
               </div>
-              
+
               {/* Mat color filter tabs */}
               <div className="flex mb-2 border-b border-light-border dark:border-dark-border">
                 <button 
@@ -1289,7 +1264,7 @@ const PosSystem = () => {
                   By Category
                 </button>
               </div>
-              
+
               {/* Category sections for Crescent matboards */}
               {matManufacturerFilter === 'Crescent' && (
                 <div className="mb-2 max-h-40 overflow-y-auto pr-2">
@@ -1327,7 +1302,7 @@ const PosSystem = () => {
                   )}
                 </div>
               )}
-              
+
               {/* Simple grid for All matboards view */}
               {matManufacturerFilter === 'all' && (
                 <div className="grid grid-cols-4 gap-2">
@@ -1358,7 +1333,7 @@ const PosSystem = () => {
                   )}
                 </div>
               )}
-              
+
               {/* Selected mat color details */}
               {selectedMatboards.length > 0 && (
                 <div className="mt-4 text-sm">
@@ -1418,7 +1393,7 @@ const PosSystem = () => {
               )}
             </div>
           </div>
-          
+
           {/* Glass Options */}
           <h3 className="text-lg font-medium mb-3">Glass Options</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -1449,20 +1424,20 @@ const PosSystem = () => {
             ))}
           </div>
         </div>
-        
+
         {/* Special Services Section */}
         <SpecialServices 
           selectedServices={selectedServices}
           onChange={setSelectedServices}
         />
       </div>
-      
+
       {/* Right Column - Preview & Order Summary */}
       <div className="space-y-6">
         {/* Frame Preview */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Frame Preview</h2>
-          
+
           {/* Preview Container */}
           <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center">
             <FrameVisualizer
@@ -1475,7 +1450,7 @@ const PosSystem = () => {
               useMultipleFrames={useMultipleFrames}
             />
           </div>
-          
+
           {/* Frame Details */}
           {selectedFrames.length > 0 && (
             <div className="mt-4">
@@ -1508,6 +1483,10 @@ const PosSystem = () => {
                         <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Wholesale Price:</td>
                         <td className="py-1">${frameItem.frame.price} per foot</td>
                       </tr>
+                      <tr>
+                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Pricing Method:</td>
+                        <td className="py-1">{frameItem.pricingMethod}</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -1515,7 +1494,7 @@ const PosSystem = () => {
             </div>
           )}
         </div>
-        
+
         {/* Price Summary */}
         <OrderSummary
           frames={selectedFrames}

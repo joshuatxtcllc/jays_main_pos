@@ -21,8 +21,9 @@ interface FrameSelectorProps {
     frame: Frame;
     position: number;
     distance: number;
+    pricingMethod?: string;
   }[];
-  onSelectFrame: (frame: Frame, position: number) => void;
+  onSelectFrame: (frame: Frame, position: number, pricingMethod?: string) => void;
   onUpdateFrameDistance: (distance: number, position: number) => void;
   activePosition: number;
   maxFrames?: number;
@@ -283,6 +284,32 @@ export function FrameSelector({
               />
             </div>
           )}
+          
+          {/* Frame Pricing Method Selection */}
+          <div className="mt-2">
+            <Label htmlFor="frame-pricing-method" className="text-xs">Pricing Method</Label>
+            <select
+              id="frame-pricing-method"
+              className="w-full p-2 mt-1 border border-input rounded-md bg-background text-sm"
+              value={selectedFrames.find(f => f.position === activePosition)?.pricingMethod || 'chop'}
+              onChange={(e) => {
+                const frame = selectedFrames.find(f => f.position === activePosition);
+                if (frame) {
+                  // Update frame with new pricing method
+                  const updatedFrame = {...frame, pricingMethod: e.target.value};
+                  onSelectFrame(updatedFrame.frame, activePosition, e.target.value);
+                }
+              }}
+            >
+              <option value="chop">Chop Price</option>
+              <option value="length">Length Price</option>
+              <option value="join">Join Price</option>
+              <option value="base">Base Price</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Select pricing method based on frame processing
+            </p>
+          </div>
         </div>
       )}
       
@@ -357,7 +384,10 @@ export function FrameSelector({
       <div className="mb-4">
         <Label className="text-sm font-medium">Search Vendor Catalog</Label>
         <VendorFrameSearch 
-          onSelectFrame={(frame) => onSelectFrame(frame, activePosition)} 
+          onSelectFrame={(frame) => {
+            const pricingMethod = selectedFrames.find(f => f.position === activePosition)?.pricingMethod || 'chop';
+            onSelectFrame(frame, activePosition, pricingMethod);
+          }} 
         />
       </div>
       

@@ -95,6 +95,7 @@ export interface FramePricingParams {
   matWidth: number;
   quantity: number;
   includeWholesalePrices?: boolean;
+  framePricingMethod?: string;
 }
 
 export interface PricingResult {
@@ -271,11 +272,27 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
   // Calculate frame price
   let framePrice = 0;
   if (frame) {
+    // Get wholesale price with pricing method
     const frameWholesalePrice = parseFloat(frame.price);
     const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
+    
     // Apply a more reasonable markup factor to prevent excessive pricing
     const adjustedMarkupFactor = 1.2; // Reduced from original FRAME_MARKUP_FACTOR
+    
+    // Get pricing method from params
+    const pricingMethod = params.framePricingMethod || 'chop';
+    
+    // Pass pricing method to wholesale pricing calculation
     framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * adjustedMarkupFactor;
+    
+    // If we're using Larson-Juhl frames, override with specific wholesale pricing method
+    if (frame.id.startsWith('larson-')) {
+      const options = { pricingMethod };
+      const wholesale = require('./wholesalePricingService').getWholesalePrice(frame.id, options);
+      if (wholesale) {
+        framePrice = wholesale * frameLength / 12 * frameMarkup * adjustedMarkupFactor;
+      }
+    }
   }
 
   // Calculate mat price

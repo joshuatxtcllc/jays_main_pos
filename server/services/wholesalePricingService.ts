@@ -50,30 +50,40 @@ import { getLarsonJuhlWholesalePrice } from './larsonJuhlWholesalePricing';
 /**
  * Helper function to fetch real-time wholesale pricing from vendor APIs
  * @param frameId The frame's unique ID to get wholesale price 
+ * @param options Pricing method options
  * @returns The wholesale price per foot
  */
-export async function getFrameWholesalePrice(frameId: string): Promise<number | null> {
+export async function getFrameWholesalePrice(frameId: string, options?: { pricingMethod?: string }): Promise<number | null> {
   try {
     // Check if this is a Larson-Juhl frame
     if (frameId.startsWith('larson-')) {
       // Use the official Larson-Juhl wholesale pricing
       const larsonPrice = getLarsonJuhlWholesalePrice(frameId);
       if (larsonPrice) {
-        // Use chopPrice for retail pricing, which is a more reasonable starting point
-        // If chopPrice isn't available, use a more reasonable markup from basePricePerFoot
-        const wholesalePrice = larsonPrice.chopPrice 
-          ? larsonPrice.chopPrice / 2.2 
-          : larsonPrice.basePricePerFoot;
-        
+        let wholesalePrice;
+        switch (options?.pricingMethod) {
+          case 'chop':
+            wholesalePrice = larsonPrice.chopPrice ? larsonPrice.chopPrice / 2.2 : larsonPrice.basePricePerFoot;
+            break;
+          case 'length':
+            wholesalePrice = larsonPrice.lengthPrice ? larsonPrice.lengthPrice / 2.2 : larsonPrice.basePricePerFoot;
+            break;
+          case 'join':
+            wholesalePrice = larsonPrice.joinPrice ? larsonPrice.joinPrice / 2.2 : larsonPrice.basePricePerFoot;
+            break;
+          default:
+            wholesalePrice = larsonPrice.chopPrice ? larsonPrice.chopPrice / 2.2 : larsonPrice.basePricePerFoot;
+        }
+
         console.log(`Using official Larson-Juhl wholesale price for ${frameId}: $${wholesalePrice}/ft (from base: $${larsonPrice.basePricePerFoot}/ft)`);
         return wholesalePrice;
       }
     }
-    
+
     // For non-Larson frames or if Larson frame not found in the catalog
     const [frame] = await db.select().from(frames).where(eq(frames.id, frameId));
     if (!frame) return null;
-    
+
     // Simulate wholesale price (typically 1/3 of retail)
     return parseFloat(frame.price) / 3;
   } catch (error) {
@@ -115,40 +125,40 @@ export async function calculateRetailPrice(
   let frame = null;
   let matColor = null;
   let glassOption = null;
-  
+
   // Fetch materials from database
   if (frameId) {
     const [frameResult] = await db.select().from(frames).where(eq(frames.id, frameId));
     frame = frameResult;
   }
-  
+
   if (matColorId) {
     const [matResult] = await db.select().from(matColors).where(eq(matColors.id, matColorId));
     matColor = matResult;
   }
-  
+
   if (glassOptionId) {
     const [glassResult] = await db.select().from(glassOptions).where(eq(glassOptions.id, glassOptionId));
     glassOption = glassResult;
   }
-  
+
   // Calculate finished dimensions
   const finishedWidth = artworkWidth + (matWidth * 2);
   const finishedHeight = artworkHeight + (matWidth * 2);
-  
+
   // Calculate united inches (width + height)
   const unitedInches = finishedWidth + finishedHeight;
-  
+
   // Calculate material prices based on sliding scale markups for Houston Heights
   let framePrice = 0;
   let matPrice = 0;
   let glassPrice = 0;
-  
+
   // Frame pricing (based on united inches with Houston sliding scale)
   if (frame) {
     const basePrice = parseFloat(frame.price);
     const frameFootage = (unitedInches / 12); // Convert to feet
-    
+
     // Apply Houston Heights sliding scale for frames (target $134 for 16x20 with 2" mat)
     if (unitedInches <= 20) {
       framePrice = basePrice * frameFootage * 0.85;
@@ -161,17 +171,17 @@ export async function calculateRetailPrice(
     } else {
       framePrice = basePrice * frameFootage * 0.75;
     }
-    
+
     // Apply the 1/6 reduced factor as requested (16.67% of original)
     framePrice = framePrice * 0.1667;
   }
-  
+
   // Mat pricing (based on square inches with Houston sliding scale)
   if (matColor) {
     const basePrice = parseFloat(matColor.price);
     const matSquareInches = finishedWidth * finishedHeight;
     const matSquareFeet = matSquareInches / 144; // Convert to square feet
-    
+
     // Apply Houston Heights sliding scale for mats (target $32 for 16x20 with 2" mat)
     if (matSquareFeet <= 2) {
       matPrice = basePrice * matSquareFeet * 1.8;
@@ -185,12 +195,12 @@ export async function calculateRetailPrice(
       matPrice = basePrice * matSquareFeet * 1.3;
     }
   }
-  
+
   // Glass pricing (based on square inches with Houston sliding scale)
   if (glassOption) {
     const basePrice = parseFloat(glassOption.price);
     const glassSquareInches = finishedWidth * finishedHeight;
-    
+
     // Apply Houston Heights sliding scale for glass (target $39 for 16x20 with 2" mat)
     if (glassSquareInches <= 200) {
       glassPrice = basePrice * glassSquareInches * 0.012;
@@ -203,11 +213,11 @@ export async function calculateRetailPrice(
     } else {
       glassPrice = basePrice * glassSquareInches * 0.008;
     }
-    
+
     // Apply the 45% reduced factor as requested (reduce by 55%)
     glassPrice = glassPrice * 0.45;
   }
-  
+
   // Calculate labor cost based on Houston Heights rates
   const laborRates = getHoustonHeightsLaborRates();
   const totalLaborHours = 
@@ -216,18 +226,18 @@ export async function calculateRetailPrice(
     (glassOption ? laborRates.estimates.glassCutting : 0) +
     laborRates.estimates.fitting + 
     laborRates.estimates.finishing;
-  
+
   const laborCost = totalLaborHours * laborRates.baseRate * laborRates.regionalFactor;
-  
+
   // Calculate material cost
   const materialCost = framePrice + matPrice + glassPrice;
-  
+
   // Calculate subtotal (materials + labor)
   const subtotal = materialCost + laborCost;
-  
+
   // Apply quantity
   const totalPrice = subtotal * quantity;
-  
+
   // Format result
   const result: PricingResult = {
     framePrice: Math.round(framePrice * 100) / 100,
@@ -238,34 +248,34 @@ export async function calculateRetailPrice(
     subtotal: Math.round(subtotal * 100) / 100,
     totalPrice: Math.round(totalPrice * 100) / 100,
   };
-  
+
   // Include wholesale prices if requested (for admin)
   if (includeWholesalePrices) {
     result.wholesalePrices = {};
-    
+
     if (frame) {
       const wholesalePrice = await getFrameWholesalePrice(frame.id);
       if (wholesalePrice !== null) {
         result.wholesalePrices.frame = wholesalePrice.toFixed(2);
       }
     }
-    
+
     if (matColor) {
       // Simulate mat wholesale price
       const matWholesale = parseFloat(matColor.price) * 0.4; // 40% of retail as wholesale
       result.wholesalePrices.mat = matWholesale.toFixed(2);
     }
-    
+
     if (glassOption) {
       // Simulate glass wholesale price
       const glassWholesale = parseFloat(glassOption.price) * 0.35; // 35% of retail as wholesale
       result.wholesalePrices.glass = glassWholesale.toFixed(2);
     }
-    
+
     // Include labor rates details
     result.laborRates = laborRates;
   }
-  
+
   return result;
 }
 
@@ -278,10 +288,10 @@ export async function updateWholesalePrices(): Promise<{ updated: number; messag
   try {
     // In a real implementation, this would connect to vendor APIs
     // For now, just simulate a successful update
-    
+
     // Get all frames
     const framesList = await db.select().from(frames);
-    
+
     // Simulate updating prices (no actual DB changes)
     return {
       updated: framesList.length,
