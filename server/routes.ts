@@ -24,7 +24,10 @@ import {
   getRomaFrames, 
   getAllVendorFrames,
   searchFramesByItemNumber,
-  syncFramesWithDatabase
+  syncFramesWithDatabase,
+  getLarsonJuhlWholesalePricing,
+  getLarsonJuhlWholesalePricingByCollection,
+  getLarsonJuhlCollectionsList
 } from "./controllers/vendorCatalogController";
 import { 
   getAllMaterialOrdersWithHubStatus, 
