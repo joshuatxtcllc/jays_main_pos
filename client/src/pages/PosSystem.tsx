@@ -915,7 +915,8 @@ const PosSystem = () => {
                 min="0.125"
                 value={artworkHeight}
                 onChange={(e) => handleDimensionChange('height', parseFloat(e.target.value))}
-              />div>
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
                 Art Type
