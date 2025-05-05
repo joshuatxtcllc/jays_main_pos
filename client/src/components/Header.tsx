@@ -52,6 +52,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
       subItems: [
         { title: "All Orders", path: "/orders" },
         { title: "Dashboard", path: "/dashboard" },
+        { title: "Order Progress", path: "/order-progress" },
       ]
     },
     {
@@ -67,7 +68,6 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
       subItems: [
         { title: "Production Board", path: "/production" },
         { title: "Pick List", path: "/materials-pick-list" },
-        { title: "Order Progress", path: "/order-progress" },
       ]
     },
     {
