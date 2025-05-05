@@ -1,7 +1,7 @@
 
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
-import { emailService } from './emailService';
+import * as emailService from './emailService';
 import { MaterialOrderStatus, Order } from '@shared/schema';
 
 /**
