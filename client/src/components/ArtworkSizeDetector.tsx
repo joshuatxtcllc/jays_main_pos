@@ -248,12 +248,12 @@ export function ArtworkSizeDetector({
             // Detect dimensions
             const detectedDimensions = await detector.estimateDimensions(img);
             
-            // Validate dimensions are within reasonable ranges for framing
+            // Validate dimensions are within reasonable ranges for framing (5" to 40")
             const isValidSize = 
-              detectedDimensions.width >= 2 && 
-              detectedDimensions.width <= 60 && 
-              detectedDimensions.height >= 2 && 
-              detectedDimensions.height <= 60;
+              detectedDimensions.width >= 5 && 
+              detectedDimensions.width <= 40 && 
+              detectedDimensions.height >= 5 && 
+              detectedDimensions.height <= 40;
             
             if (isValidSize) {
               setDimensions(detectedDimensions);
@@ -264,10 +264,29 @@ export function ArtworkSizeDetector({
                 description: `Detected artwork size: ${detectedDimensions.width}" × ${detectedDimensions.height}"`,
               });
             } else {
-              // If dimensions are unreasonable, fall back to default dimensions
+              console.log('Detection resulted in invalid size:', detectedDimensions);
+              
+              // If dimensions are unreasonable, estimate based on aspect ratio
+              const aspectRatio = img.width / img.height;
+              
+              // Use standard sizes as a fallback
+              let defaultWidth = 16;
+              let defaultHeight;
+              
+              if (aspectRatio >= 1) { // Landscape or square
+                defaultHeight = Math.round((defaultWidth / aspectRatio) * 10) / 10;
+              } else { // Portrait
+                defaultHeight = 20;
+                defaultWidth = Math.round((defaultHeight * aspectRatio) * 10) / 10;
+              }
+              
+              // Ensure dimensions are within reasonable ranges
+              defaultWidth = Math.max(5, Math.min(40, defaultWidth));
+              defaultHeight = Math.max(5, Math.min(40, defaultHeight));
+              
               const defaultDimensions = {
-                width: 16,
-                height: Math.round((16 / img.width) * img.height * 10) / 10,
+                width: defaultWidth,
+                height: defaultHeight,
                 unit: 'in' as const
               };
               
@@ -276,7 +295,7 @@ export function ArtworkSizeDetector({
               
               toast({
                 title: 'Detection Adjusted',
-                description: `Using standard dimensions. Please verify or adjust manually.`,
+                description: `Using estimated dimensions. Please verify or adjust manually.`,
                 variant: 'warning'
               });
               

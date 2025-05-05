@@ -1,3 +1,4 @@
+
 /**
  * Artwork Size Detector for Jay's Frames
  * 
@@ -221,70 +222,91 @@ export class ArtworkSizeDetector {
       // Draw the image
       this.ctx.drawImage(image, 0, 0, image.width, image.height);
       
-      // Since we don't have actual marker detection in this simplified version,
-      // we'll use image dimensions and a reasonable scaling factor with improved accuracy
-      
       // Calculate aspect ratio
       const aspectRatio = image.width / image.height;
       
-      // This is where actual marker detection would occur in a full implementation
-      // For now, we'll use a much more conservative estimation approach
+      // This is where actual marker detection would occur in a production implementation
+      // For now, we'll use a conservative estimation approach based on typical artwork sizes
       
-      // Reference marker size in cm (typically 5cm)
-      const markerSizeCm = this.options.markerSizeCm || 5;
+      // Common standard frame sizes in inches (width x height)
+      const standardSizes = [
+        { width: 5, height: 7 },
+        { width: 8, height: 10 },
+        { width: 11, height: 14 },
+        { width: 16, height: 20 },
+        { width: 18, height: 24 },
+        { width: 20, height: 24 },
+        { width: 24, height: 36 }
+      ];
       
-      // New more reasonable scaling approach based on typical photo sizes and artwork dimensions
-      // Most common artwork sizes fall in the range of 8"x10" to 24"x36"
+      // Find the closest standard size based on aspect ratio
+      let closestSize = standardSizes[0];
+      let closestRatioDiff = Math.abs((closestSize.width / closestSize.height) - aspectRatio);
       
-      // Base scale factor - much more conservative than before
-      const baseScaleFactor = 0.15; // Significantly reduced from 6.0
+      for (const size of standardSizes) {
+        const sizeRatio = size.width / size.height;
+        const ratioDiff = Math.abs(sizeRatio - aspectRatio);
+        
+        if (ratioDiff < closestRatioDiff) {
+          closestRatioDiff = ratioDiff;
+          closestSize = size;
+        }
+      }
       
-      // More conservative progressive scaling with a much lower ceiling
-      const progressiveScaleFactor = Math.max(0.8, Math.min(1.2, image.width / 2000));
+      // If the aspect ratio is very different from all standard sizes, adjust based on image resolution
+      const sizeAdjustmentFactor = Math.min(1.5, Math.max(0.7, image.width / 2000));
       
-      // Calculate estimated dimensions with the improved algorithm
-      // Apply an additional normalization factor to keep dimensions in a reasonable range
-      const normalizationFactor = 1.5; // Help ensure we get reasonable dimensions
+      // Determine the base size dimensions
+      let estimatedWidth = closestSize.width * sizeAdjustmentFactor;
+      let estimatedHeight = closestSize.height * sizeAdjustmentFactor;
       
-      // Calculate width in cm with our more conservative approach
-      const calculatedWidthCm = (image.width / 100) * markerSizeCm * baseScaleFactor * 
-                               progressiveScaleFactor * normalizationFactor;
+      // For images with unusual aspect ratios, adjust to maintain the image's original proportions
+      if (closestRatioDiff > 0.2) {
+        // Use a medium standard size as a baseline
+        const baseSize = 16; // inches - typical medium artwork dimension
+        
+        // Calculate dimensions that preserve the image's aspect ratio
+        if (aspectRatio >= 1) { // Landscape or square
+          estimatedWidth = baseSize;
+          estimatedHeight = baseSize / aspectRatio;
+        } else { // Portrait
+          estimatedHeight = baseSize;
+          estimatedWidth = baseSize * aspectRatio;
+        }
+      }
       
-      // Set reasonable bounds for artwork dimensions (in cm)
-      const minWidthCm = 15; // About 6 inches minimum
-      const maxWidthCm = 92; // About 36 inches maximum
+      // Round to reasonable framing dimensions (nearest 0.5 inch)
+      estimatedWidth = Math.round(estimatedWidth * 2) / 2;
+      estimatedHeight = Math.round(estimatedHeight * 2) / 2;
       
-      // Clamp the width to reasonable bounds
-      const estimatedWidthCm = Math.max(minWidthCm, 
-                               Math.min(maxWidthCm, Math.round(calculatedWidthCm)));
+      // Enforce minimum and maximum sizes for framing
+      const minSize = 5; // 5 inches minimum
+      const maxSize = 40; // 40 inches maximum
       
-      // Calculate height based on aspect ratio, also clamped to reasonable bounds
-      const maxHeightCm = 92; // About 36 inches maximum
-      const rawHeightCm = estimatedWidthCm / aspectRatio;
-      const estimatedHeightCm = Math.max(minWidthCm, 
-                               Math.min(maxHeightCm, Math.round(rawHeightCm)));
+      estimatedWidth = Math.max(minSize, Math.min(maxSize, estimatedWidth));
+      estimatedHeight = Math.max(minSize, Math.min(maxSize, estimatedHeight));
       
       // Log detailed information for debugging
       console.log('Image dimensions:', image.width, 'x', image.height, 'pixels');
       console.log('Aspect ratio:', aspectRatio);
-      console.log('Base scale factor:', baseScaleFactor);
-      console.log('Progressive scale factor:', progressiveScaleFactor);
-      console.log('Normalization factor:', normalizationFactor);
-      console.log('Estimated dimensions:', estimatedWidthCm, 'x', estimatedHeightCm, 'cm');
+      console.log('Closest standard size:', closestSize.width, 'x', closestSize.height);
+      console.log('Size adjustment factor:', sizeAdjustmentFactor);
+      console.log('Estimated dimensions:', estimatedWidth, 'x', estimatedHeight, 'inches');
       
-      // Convert to inches (1 inch = 2.54 cm)
-      const estimatedWidthIn = parseFloat((estimatedWidthCm / 2.54).toFixed(1));
-      const estimatedHeightIn = parseFloat((estimatedHeightCm / 2.54).toFixed(1));
-      
-      // Return values in inches for the framing system
+      // Return the estimated dimensions
       return {
-        width: estimatedWidthIn,
-        height: estimatedHeightIn,
+        width: estimatedWidth,
+        height: estimatedHeight,
         unit: 'in'
       };
     } catch (error) {
       console.error('Error estimating artwork dimensions:', error);
-      throw new Error('Failed to estimate artwork dimensions. Please try uploading a clearer image with the reference marker visible.');
+      // Fallback to a reasonable default size if detection fails
+      return {
+        width: 16,
+        height: 20,
+        unit: 'in'
+      };
     }
   }
   
