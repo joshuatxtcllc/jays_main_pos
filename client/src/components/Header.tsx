@@ -198,9 +198,9 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
             <button className="flex items-center space-x-1">
               <span className="font-medium">Jay</span>
               <img 
-                src="https://randomuser.me/api/portraits/men/41.jpg" 
-                alt="Profile" 
-                className="w-8 h-8 rounded-full border-2 border-primary"
+                src="/images/toolman-jay-avatar.png" 
+                alt="Toolman Jay" 
+                className="w-10 h-10 rounded-full border-2 border-primary"
               />
             </button>
           </div>
