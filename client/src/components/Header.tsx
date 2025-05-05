@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
         className={cn(
           navigationMenuTriggerStyle(),
           isActive && "bg-accent/50 text-accent-foreground",
-          "cursor-pointer"
+          "cursor-pointer text-white"
         )}
       >
         {children}
@@ -126,6 +126,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
                 <NavigationMenuItem key={idx}>
                   <NavigationMenuTrigger
                     className={cn(
+                      "text-white",
                       location === menuItem.path && "text-primary"
                     )}
                   >
@@ -236,12 +237,12 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
         <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg overflow-y-auto max-h-[70vh]">
           {menuStructure.map((menuItem, idx) => (
             <div key={idx} className="py-1">
-              <div className="font-medium text-lg mb-1">{menuItem.title}</div>
+              <div className="font-medium text-lg mb-1 text-white">{menuItem.title}</div>
               <div className="pl-4 flex flex-col space-y-2">
                 {menuItem.subItems.map((subItem, subIdx) => (
                   <Link key={subIdx} href={subItem.path}>
                     <span className={cn(
-                      "py-1 font-medium hover:text-primary transition-colors cursor-pointer",
+                      "py-1 font-medium text-white hover:text-primary transition-colors cursor-pointer",
                       location === subItem.path && "text-primary"
                     )}>
                       {subItem.title}
