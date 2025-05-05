@@ -198,9 +198,13 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
             <button className="flex items-center space-x-1">
               <span className="font-medium">Jay</span>
               <img 
-                src="./images/toolman-jay-avatar.png" 
+                src="/images/toolman-jay-avatar.png" 
                 alt="Toolman Jay" 
                 className="w-10 h-10 rounded-full border-2 border-primary"
+                onError={(e) => {
+                  console.error("Failed to load avatar image");
+                  e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23718096'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='white' font-size='16'%3EJ%3C/text%3E%3C/svg%3E";
+                }}
               />
             </button>
           </div>
