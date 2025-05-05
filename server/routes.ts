@@ -62,6 +62,8 @@ import invoiceRoutes from "./routes/invoiceRoutes";
 import customerInvoicesRoutes from "./routes/customerInvoicesRoutes";
 import vendorSettingsRoutes from "./routes/vendorSettingsRoutes";
 import qrCodeRoutes from "./routes/qrCodeRoutes";
+import vendorApiRoutes from './routes/vendorApiRoutes';
+import orderStatusHistoryRoutes from './routes/orderStatusHistoryRoutes';
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 
@@ -74,7 +76,7 @@ import {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
-  
+
   // Customers
   app.get('/api/customers', async (req, res) => {
     try {
@@ -89,11 +91,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const customer = await storage.getCustomer(id);
-      
+
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      
+
       res.json(customer);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch customer" });
@@ -103,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/customers', async (req, res) => {
     try {
       const validatedData = insertCustomerSchema.parse(req.body);
-      
+
       // Check if customer with same email already exists
       if (validatedData.email) {
         const existingCustomer = await storage.getCustomerByEmail(validatedData.email);
@@ -111,7 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.json(existingCustomer);
         }
       }
-      
+
       const customer = await storage.createCustomer(validatedData);
       res.status(201).json(customer);
     } catch (error) {
@@ -140,12 +142,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = req.params.id;
       console.log(`Server: Fetching frame with ID: ${id}`);
       const frame = await storage.getFrame(id);
-      
+
       if (!frame) {
         console.log(`Server: Frame with ID ${id} not found`);
         return res.status(404).json({ message: "Frame not found" });
       }
-      
+
       console.log(`Server: Successfully fetched frame: ${frame.name}`);
       res.json(frame);
     } catch (error) {
@@ -168,11 +170,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const matColor = await storage.getMatColor(id);
-      
+
       if (!matColor) {
         return res.status(404).json({ message: "Mat color not found" });
       }
-      
+
       res.json(matColor);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch mat color" });
@@ -193,11 +195,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const glassOption = await storage.getGlassOption(id);
-      
+
       if (!glassOption) {
         return res.status(404).json({ message: "Glass option not found" });
       }
-      
+
       res.json(glassOption);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch glass option" });
@@ -218,11 +220,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const specialService = await storage.getSpecialService(id);
-      
+
       if (!specialService) {
         return res.status(404).json({ message: "Special service not found" });
       }
-      
+
       res.json(specialService);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch special service" });
@@ -243,35 +245,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const order = await storage.getOrder(id);
-      
+
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      
+
       res.json(order);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch order" });
     }
   });
-  
+
   app.patch('/api/orders/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const order = await storage.getOrder(id);
-      
+
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      
+
       // Update and recalculate prices if necessary
       const updates: Partial<Order> = { ...req.body };
-      
+
       // Extract non-order properties before updating
       const recalculatePricingFlag = req.body.recalculatePricing === true;
-      
+
       // Remove non-order properties that aren't in the Order interface
       const { recalculatePricing, ...orderUpdates } = req.body;
-      
+
       // Flag to check if we need to recalculate pricing
       const shouldRecalculatePricing = recalculatePricingFlag || 
         updates.quantity !== undefined || 
@@ -281,66 +283,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updates.frameId !== order.frameId ||
         updates.matColorId !== order.matColorId ||
         updates.glassOptionId !== order.glassOptionId;
-      
+
       // If size or material components changed, recalculate pricing
       if (shouldRecalculatePricing) {
         console.log("Recalculating pricing due to dimension or material changes");
-        
+
         // If quantity is updated, use the new value, otherwise use existing
         const quantity = updates.quantity !== undefined 
           ? parseInt(updates.quantity as unknown as string) 
           : (order.quantity || 1);
-          
+
         if (updates.quantity !== undefined && (isNaN(quantity) || quantity < 1)) {
           return res.status(400).json({ message: "Invalid quantity value" });
         }
-        
+
         // Update the quantity in the updates object
         updates.quantity = quantity;
-        
+
         // Determine new dimensions
         const artworkWidth = updates.artworkWidth !== undefined 
           ? Number(updates.artworkWidth) 
           : Number(order.artworkWidth);
-          
+
         const artworkHeight = updates.artworkHeight !== undefined 
           ? Number(updates.artworkHeight) 
           : Number(order.artworkHeight);
-          
+
         const matWidth = updates.matWidth !== undefined 
           ? Number(updates.matWidth) 
           : Number(order.matWidth);
-          
+
         // Calculate united inches for pricing (width + height)
         const unitedInches = artworkWidth + artworkHeight;
-        
+
         // Get unit price based on dimensions and frame type
         // For now, we'll use a simplified calculation
         const frameId = updates.frameId || order.frameId;
         const matColorId = updates.matColorId || order.matColorId;
         const glassOptionId = updates.glassOptionId || order.glassOptionId;
-        
+
         // Simplified pricing calculation
         // In a real implementation, we would fetch pricing from the database
         const basePrice = unitedInches * 5; // $5 per united inch as base
         const framePrice = basePrice * 0.5; // Frame is 50% of base
         const matPrice = unitedInches * 0.2 * matWidth; // Mat price based on size and width
         const glassPrice = (artworkWidth * artworkHeight) * 0.1; // Glass based on area
-        
+
         // Calculate new subtotal
         const newUnitPrice = basePrice + framePrice + matPrice + glassPrice;
         const newSubtotal = newUnitPrice * quantity;
         updates.subtotal = newSubtotal.toString();
-        
+
         // Calculate tax at standard rate (e.g., 8%)
         const taxRate = order.orderGroupId 
           ? (Number(order.tax) / Number(order.subtotal)) 
           : 0.08;
-          
+
         const newTax = newSubtotal * taxRate;
         updates.tax = newTax.toString();
         updates.total = (newSubtotal + newTax).toString();
-        
+
         // Update the order group totals if necessary
         if (order.orderGroupId) {
           const orderGroup = await storage.getOrderGroup(order.orderGroupId);
@@ -348,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Calculate price difference
             const priceDifference = newSubtotal - Number(order.subtotal);
             const taxDifference = newTax - Number(order.tax);
-            
+
             // Update order group totals
             await storage.updateOrderGroup(order.orderGroupId, {
               subtotal: (Number(orderGroup.subtotal) + priceDifference).toString(),
@@ -358,7 +360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       const updatedOrder = await storage.updateOrder(id, updates);
       res.json(updatedOrder);
     } catch (error) {
@@ -366,16 +368,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update order" });
     }
   });
-  
+
   app.delete('/api/orders/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const order = await storage.getOrder(id);
-      
+
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      
+
       // If the order belongs to an order group, update the order group totals
       if (order.orderGroupId) {
         const orderGroup = await storage.getOrderGroup(order.orderGroupId);
@@ -388,10 +390,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
         }
       }
-      
+
       // Delete the order
       await storage.deleteOrder(id);
-      
+
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting order:", error);
@@ -404,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertOrderSchema.parse(req.body);
       console.log('POST /api/orders - Validated order data:', validatedData);
-      
+
       // Calculate prices
       if (validatedData.frameId && validatedData.matColorId && validatedData.glassOptionId) {
         console.log('POST /api/orders - Looking up related entities');
@@ -416,38 +418,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
           matColor: matColor ? 'Found' : 'Not found', 
           glassOption: glassOption ? 'Found' : 'Not found' 
         });
-        
+
         if (frame && matColor && glassOption) {
           // Calculate united inch (width + height)
           const unitedInch = Number(validatedData.artworkWidth) + Number(validatedData.artworkHeight);
           console.log('Frame united inch:', unitedInch);
-          
+
           // Calculate perimeter in feet
           const perimeter = 2 * unitedInch / 12;
           console.log('Frame perimeter:', perimeter, 'feet');
-          
+
           // Calculate frame price using Houston Heights pricing service
           const frameWholesalePrice = Number(frame.price);
           const framePrice = frameWholesalePrice * perimeter * 2.5 * 0.1667; // Apply markup and Houston factor
           console.log('Frame price:', framePrice, 'from base price:', frameWholesalePrice);
-          
+
           // Mat pricing calculations
           // For matboard, we need the outer dimensions (including the matboard border)
           const outerWidth = Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth);
           const outerHeight = Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth);
           const outerUnitedInch = outerWidth + outerHeight;
           console.log('Mat outer united inch:', outerUnitedInch);
-          
+
           // Calculate mat area
           const matArea = (outerWidth * outerHeight) - (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight));
           console.log('Mat area:', matArea, 'square inches');
-          
+
           // Calculate mat price using Houston Heights formula
           const matPriceBase = Number(matColor.price);
           // Apply scaling based on united inches, area and Houston factor
           const matPrice = matPriceBase * matArea * 0.45 * (1 + (outerUnitedInch * 0.01)); 
           console.log('Mat price:', matPrice, 'from base price:', matPriceBase);
-          
+
           // Glass price calculations for Houston Heights
           const glassArea = (Number(validatedData.artworkWidth) + 2 * Number(validatedData.matWidth)) * 
                            (Number(validatedData.artworkHeight) + 2 * Number(validatedData.matWidth));
@@ -455,16 +457,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Apply Houston-specific glass pricing with 45% adjustment factor
           const glassPrice = glassWholesalePrice * glassArea * 0.45;
           console.log('Glass price:', glassPrice, 'from base price:', glassWholesalePrice);
-          
+
           // Backing price (with markup)
           const backingPrice = glassArea * 0.03 * 2.5;
-          
+
           // Labor price
           const laborPrice = 20 + (Number(validatedData.artworkWidth) * Number(validatedData.artworkHeight) * 0.05);
-          
+
           // Calculate subtotal
           const subtotal = framePrice + matPrice + glassPrice + backingPrice + laborPrice;
-          
+
           // Check if the order group is tax exempt
           let tax = 0;
           if (validatedData.orderGroupId) {
@@ -475,24 +477,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             tax = subtotal * 0.08; // Apply default tax for new orders
           }
-          
+
           // Total
           const total = subtotal + tax;
-          
+
           // Update order data with calculated prices
           validatedData.subtotal = subtotal.toString();
           validatedData.tax = tax.toString();
           validatedData.total = total.toString();
         }
       }
-      
+
       console.log('POST /api/orders - Creating order in database with data:', validatedData);
-      
+
       // Create or use existing order group
       let orderGroupId = validatedData.orderGroupId;
       if (!orderGroupId) {
         console.log('POST /api/orders - No order group ID provided, creating a new order group');
-        
+
         // Create a new order group for this order
         const orderGroup = await storage.createOrderGroup({
           customerId: validatedData.customerId,
@@ -502,12 +504,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: 'open'
         });
         console.log('POST /api/orders - Created new order group:', orderGroup);
-        
+
         // Use the new order group ID
         orderGroupId = orderGroup.id;
         validatedData.orderGroupId = orderGroupId;
       }
-      
+
       const order = await storage.createOrder(validatedData);
       console.log('POST /api/orders - Order created successfully:', order);
       res.status(201).json(order);
@@ -561,11 +563,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const wholesaleOrder = await storage.getWholesaleOrder(id);
-      
+
       if (!wholesaleOrder) {
         return res.status(404).json({ message: "Wholesale order not found" });
       }
-      
+
       res.json(wholesaleOrder);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch wholesale order" });
@@ -575,26 +577,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/wholesale-orders', async (req, res) => {
     try {
       const validatedData = insertWholesaleOrderSchema.parse(req.body);
-      
+
       // Get the order to extract frame and manufacturer info
       const orderId = validatedData.orderId ?? 0;
       const order = await storage.getOrder(orderId);
-      
+
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      
+
       // Get the frame to get manufacturer
       if (!order.frameId) {
         return res.status(400).json({ message: "Frame ID not found for the order" });
       }
-      
+
       const frame = await storage.getFrame(order.frameId);
-      
+
       if (!frame) {
         return res.status(400).json({ message: "Frame not found for the order" });
       }
-      
+
       // Prepare wholesale order data
       const wholesaleOrderData = {
         ...validatedData,
@@ -623,7 +625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         ]
       };
-      
+
       const wholesaleOrder = await storage.createWholesaleOrder(wholesaleOrderData);
       res.status(201).json(wholesaleOrder);
     } catch (error) {
@@ -638,39 +640,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const wholesaleOrder = await storage.getWholesaleOrder(id);
-      
+
       if (!wholesaleOrder) {
         return res.status(404).json({ message: "Wholesale order not found" });
       }
-      
+
       // Validate status
       if (req.body.status) {
         if (!['pending', 'ordered', 'received', 'cancelled'].includes(req.body.status)) {
           return res.status(400).json({ message: "Invalid status value" });
         }
       }
-      
+
       const updatedWholesaleOrder = await storage.updateWholesaleOrder(id, req.body);
       res.json(updatedWholesaleOrder);
     } catch (error) {
       res.status(500).json({ message: "Failed to update wholesale order" });
     }
   });
-  
+
   // Larson Juhl Catalog
   app.get('/api/larson-catalog', getAllLarsonMatboards);
   app.get('/api/larson-catalog/crescent', getCrescentMatboards);
   app.post('/api/larson-catalog/sync', syncMatboardsToMatColors);
-  
+
   // Crescent Select Matboards
   app.get('/api/crescent-select', getCrescentSelect);
   app.post('/api/crescent-select/import', importCrescentSelect);
-  
+
   // Frame Catalog API
   app.get('/api/frames', getAllFrames);
   app.get('/api/frames/:id', getFrameById);
   app.get('/api/frames/manufacturer/:manufacturer', getFramesByManufacturer);
-  
+
   // Vendor Catalog API Routes
   app.get('/api/vendor-catalog/larson', getLarsonJuhlFrames);
   app.get('/api/vendor-catalog/larson/wholesale', getLarsonJuhlWholesalePricing);
@@ -681,10 +683,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/vendor-catalog/all', getAllVendorFrames);
   app.get('/api/vendor-catalog/search/:itemNumber', searchFramesByItemNumber);
   app.post('/api/vendor-catalog/sync', syncFramesWithDatabase);
-  
+
   // Custom framing pricing endpoints
   app.post('/api/pricing/calculate', calculatePrice);
-  
+
   // Glass options endpoint
   app.get('/api/glass-options', async (req, res) => {
     try {
@@ -716,11 +718,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const orderGroup = await storage.getOrderGroup(id);
-      
+
       if (!orderGroup) {
         return res.status(404).json({ message: "Order group not found" });
       }
-      
+
       res.json(orderGroup);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch order group" });
@@ -741,31 +743,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const orderGroup = await storage.getActiveOrderGroupByCustomer(id);
-      
+
       if (!orderGroup) {
         return res.status(404).json({ message: "No active order group found for customer" });
       }
-      
+
       res.json(orderGroup);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch active order group" });
     }
   });
-  
+
   // Get all orders for a customer (order history)
   app.get('/api/customers/:id/orders', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const customer = await storage.getCustomer(id);
-      
+
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      
+
       // Get all orders for this customer directly from storage
       const allOrders = await storage.getAllOrders();
       const customerOrders = allOrders.filter(o => o.customerId === id);
-      
+
       // Get unique order group IDs
       const uniqueOrderGroupIds: number[] = [];
       customerOrders.forEach(order => {
@@ -774,16 +776,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           uniqueOrderGroupIds.push(order.orderGroupId);
         }
       });
-      
+
       const orderGroups = [];
-      
+
       for (const groupId of uniqueOrderGroupIds) {
         const group = await storage.getOrderGroup(groupId);
         if (group) {
           orderGroups.push(group);
         }
       }
-      
+
       // Create an enhanced response with order details
       const orderHistory = orderGroups.map(group => {
         const groupOrders = customerOrders.filter(order => order.orderGroupId === group.id);
@@ -796,35 +798,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           total: group.total
         };
       });
-      
+
       res.json(orderHistory);
     } catch (error) {
       console.error('Error fetching customer order history:', error);
       res.status(500).json({ message: "Failed to fetch customer order history" });
     }
   });
-  
+
   // Update customer details
   app.patch('/api/customers/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const customer = await storage.getCustomer(id);
-      
+
       if (!customer) {
         return res.status(404).json({ message: "Customer not found" });
       }
-      
+
       const updatedCustomer = await storage.updateCustomer(id, req.body);
       res.json(updatedCustomer);
     } catch (error) {
       res.status(500).json({ message: "Failed to update customer" });
     }
-  });
-
-  app.post('/api/order-groups', async (req, res) => {
+  });app.post('/api/order-groups', async (req, res) => {
     try {
       const validatedData = insertOrderGroupSchema.parse(req.body);
-      
+
       const orderGroup = await storage.createOrderGroup(validatedData);
       res.status(201).json(orderGroup);
     } catch (error) {
@@ -839,39 +839,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const orderGroup = await storage.getOrderGroup(id);
-      
+
       if (!orderGroup) {
         return res.status(404).json({ message: "Order group not found" });
       }
-      
+
       // Validate status
       if (req.body.status) {
         if (!['open', 'completed', 'cancelled', 'paid'].includes(req.body.status)) {
           return res.status(400).json({ message: "Invalid status value" });
         }
       }
-      
+
       // Validate discount type if provided
       if (req.body.discountType && !['percentage', 'fixed'].includes(req.body.discountType)) {
         return res.status(400).json({ message: "Invalid discount type. Use 'percentage' or 'fixed'" });
       }
-      
+
       const updatedOrderGroup = await storage.updateOrderGroup(id, req.body);
-      
+
       // Recalculate total if tax exempt status or discount has changed
       if (req.body.taxExempt !== undefined || 
           req.body.discountAmount !== undefined || 
           req.body.discountType !== undefined) {
-        
+
         // Get all orders in the group
         const orders = await storage.getOrdersByGroupId(id);
-        
+
         // Calculate subtotal from all orders
         let subtotal = 0;
         for (const order of orders) {
           subtotal += Number(order.subtotal);
         }
-        
+
         // Apply discount if available
         let discountedSubtotal = subtotal;
         if (updatedOrderGroup.discountAmount && updatedOrderGroup.discountType) {
@@ -884,73 +884,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
             discountedSubtotal = Math.max(0, subtotal - discountAmount);
           }
         }
-        
+
         // Calculate tax unless tax exempt
         let totalTax = 0;
         if (!updatedOrderGroup.taxExempt) {
           totalTax = discountedSubtotal * 0.08; // 8% tax rate
         }
-        
+
         // Calculate total
         const total = discountedSubtotal + totalTax;
-        
+
         // Update the order group with new totals
         await storage.updateOrderGroup(id, {
           subtotal: subtotal.toString(),
           tax: totalTax.toString(),
           total: total.toString()
         });
-        
+
         // Return the fully updated order group
         const finalOrderGroup = await storage.getOrderGroup(id);
         return res.json(finalOrderGroup);
       }
-      
+
       res.json(updatedOrderGroup);
     } catch (error) {
       console.error('Error updating order group:', error);
       res.status(500).json({ message: "Failed to update order group" });
     }
   });
-  
+
   // Apply discount and tax exemption
   app.post('/api/order-groups/:id/apply-discount', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const { discountType, discountAmount, taxExempt } = req.body;
-      
+
       if (!discountType || !discountAmount) {
         return res.status(400).json({ message: "Discount type and amount are required" });
       }
-      
+
       if (!['percentage', 'fixed'].includes(discountType)) {
         return res.status(400).json({ message: "Invalid discount type. Use 'percentage' or 'fixed'" });
       }
-      
+
       const orderGroup = await storage.getOrderGroup(id);
       if (!orderGroup) {
         return res.status(404).json({ message: "Order group not found" });
       }
-      
+
       // Update order group with discount and tax exempt data
       const updateData: any = {
         discountType,
         discountAmount
       };
-      
+
       if (taxExempt !== undefined) {
         updateData.taxExempt = taxExempt;
       }
-      
+
       // Get all orders in the group
       const orders = await storage.getOrdersByGroupId(id);
-      
+
       // Calculate subtotal from all orders
       let subtotal = 0;
       for (const order of orders) {
         subtotal += Number(order.subtotal);
       }
-      
+
       // Apply discount
       let discountedSubtotal = subtotal;
       if (discountType === 'percentage') {
@@ -960,23 +960,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Apply fixed amount discount
         discountedSubtotal = Math.max(0, subtotal - Number(discountAmount));
       }
-      
+
       // Calculate tax unless tax exempt
       let totalTax = 0;
       if (!taxExempt) {
         totalTax = discountedSubtotal * 0.08; // 8% tax rate
       }
-      
+
       // Calculate total
       const total = discountedSubtotal + totalTax;
-      
+
       // Update the order group with new totals
       updateData.subtotal = subtotal.toString();
       updateData.tax = totalTax.toString();
       updateData.total = total.toString();
-      
+
       const updatedOrderGroup = await storage.updateOrderGroup(id, updateData);
-      
+
       res.json({
         success: true,
         message: `Applied ${discountType} discount of ${discountAmount}${discountType === 'percentage' ? '%' : '$'}${taxExempt ? ' and tax exemption' : ''}`,
@@ -993,7 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   if (!stripeSecretKey) {
     console.error("Missing STRIPE_SECRET_KEY environment variable");
   }
-  
+
   const stripe = new Stripe(stripeSecretKey || '', {
     apiVersion: '2023-10-16' as any,
   });
@@ -1003,28 +1003,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/process-cash-check-payment', async (req, res) => {
     try {
       const { orderGroupId, paymentMethod, cashAmount, checkNumber, notes } = req.body;
-      
+
       if (!orderGroupId) {
         return res.status(400).json({ message: "Order group ID is required" });
       }
-      
+
       if (!paymentMethod || !['cash', 'check'].includes(paymentMethod)) {
         return res.status(400).json({ message: "Valid payment method (cash or check) is required" });
       }
-      
+
       if (paymentMethod === 'cash' && !cashAmount) {
         return res.status(400).json({ message: "Cash amount is required for cash payments" });
       }
-      
+
       if (paymentMethod === 'check' && !checkNumber) {
         return res.status(400).json({ message: "Check number is required for check payments" });
       }
-      
+
       const orderGroup = await storage.getOrderGroup(parseInt(orderGroupId));
       if (!orderGroup) {
         return res.status(404).json({ message: "Order group not found" });
       }
-      
+
       // Update the order group with payment information
       const paymentData = {
         status: 'paid',
@@ -1034,36 +1034,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(paymentMethod === 'cash' ? { cashAmountReceived: cashAmount } : {}),
         ...(paymentMethod === 'check' ? { checkNumber: checkNumber } : {})
       };
-      
+
       const updatedOrderGroup = await storage.updateOrderGroup(parseInt(orderGroupId), paymentData);
-      
+
       res.json({ success: true, orderGroup: updatedOrderGroup });
     } catch (error) {
       console.error("Error processing cash/check payment:", error);
       res.status(500).json({ message: "Failed to process payment" });
     }
   });
-  
+
   app.post('/api/create-payment-intent', async (req, res) => {
     try {
       const { orderGroupId } = req.body;
-      
+
       if (!orderGroupId) {
         return res.status(400).json({ message: "Order group ID is required" });
       }
-      
+
       const orderGroup = await storage.getOrderGroup(parseInt(orderGroupId));
       if (!orderGroup) {
         return res.status(404).json({ message: "Order group not found" });
       }
-      
+
       // Get the customer
       const customer = orderGroup.customerId ? 
         await storage.getCustomer(orderGroup.customerId) : null;
-        
+
       // Get all orders in the group to calculate total
       const orders = await storage.getOrdersByGroupId(orderGroup.id);
-      
+
       // Calculate the total amount for all orders
       let totalAmount = 0;
       for (const order of orders) {
@@ -1081,10 +1081,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalAmount = Math.max(0, totalAmount - discountAmount);
         }
       }
-      
+
       // Convert amount to cents for Stripe
       const amountInCents = Math.round(totalAmount * 100);
-      
+
       // Create a Stripe customer if needed
       let stripeCustomerId = customer?.stripeCustomerId;
       if (customer && !stripeCustomerId && customer.email) {
@@ -1092,20 +1092,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const customerParams: Stripe.CustomerCreateParams = {
           name: customer.name || undefined
         };
-        
+
         // Only add email and phone if they exist and aren't null
         if (customer.email) customerParams.email = customer.email;
         if (customer.phone) customerParams.phone = customer.phone;
-        
+
         const stripeCustomer = await stripe.customers.create(customerParams);
         stripeCustomerId = stripeCustomer.id;
-        
+
         // Update customer with Stripe ID
         if (stripeCustomerId) {
           await storage.updateCustomer(customer.id, { stripeCustomerId });
         }
       }
-      
+
       // Create the payment intent
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amountInCents,
@@ -1119,13 +1119,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customer: customer ? customer.name : 'Guest',
         },
       });
-      
+
       // Update the order group with the payment intent ID
       await storage.updateOrderGroup(orderGroup.id, {
         stripePaymentIntentId: paymentIntent.id,
         stripePaymentStatus: 'pending',
       });
-      
+
       res.json({
         clientSecret: paymentIntent.client_secret,
       });
@@ -1141,7 +1141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/webhook', async (req, res) => {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
+
     // For testing without webhook setup
     if (!endpointSecret || !sig) {
       // Handle raw event directly for development
@@ -1155,7 +1155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       return;
     }
-    
+
     // Production webhook handling with signature verification
     let event;
     try {
@@ -1177,7 +1177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     switch (event.type) {
       case 'payment_intent.succeeded':
         const paymentIntent = event.data.object;
-        
+
         // Get the order group ID from metadata
         const orderGroupId = paymentIntent.metadata.orderGroupId;
         if (orderGroupId) {
@@ -1187,7 +1187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             stripePaymentStatus: 'succeeded',
             paymentDate: new Date(),
           });
-          
+
           // Update order statuses
           const orders = await storage.getOrdersByGroupId(parseInt(orderGroupId));
           for (const order of orders) {
@@ -1195,7 +1195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: 'in_progress'
             });
           }
-          
+
           // Get customer information for email notification
           if (orders.length > 0 && orders[0].customerId) {
             const customer = await storage.getCustomer(orders[0].customerId);
@@ -1207,11 +1207,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         break;
-      
+
       case 'payment_intent.payment_failed':
         const failedPaymentIntent = event.data.object;
         const failedOrderGroupId = failedPaymentIntent.metadata.orderGroupId;
-        
+
         if (failedOrderGroupId) {
           await storage.updateOrderGroup(parseInt(failedOrderGroupId), {
             stripePaymentStatus: 'failed',
@@ -1248,7 +1248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { status } = req.body;
-      
+
       if (!status) {
         return res.status(400).json({ message: "Status is required" });
       }
@@ -1265,7 +1265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { estimatedDays } = req.body;
-      
+
       if (!estimatedDays || isNaN(parseInt(estimatedDays))) {
         return res.status(400).json({ message: "Valid estimated days value is required" });
       }
@@ -1306,7 +1306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { enabled } = req.body;
-      
+
       if (typeof enabled !== 'boolean') {
         return res.status(400).json({ message: "Enabled status is required and must be a boolean" });
       }
@@ -1317,11 +1317,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .set({ notificationsEnabled: enabled })
         .where(eq(orders.id, id))
         .returning();
-      
+
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      
+
       res.json(order);
     } catch (error) {
       console.error('Error updating order notification settings:', error);
@@ -1330,7 +1330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Material Orders API Routes
-  
+
   // Get all material orders
   app.get('/api/material-orders', async (req, res) => {
     try {
@@ -1347,11 +1347,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const materialOrder = await storage.getMaterialOrder(id);
-      
+
       if (!materialOrder) {
         return res.status(404).json({ message: "Material order not found" });
       }
-      
+
       res.json(materialOrder);
     } catch (error) {
       console.error('Error fetching material order:', error);
@@ -1367,7 +1367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!materialOrderStatuses.includes(status as MaterialOrderStatus)) {
         return res.status(400).json({ message: "Invalid material order status" });
       }
-      
+
       const materialOrders = await storage.getMaterialOrdersByStatus(status as MaterialOrderStatus);
       res.json(materialOrders);
     } catch (error) {
@@ -1384,7 +1384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!materialTypes.includes(type as MaterialType)) {
         return res.status(400).json({ message: "Invalid material type" });
       }
-      
+
       const materialOrders = await storage.getMaterialOrdersByType(type as MaterialType);
       res.json(materialOrders);
     } catch (error) {
@@ -1397,7 +1397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/material-orders', async (req, res) => {
     try {
       const materialOrderData = req.body;
-      
+
       // Validate material order data using schema
       try {
         insertMaterialOrderSchema.parse(materialOrderData);
@@ -1407,7 +1407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           errors: validationError.errors 
         });
       }
-      
+
       const newMaterialOrder = await storage.createMaterialOrder(materialOrderData);
       res.status(201).json(newMaterialOrder);
     } catch (error) {
@@ -1421,13 +1421,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
-      
+
       // Check if material order exists
       const existingOrder = await storage.getMaterialOrder(id);
       if (!existingOrder) {
         return res.status(404).json({ message: "Material order not found" });
       }
-      
+
       const updatedMaterialOrder = await storage.updateMaterialOrder(id, updates);
       res.json(updatedMaterialOrder);
     } catch (error) {
@@ -1440,13 +1440,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete('/api/material-orders/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      
+
       // Check if material order exists
       const existingOrder = await storage.getMaterialOrder(id);
       if (!existingOrder) {
         return res.status(404).json({ message: "Material order not found" });
       }
-      
+
       await storage.deleteMaterialOrder(id);
       res.status(204).send();
     } catch (error) {
@@ -1459,22 +1459,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/material-orders/ai-assist', async (req, res) => {
     try {
       const { orderId, materialType } = req.body;
-      
+
       if (!orderId) {
         return res.status(400).json({ message: "Order ID is required" });
       }
-      
+
       // Get the order to extract material information
       const order = await storage.getOrder(orderId);
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
       }
-      
+
       // Create material order based on order details and material type
       // This is a simplified example - actual AI processing would happen here
       // Extract vendor from frame ID (e.g., "larson-210286" -> "larson")
       const frameVendor = order.frameId?.split('-')[0] || 'Unknown';
-      
+
       // Map vendor code to proper name
       const vendorMap: {[key: string]: string} = {
         'larson': 'Larson-Juhl',
@@ -1482,7 +1482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'roma': 'Roma Moulding',
         'crescent': 'Crescent'
       };
-      
+
       const materialOrderData: InsertMaterialOrder = {
         quantity: '1',
         materialType: materialType as MaterialType,
@@ -1497,7 +1497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         expectedDeliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
         priority: 'normal'
       };
-      
+
       const newMaterialOrder = await storage.createMaterialOrder(materialOrderData);
       res.status(201).json(newMaterialOrder);
     } catch (error) {
@@ -1510,38 +1510,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Jays Frames Hub Integration Routes
   // Get all material orders with Hub sync status
   app.get('/api/hub/material-orders', getAllMaterialOrdersWithHubStatus);
-  
+
   // Sync a specific material order with the Hub
   app.post('/api/hub/material-orders/:id/sync', syncMaterialOrderWithHub);
-  
+
   // Sync all pending material orders with the Hub
   app.post('/api/hub/material-orders/sync-all', syncMaterialOrdersWithHub);
-  
+
   // Get inventory levels from the Hub
   app.get('/api/hub/inventory', getHubInventoryLevels);
-  
+
   // Get the status of a specific material order from the Hub
   app.get('/api/hub/material-orders/:id/status', getHubOrderStatus);
-  
+
   // Update a material order status in both systems
   app.patch('/api/hub/material-orders/:id/status', updateOrderStatus);
 
   // Register inventory management routes
   app.use('/api/inventory', inventoryRoutes);
-  
+
   // Register invoice routes
   app.use('/api/invoices', invoiceRoutes);
-  
+
   // Register customer invoices routes
   app.use('/api/customers', customerInvoicesRoutes);
-  
+
   // Register vendor settings routes
-  app.use('/api/vendor-api', vendorSettingsRoutes);
-  app.use('/api', qrCodeRoutes);
-  
+  app.use('/api/vendor-api', vendorApiRoutes);
+  app.use('/api/vendor-settings', vendorSettingsRoutes);
+  app.use('/api/qrcode', qrCodeRoutes);
+  app.use('/api/status-history', orderStatusHistoryRoutes);
+
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
-  
+
   // Materials pick list routes
   app.get('/api/materials/pick-list', getMaterialsPickList);
   app.get('/api/materials/by-supplier', getMaterialsBySupplier);

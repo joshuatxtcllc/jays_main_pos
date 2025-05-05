@@ -5,6 +5,7 @@ import { useOrders } from '@/hooks/use-orders';
 import OrderProgress from '@/components/OrderProgress';
 import NotificationHistory from '@/components/NotificationHistory';
 import { OrderEditDialog } from '@/components/OrderEditDialog';
+import { OrderStatusHistory } from '@/components/OrderStatusHistory'; // Added import
 import { useToast } from "@/hooks/use-toast";
 import { 
   Card, 
@@ -202,6 +203,11 @@ export default function OrderDetailsPage() {
 
           <div className="mt-6">
             <NotificationHistory orderId={order.id} />
+            {/* Order Status History */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold mb-4">Status History</h3>
+              <OrderStatusHistory orderId={order.id} /> {/* Assuming orderId is available */}
+            </div>
           </div>
         </div>
       </div>

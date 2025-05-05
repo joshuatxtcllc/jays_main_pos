@@ -8,6 +8,8 @@ import { useLocation } from "wouter";
 import { ShoppingBag, CreditCard, FileText, Clock, DollarSign, TrendingUp, History, CalendarClock, AlertCircle, ChevronRight, Loader2 } from "lucide-react";
 import { format, subMonths, isAfter } from "date-fns";
 import CustomerInvoicesList from "./CustomerInvoicesList";
+import { CustomerStatusHistory } from '@/components/OrderStatusHistory'; // Added import
+
 
 interface CustomerInfo {
   id: number;
@@ -120,33 +122,33 @@ export default function CustomerDashboard({ customerId }: { customerId: number }
     // Filter based on selected time range
     const filteredOrders = orders.filter(order => {
       if (timeRange === 'all') return true;
-      
+
       const orderDate = new Date(order.createdAt);
       const cutoffDate = timeRange === '6months' 
         ? subMonths(new Date(), 6) 
         : subMonths(new Date(), 12);
-      
+
       return isAfter(orderDate, cutoffDate);
     });
 
     const filteredOrderGroups = orderGroups.filter(group => {
       if (timeRange === 'all') return true;
-      
+
       const orderDate = new Date(group.createdAt);
       const cutoffDate = timeRange === '6months' 
         ? subMonths(new Date(), 6) 
         : subMonths(new Date(), 12);
-      
+
       return isAfter(orderDate, cutoffDate);
     });
 
     // Calculate metrics
     const totalSpent = filteredOrderGroups.reduce((sum, group) => 
       sum + (group.total ? parseFloat(group.total) : 0), 0);
-    
+
     const orderCount = filteredOrderGroups.length;
     const averageOrderValue = orderCount > 0 ? totalSpent / orderCount : 0;
-    
+
     // Find most recent order date
     const orderDates = filteredOrders
       .map(order => new Date(order.createdAt).getTime())
@@ -154,32 +156,32 @@ export default function CustomerDashboard({ customerId }: { customerId: number }
     const recentOrderDate = orderDates.length > 0 
       ? new Date(orderDates[0]).toISOString() 
       : null;
-    
+
     // Count upcoming and in-progress orders
     const upcomingOrders = filteredOrders.filter(
       order => order.dueDate && new Date(order.dueDate) > new Date()
     ).length;
-    
+
     const inProgressOrders = filteredOrders.filter(
       order => 
         order.productionStatus !== 'completed' && 
         order.productionStatus !== 'order_processed'
     ).length;
-    
+
     // Count payment methods
     const paymentMethods: Record<string, number> = {};
     filteredOrderGroups.forEach(group => {
       const method = group.paymentMethod || 'unknown';
       paymentMethods[method] = (paymentMethods[method] || 0) + 1;
     });
-    
+
     // Orders by month
     const ordersByMonth: Record<string, number> = {};
     filteredOrders.forEach(order => {
       const monthYear = format(new Date(order.createdAt), 'MMM yyyy');
       ordersByMonth[monthYear] = (ordersByMonth[monthYear] || 0) + 1;
     });
-    
+
     return {
       totalSpent,
       orderCount,
@@ -394,9 +396,15 @@ export default function CustomerDashboard({ customerId }: { customerId: number }
           </Button>
         </CardFooter>
       </Card>
-      
+
       {/* Customer Invoices Section */}
       <CustomerInvoicesList customerId={customerId} />
+
+      {/* Order Status History Section */}
+      <div className="mt-8">
+        <h3 className="text-lg font-semibold mb-4">Order Status Updates</h3>
+        <CustomerStatusHistory customerId={customerId} />
+      </div>
     </div>
   );
 }
