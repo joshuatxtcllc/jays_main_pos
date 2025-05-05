@@ -247,13 +247,42 @@ export function ArtworkSizeDetector({
           try {
             // Detect dimensions
             const detectedDimensions = await detector.estimateDimensions(img);
-            setDimensions(detectedDimensions);
-            onDimensionsDetected(detectedDimensions, dataUrl);
             
-            toast({
-              title: 'Dimensions Detected',
-              description: `Detected artwork size: ${detectedDimensions.width}" × ${detectedDimensions.height}"`,
-            });
+            // Validate dimensions are within reasonable ranges for framing
+            const isValidSize = 
+              detectedDimensions.width >= 2 && 
+              detectedDimensions.width <= 60 && 
+              detectedDimensions.height >= 2 && 
+              detectedDimensions.height <= 60;
+            
+            if (isValidSize) {
+              setDimensions(detectedDimensions);
+              onDimensionsDetected(detectedDimensions, dataUrl);
+              
+              toast({
+                title: 'Dimensions Detected',
+                description: `Detected artwork size: ${detectedDimensions.width}" × ${detectedDimensions.height}"`,
+              });
+            } else {
+              // If dimensions are unreasonable, fall back to default dimensions
+              const defaultDimensions = {
+                width: 16,
+                height: Math.round((16 / img.width) * img.height * 10) / 10,
+                unit: 'in' as const
+              };
+              
+              setDimensions(defaultDimensions);
+              onDimensionsDetected(defaultDimensions, dataUrl);
+              
+              toast({
+                title: 'Detection Adjusted',
+                description: `Using standard dimensions. Please verify or adjust manually.`,
+                variant: 'warning'
+              });
+              
+              // Show manual entry for user to adjust
+              setManualEntry(true);
+            }
           } catch (error) {
             console.error('Error detecting dimensions:', error);
             toast({

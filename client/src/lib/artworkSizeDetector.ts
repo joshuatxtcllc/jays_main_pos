@@ -222,48 +222,61 @@ export class ArtworkSizeDetector {
       this.ctx.drawImage(image, 0, 0, image.width, image.height);
       
       // Since we don't have actual marker detection in this simplified version,
-      // we'll use image dimensions and a reasonable scaling factor
-      // In a real implementation, this would detect the reference marker and use it for scaling
+      // we'll use image dimensions and a reasonable scaling factor with improved accuracy
       
-      // For now, use a reasonable approximation based on image dimensions
-      // This simulates what would happen in a real implementation
+      // Calculate aspect ratio
       const aspectRatio = image.width / image.height;
       
-      // This is where actual marker detection and dimension calculation would happen
-      // For now, we'll use reasonable estimates for testing purposes
+      // This is where actual marker detection would occur in a full implementation
+      // For now, we'll use a much more conservative estimation approach
       
-      // Detect artwork dimensions based on image size and scaling factors
-      // This improved algorithm better handles larger artwork sizes
-      const markerSizeCm = this.options.markerSizeCm || 5; // Provide default if undefined
+      // Reference marker size in cm (typically 5cm)
+      const markerSizeCm = this.options.markerSizeCm || 5;
       
-      // Calculate scaling based on typical digital photo resolution and artwork sizes
-      // We need to scale up significantly for large artwork like 24"x36"
-      const baseScaleFactor = 6.0; // Higher base factor to account for larger artworks
+      // New more reasonable scaling approach based on typical photo sizes and artwork dimensions
+      // Most common artwork sizes fall in the range of 8"x10" to 24"x36"
       
-      // Progressive scaling factor that increases more rapidly with image size
-      // This provides better estimates for both small and large artworks
-      const progressiveScaleFactor = Math.max(1.0, Math.min(4.0, image.width / 600));
+      // Base scale factor - much more conservative than before
+      const baseScaleFactor = 0.15; // Significantly reduced from 6.0
       
-      // Add a minimum size threshold to prevent tiny measurements
-      const minWidthCm = 20; // Approximately 8 inches minimum
+      // More conservative progressive scaling with a much lower ceiling
+      const progressiveScaleFactor = Math.max(0.8, Math.min(1.2, image.width / 2000));
       
-      // Calculate estimated dimensions with improved scaling
-      const calculatedWidthCm = (image.width / 100) * markerSizeCm * baseScaleFactor * progressiveScaleFactor;
-      const estimatedWidthCm = Math.max(minWidthCm, Math.round(calculatedWidthCm));
-      const estimatedHeightCm = Math.round(estimatedWidthCm / aspectRatio);
+      // Calculate estimated dimensions with the improved algorithm
+      // Apply an additional normalization factor to keep dimensions in a reasonable range
+      const normalizationFactor = 1.5; // Help ensure we get reasonable dimensions
+      
+      // Calculate width in cm with our more conservative approach
+      const calculatedWidthCm = (image.width / 100) * markerSizeCm * baseScaleFactor * 
+                               progressiveScaleFactor * normalizationFactor;
+      
+      // Set reasonable bounds for artwork dimensions (in cm)
+      const minWidthCm = 15; // About 6 inches minimum
+      const maxWidthCm = 92; // About 36 inches maximum
+      
+      // Clamp the width to reasonable bounds
+      const estimatedWidthCm = Math.max(minWidthCm, 
+                               Math.min(maxWidthCm, Math.round(calculatedWidthCm)));
+      
+      // Calculate height based on aspect ratio, also clamped to reasonable bounds
+      const maxHeightCm = 92; // About 36 inches maximum
+      const rawHeightCm = estimatedWidthCm / aspectRatio;
+      const estimatedHeightCm = Math.max(minWidthCm, 
+                               Math.min(maxHeightCm, Math.round(rawHeightCm)));
       
       // Log detailed information for debugging
       console.log('Image dimensions:', image.width, 'x', image.height, 'pixels');
       console.log('Aspect ratio:', aspectRatio);
       console.log('Base scale factor:', baseScaleFactor);
       console.log('Progressive scale factor:', progressiveScaleFactor);
+      console.log('Normalization factor:', normalizationFactor);
       console.log('Estimated dimensions:', estimatedWidthCm, 'x', estimatedHeightCm, 'cm');
       
       // Convert to inches (1 inch = 2.54 cm)
-      const estimatedWidthIn = parseFloat((estimatedWidthCm / 2.54).toFixed(2));
-      const estimatedHeightIn = parseFloat((estimatedHeightCm / 2.54).toFixed(2));
+      const estimatedWidthIn = parseFloat((estimatedWidthCm / 2.54).toFixed(1));
+      const estimatedHeightIn = parseFloat((estimatedHeightCm / 2.54).toFixed(1));
       
-      // For demonstration, return values in inches since that's what the framing system uses
+      // Return values in inches for the framing system
       return {
         width: estimatedWidthIn,
         height: estimatedHeightIn,
