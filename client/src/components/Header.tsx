@@ -2,6 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 import { CartWidget } from './CartWidget';
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from '@/components/ui/navigation-menu';
 
 interface HeaderProps {
   darkMode: boolean;
@@ -26,6 +35,75 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // Menu item definitions with their submenus
+  const menuStructure = [
+    {
+      title: "POS System",
+      path: "/",
+      subItems: [
+        { title: "Point of Sale", path: "/" },
+        { title: "Pricing", path: "/pricing" },
+        { title: "Payment Links", path: "/payment-links" },
+      ]
+    },
+    {
+      title: "Orders",
+      path: "/orders",
+      subItems: [
+        { title: "All Orders", path: "/orders" },
+        { title: "Dashboard", path: "/dashboard" },
+      ]
+    },
+    {
+      title: "Customers",
+      path: "/customers",
+      subItems: [
+        { title: "Customer List", path: "/customers" },
+      ]
+    },
+    {
+      title: "Production",
+      path: "/production",
+      subItems: [
+        { title: "Production Board", path: "/production" },
+        { title: "Pick List", path: "/materials-pick-list" },
+        { title: "Order Progress", path: "/order-progress" },
+      ]
+    },
+    {
+      title: "Materials",
+      path: "/materials",
+      subItems: [
+        { title: "Materials", path: "/materials" },
+        { title: "Inventory", path: "/inventory" },
+        { title: "QR Tracking", path: "/inventory-tracking" },
+      ]
+    },
+    {
+      title: "Settings",
+      path: "/vendor-settings",
+      subItems: [
+        { title: "Vendor Settings", path: "/vendor-settings" },
+        { title: "Hub Integration", path: "/hub" },
+      ]
+    }
+  ];
+
+  // Helper function for Navigation Menu Link
+  const NavMenuLink = ({ href, children, isActive }: { href: string, children: React.ReactNode, isActive?: boolean }) => (
+    <Link href={href}>
+      <NavigationMenuLink
+        className={cn(
+          navigationMenuTriggerStyle(),
+          isActive && "bg-accent/50 text-accent-foreground",
+          "cursor-pointer"
+        )}
+      >
+        {children}
+      </NavigationMenuLink>
+    </Link>
+  );
+
   return (
     <header className={cn(
       "fixed top-0 left-0 w-full z-50 transition-all duration-300",
@@ -39,118 +117,46 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
             Jay's Frames Guru
           </h1>
         </div>
-        
-        <nav className="hidden md:flex space-x-6">
-          <Link href="/">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/" && "text-primary"
-            )}>
-              POS System
-            </span>
-          </Link>
-          <Link href="/orders">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/orders" && "text-primary"
-            )}>
-              Orders
-            </span>
-          </Link>
-          <Link href="/payment-links">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/payment-links" && "text-primary"
-            )}>
-              Payment Links
-            </span>
-          </Link>
-          <Link href="/dashboard">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/dashboard" && "text-primary"
-            )}>
-              Dashboard
-            </span>
-          </Link>
-          <Link href="/customers">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location.startsWith("/customers") && "text-primary"
-            )}>
-              Customers
-            </span>
-          </Link>
-          <Link href="/production">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/production" && "text-primary"
-            )}>
-              Production
-            </span>
-          </Link>
-          <Link href="/materials">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/materials" && "text-primary"
-            )}>
-              Materials
-            </span>
-          </Link>
-          <Link href="/materials-pick-list">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/materials-pick-list" && "text-primary"
-            )}>
-              Pick List
-            </span>
-          </Link>
-          <Link href="/inventory">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/inventory" && "text-primary"
-            )}>
-              Inventory
-            </span>
-          </Link>
-          <Link href="/inventory-tracking">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/inventory-tracking" && "text-primary"
-            )}>
-              QR Tracking
-            </span>
-          </Link>
-          <Link href="/hub">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/hub" && "text-primary"
-            )}>
-              Hub
-            </span>
-          </Link>
-          <Link href="/pricing">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/pricing" && "text-primary"
-            )}>
-              Pricing
-            </span>
-          </Link>
-          <Link href="/vendor-settings">
-            <span className={cn(
-              "font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/vendor-settings" && "text-primary"
-            )}>
-              Vendor Settings
-            </span>
-          </Link>
-        </nav>
-        
+
+        {/* Desktop Navigation Menu */}
+        <div className="hidden md:block">
+          <NavigationMenu>
+            <NavigationMenuList>
+              {menuStructure.map((menuItem, idx) => (
+                <NavigationMenuItem key={idx}>
+                  <NavigationMenuTrigger
+                    className={cn(
+                      location === menuItem.path && "text-primary"
+                    )}
+                  >
+                    {menuItem.title}
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid gap-2 p-4 w-[220px]">
+                      {menuItem.subItems.map((subItem, subIdx) => (
+                        <li key={subIdx}>
+                          <Link href={subItem.path}>
+                            <span className={cn(
+                              "block select-none rounded-md p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer",
+                              location === subItem.path && "bg-accent/50 text-accent-foreground"
+                            )}>
+                              {subItem.title}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+              ))}
+            </NavigationMenuList>
+          </NavigationMenu>
+        </div>
+
         <div className="flex items-center space-x-4">
           {/* Cart Widget */}
           <CartWidget />
-          
+
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -174,7 +180,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
               <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
             </svg>
-            
+
             {/* Moon icon for light mode */}
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -186,7 +192,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
           </button>
-          
+
           <div className="relative">
             <button className="flex items-center space-x-1">
               <span className="font-medium">Jay</span>
@@ -198,7 +204,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
             </button>
           </div>
         </div>
-        
+
         {/* Mobile menu button */}
         <button 
           className="md:hidden p-2"
@@ -221,120 +227,31 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
           </div>
         </button>
       </div>
-      
+
       {/* Mobile menu */}
       <div className={cn(
         "md:hidden transition-all duration-300",
         isMobileMenuOpen ? "max-h-[70vh]" : "max-h-0"
       )}>
         <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg overflow-y-auto max-h-[70vh]">
-          <Link href="/">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/" && "text-primary"
-            )}>
-              POS System
-            </span>
-          </Link>
-          <Link href="/orders">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/orders" && "text-primary"
-            )}>
-              Orders
-            </span>
-          </Link>
-          <Link href="/payment-links">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/payment-links" && "text-primary"
-            )}>
-              Payment Links
-            </span>
-          </Link>
-          <Link href="/dashboard">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/dashboard" && "text-primary"
-            )}>
-              Dashboard
-            </span>
-          </Link>
-          <Link href="/customers">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location.startsWith("/customers") && "text-primary"
-            )}>
-              Customers
-            </span>
-          </Link>
-          <Link href="/production">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/production" && "text-primary"
-            )}>
-              Production
-            </span>
-          </Link>
-          <Link href="/materials">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/materials" && "text-primary"
-            )}>
-              Materials
-            </span>
-          </Link>
-          <Link href="/materials-pick-list">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/materials-pick-list" && "text-primary"
-            )}>
-              Pick List
-            </span>
-          </Link>
-          <Link href="/inventory">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/inventory" && "text-primary"
-            )}>
-              Inventory
-            </span>
-          </Link>
-          <Link href="/inventory-tracking">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/inventory-tracking" && "text-primary"
-            )}>
-              QR Tracking
-            </span>
-          </Link>
-          <Link href="/hub">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/hub" && "text-primary"
-            )}>
-              Hub
-            </span>
-          </Link>
-          
-          <Link href="/pricing">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/pricing" && "text-primary"
-            )}>
-              Pricing
-            </span>
-          </Link>
-          
-          <Link href="/vendor-settings">
-            <span className={cn(
-              "py-2 font-medium hover:text-primary transition-colors cursor-pointer",
-              location === "/vendor-settings" && "text-primary"
-            )}>
-              Vendor Settings
-            </span>
-          </Link>
-          
+          {menuStructure.map((menuItem, idx) => (
+            <div key={idx} className="py-1">
+              <div className="font-medium text-lg mb-1">{menuItem.title}</div>
+              <div className="pl-4 flex flex-col space-y-2">
+                {menuItem.subItems.map((subItem, subIdx) => (
+                  <Link key={subIdx} href={subItem.path}>
+                    <span className={cn(
+                      "py-1 font-medium hover:text-primary transition-colors cursor-pointer",
+                      location === subItem.path && "text-primary"
+                    )}>
+                      {subItem.title}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+
           <div className="py-2 flex items-center">
             <span className="font-medium mr-4">Cart:</span>
             <CartWidget />
