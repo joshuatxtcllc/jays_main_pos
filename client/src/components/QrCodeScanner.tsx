@@ -147,7 +147,18 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
         throw new Error('QR code not found or invalid');
       }
       
-      const data = await response.json();
+      // Safely parse the response
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        // Handle non-JSON responses
+        const text = await response.text();
+        throw new Error('Invalid response format. Expected JSON but got: ' + 
+          (text.substring(0, 50) + (text.length > 50 ? '...' : '')));
+      }
+      
       setScannedData(data);
       
       // Record a scan
