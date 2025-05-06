@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Order, Customer, Frame, MatColor, GlassOption, WholesaleOrder, OrderGroup } from '@shared/schema';
+import { generateOrderQrCode, generateMaterialQrCode } from '@/services/qrCodeService';
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -49,7 +50,7 @@ const StatusBadge = ({ status }: { status: string }) => {
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
-  
+
   return (
     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
       {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -70,7 +71,7 @@ const Orders = () => {
     queryKey: ['/api/orders'],
     staleTime: 30000, // 30 seconds
   });
-  
+
   // Fetch order groups
   const { data: orderGroups, isLoading: orderGroupsLoading, isError: orderGroupsError } = useQuery({
     queryKey: ['/api/order-groups'],
@@ -194,22 +195,22 @@ const Orders = () => {
   // Check if any order has orderGroupId that matches
   const findOrderGroupForOrder = (orderId: number) => {
     if (!orderGroups) return null;
-    
+
     // Find the order group by matching orders with the given order ID
     // We need to get orders that have the orderGroupId matching the group ID
     const filteredOrders = orders ? (orders as Order[]).filter(order => 
       order.id === orderId && order.orderGroupId !== null
     ) : [];
-    
+
     if (filteredOrders.length > 0) {
       const orderGroupId = filteredOrders[0].orderGroupId;
       const orderGroupArray = orderGroups as any[];
       return orderGroupArray.find(group => group.id === orderGroupId && group.status === 'pending');
     }
-    
+
     return null;
   };
-  
+
   // Handle proceeding to checkout for an order
   const handleProceedToCheckout = (orderGroupId: number) => {
     setLocation(`/checkout/${orderGroupId}`);
@@ -413,7 +414,7 @@ const Orders = () => {
               Order materials needed for Order #{selectedOrder?.id}
             </DialogDescription>
           </DialogHeader>
-          
+
           {selectedOrder && (
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
@@ -434,7 +435,7 @@ const Orders = () => {
                   <p className="text-sm">{`${selectedOrder.artworkWidth}" × ${selectedOrder.artworkHeight}"`}</p>
                 </div>
               </div>
-              
+
               <div className="border rounded-md p-3 bg-gray-50 dark:bg-gray-900">
                 <h4 className="text-sm font-medium mb-2">Materials to Order</h4>
                 <ul className="space-y-1 text-sm">
@@ -460,7 +461,7 @@ const Orders = () => {
                   </li>
                 </ul>
               </div>
-              
+
               <div className="flex justify-end space-x-2 pt-2">
                 <Button 
                   variant="outline" 

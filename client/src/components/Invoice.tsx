@@ -10,6 +10,7 @@ import {
   GlassOption 
 } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+import QRCode from 'react-qr-code'; // Added import for QR code
 
 // Create PDF and printing utilities
 const printInvoice = () => {
@@ -34,6 +35,29 @@ const Invoice: React.FC<InvoiceProps> = ({
   showControls = true
 }) => {
   const { toast } = useToast();
+  const [qrCodeData, setQrCodeData] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const fetchQrCode = async () => {
+      try {
+        const response = await fetch(`/api/qrcodes/${orderGroup.id}`); // Assumed API endpoint
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setQrCodeData(data.qrCode);
+      } catch (error) {
+        console.error("Error fetching QR code:", error);
+        toast({
+          title: 'Error',
+          description: 'Failed to generate QR code',
+          variant: 'destructive',
+        });
+      }
+    };
+    fetchQrCode();
+  }, [orderGroup.id]);
+
 
   const handleEmailInvoice = async () => {
     if (onSendByEmail) {
@@ -50,9 +74,9 @@ const Invoice: React.FC<InvoiceProps> = ({
             email: customer.email
           }),
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
           toast({
             title: 'Invoice sent',
@@ -87,7 +111,7 @@ const Invoice: React.FC<InvoiceProps> = ({
           body { background: white !important; }
         `}
       </style>
-      
+
       {/* Invoice Header */}
       <div className="flex justify-between mb-8 border-b pb-4">
         <div>
@@ -107,7 +131,7 @@ const Invoice: React.FC<InvoiceProps> = ({
           </p>
         </div>
       </div>
-      
+
       {/* Customer Information */}
       <div className="mb-8">
         <h3 className="font-semibold mb-2">Customer Information:</h3>
@@ -117,7 +141,7 @@ const Invoice: React.FC<InvoiceProps> = ({
         <p>{customer.address}</p>
         {customer.taxExempt && <p className="text-green-600 font-medium">** Tax Exempt Customer **</p>}
       </div>
-      
+
       {/* Order Items Table */}
       <div className="mb-6">
         <h3 className="font-semibold mb-2">Order Items:</h3>
@@ -155,7 +179,7 @@ const Invoice: React.FC<InvoiceProps> = ({
           </tbody>
         </table>
       </div>
-      
+
       {/* Totals */}
       <div className="flex justify-end mb-6">
         <div className="w-64">
@@ -185,7 +209,7 @@ const Invoice: React.FC<InvoiceProps> = ({
           )}
         </div>
       </div>
-      
+
       {/* Notes */}
       <div className="mb-8">
         <h3 className="font-semibold mb-2">Notes:</h3>
@@ -193,13 +217,22 @@ const Invoice: React.FC<InvoiceProps> = ({
           {orderGroup.notes || 'Thank you for your business! All custom framing services include our quality craftsmanship and attention to detail. Please keep your invoice as proof of purchase.'}
         </p>
       </div>
-      
+
+      {/* QR Code */}
+      {qrCodeData && (
+        <div className="qr-code-container bg-white p-2 rounded-md">
+          <QRCode value={qrCodeData} size={100} level="M" />
+          <p className="text-xs mt-1 text-center font-mono">{qrCodeData}</p>
+        </div>
+      )}
+
+
       {/* Terms */}
       <div className="text-xs text-muted-foreground mb-8">
         <h4 className="font-semibold mb-1">Terms and Conditions:</h4>
         <p>Custom framing is non-refundable due to its unique nature. We guarantee our craftsmanship and will repair any defects in workmanship at no charge. Please inspect your order carefully upon receipt. Any damage claims must be made within 7 days of pickup or delivery.</p>
       </div>
-      
+
       {/* Controls (hidden when printing) */}
       {showControls && (
         <div className="flex justify-end gap-4 mt-8 no-print">

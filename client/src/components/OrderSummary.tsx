@@ -6,9 +6,12 @@ import {
   calculateGlassPrice, 
   calculateBackingPrice, 
   calculateLaborPrice, 
-  calculateTotalPrice 
-} from '@/lib/utils';
+  calculateTotalPrice,
+  generateQrCode 
+} from '@/lib/utils'; // Assumed generateQrCode function exists
 import { Checkbox } from '@/components/ui/checkbox';
+import QRCode from 'react-qr-code'; // Added import for QRCode
+
 
 interface OrderSummaryProps {
   frames: {
@@ -37,6 +40,7 @@ interface OrderSummaryProps {
   useMultipleFrames?: boolean;
   addToWholesaleOrder?: boolean;
   setAddToWholesaleOrder?: (value: boolean) => void;
+  orderId: number; // Added orderId prop for QR code generation
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -56,11 +60,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   useMultipleMats = false,
   useMultipleFrames = false,
   addToWholesaleOrder = false,
-  setAddToWholesaleOrder
+  setAddToWholesaleOrder,
+  orderId
 }) => {
   // Local state for wholesale order checkbox if not provided through props
   const [localAddToWholesaleOrder, setLocalAddToWholesaleOrder] = useState(false);
-  
+
   // Use either provided props or local state for wholesale order flag
   const effectiveAddToWholesaleOrder = typeof addToWholesaleOrder !== 'undefined' ? addToWholesaleOrder : localAddToWholesaleOrder;
   const effectiveSetAddToWholesaleOrder = (value: boolean) => {
@@ -70,27 +75,27 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       setLocalAddToWholesaleOrder(value);
     }
   };
-  
+
   // Calculate prices for each frame
   const framePrices = frames.map(frameItem => 
     calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frameItem.frame.price))
   );
   const totalFramePrice = framePrices.reduce((total, price) => total + price, 0);
-  
+
   // Calculate prices for each mat
   const matPrices = mats.map(matItem => 
     calculateMatPrice(Number(artworkWidth), Number(artworkHeight), Number(matItem.width), Number(matItem.matboard.price))
   );
   const totalMatPrice = matPrices.reduce((total, price) => total + price, 0);
-  
+
   // Other price calculations
   const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, Number(glassOption.price)) : 0;
   const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth);
   const laborPrice = calculateLaborPrice(Number(artworkWidth), Number(artworkHeight));
-  
+
   // Calculate special services price
   const specialServicesPrice = specialServices.reduce((total, service) => total + Number(service.price), 0);
-  
+
   // Calculate total
   const { subtotal, tax, total } = calculateTotalPrice(
     totalFramePrice,
@@ -100,7 +105,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     laborPrice,
     specialServicesPrice
   );
-  
+
+  // Generate QR code data
+  const qrCodeData = generateQrCode(orderId); // Assumed generateQrCode function exists
+
+
   return (
     <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 header-underline">Order Summary</h2>
@@ -122,7 +131,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             ))}
           </div>
         )}
-        
+
         {/* Mats */}
         {mats.length > 0 && (
           <div>
@@ -140,7 +149,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             ))}
           </div>
         )}
-        
+
         {glassOption && (
           <div className="flex justify-between">
             <span className="text-light-textSecondary dark:text-dark-textSecondary">
@@ -149,17 +158,17 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>${glassPrice.toFixed(2)}</span>
           </div>
         )}
-        
+
         <div className="flex justify-between">
           <span className="text-light-textSecondary dark:text-dark-textSecondary">Backing</span>
           <span>${backingPrice.toFixed(2)}</span>
         </div>
-        
+
         <div className="flex justify-between">
           <span className="text-light-textSecondary dark:text-dark-textSecondary">Labor</span>
           <span>${laborPrice.toFixed(2)}</span>
         </div>
-        
+
         {/* Special Services, shown only if selected */}
         {specialServices.length > 0 && (
           <div className="border-t border-light-border dark:border-dark-border pt-2">
@@ -175,7 +184,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             ))}
           </div>
         )}
-        
+
         <div className="border-t border-light-border dark:border-dark-border pt-2">
           <div className="flex justify-between font-medium">
             <span>Subtotal</span>
@@ -186,14 +195,14 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>${tax.toFixed(2)}</span>
           </div>
         </div>
-        
+
         <div className="border-t border-light-border dark:border-dark-border pt-2">
           <div className="flex justify-between text-lg font-semibold text-primary">
             <span>Total</span>
             <span>${total.toFixed(2)}</span>
           </div>
         </div>
-        
+
         {/* Add to Wholesale Order Checkbox */}
         <div className="flex items-center space-x-2 mt-4">
           <Checkbox 
@@ -209,7 +218,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </label>
         </div>
       </div>
-      
+
       {/* Action Buttons */}
       <div className="mt-6 space-y-3">
         {!showCheckoutButton ? (
@@ -220,10 +229,10 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 console.log('Create Order button clicked in OrderSummary');
                 console.log('Button disabled state:', (frames.length === 0 || mats.length === 0 || !glassOption));
                 console.log('Add to wholesale order:', effectiveAddToWholesaleOrder);
-                
+
                 // First create the actual customer order
                 onCreateOrder();
-                
+
                 // Only create wholesale order if requested - this will now handle its own validation
                 if (effectiveAddToWholesaleOrder) {
                   // Small delay to make sure the order creation completes first
@@ -239,7 +248,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               </svg>
               Create Order
             </button>
-            
+
             <button 
               className="w-full py-3 border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg text-light-text dark:text-dark-text rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-bg/80 transition-colors flex items-center justify-center"
               onClick={onSaveQuote}
@@ -267,7 +276,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </button>
         )}
       </div>
-      
+
       {/* Wholesale Order Details */}
       {frames.length > 0 && mats.length > 0 && (
         <div className="mt-6 border border-light-border dark:border-dark-border rounded-lg p-3 bg-gray-50 dark:bg-dark-bg/30">
@@ -288,7 +297,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <span>{Math.ceil((2 * (artworkWidth + artworkHeight) / 12) + 1)} ft</span>
               </li>
             ))}
-            
+
             {/* Glass requirements */}
             {glassOption && (
               <li className="flex justify-between">
@@ -296,7 +305,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
                 <span>{artworkWidth + 2 * primaryMatWidth}" × {artworkHeight + 2 * primaryMatWidth}"</span>
               </li>
             )}
-            
+
             {/* Mat requirements */}
             {mats.map(matItem => (
               <li key={matItem.matboard.id + '-' + matItem.position} className="flex justify-between">
@@ -321,6 +330,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
               Add to Wholesale Order
             </label>
           </div>
+        </div>
+      )}
+
+      {qrCodeData && (
+        <div className="mt-4">
+          <QRCode value={qrCodeData} size={128} level="H" />
         </div>
       )}
     </div>

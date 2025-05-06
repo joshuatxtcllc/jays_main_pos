@@ -18,11 +18,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, ArrowLeft, Clock, Edit, ShoppingBag } from 'lucide-react';
+import { getQrCodeByEntity } from '@/services/qrCodeService'; // Added import
+
 
 export default function OrderDetailsPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const { toast } = useToast();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<string | null>(null); // Added state for QR code data
 
   const {
     order,
@@ -47,6 +50,28 @@ export default function OrderDetailsPage() {
   const handleEditDialogOpenChange = (open: boolean) => {
     setIsEditDialogOpen(open);
   };
+
+  useEffect(() => {
+    const loadOrderAndQrCode = async () => {
+      if (orderId) {
+        try {
+          const orderData = await getOrderById(parseInt(orderId));
+          setOrder(orderData);
+          const qrCode = await getQrCodeByEntity('order', orderId);
+          setQrCodeData(qrCode?.code || null); //Handle potential null response
+        } catch (error) {
+          console.error('Error loading order or QR code:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load order details or QR code.',
+            variant: 'destructive',
+          });
+        }
+      }
+    };
+    loadOrderAndQrCode();
+  }, [orderId]);
+
 
   if (isLoadingOrder) {
     return (
@@ -168,6 +193,12 @@ export default function OrderDetailsPage() {
                   {order.status?.charAt(0).toUpperCase() + order.status?.slice(1).replace('_', ' ')}
                 </div>
               </div>
+              {qrCodeData && (
+                <div className="col-span-2">
+                  <h4 className="text-sm font-medium mb-1">QR Code</h4>
+                  <img src={`data:image/svg+xml;base64,${qrCodeData}`} alt="QR Code" /> {/* Assumes base64 encoded SVG */}
+                </div>
+              )}
             </div>
 
             <Separator />

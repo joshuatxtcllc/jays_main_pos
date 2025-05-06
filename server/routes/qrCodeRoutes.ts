@@ -7,13 +7,15 @@ import {
   recordQrCodeScan,
   getQrCodeScans,
   linkQrCodeToMaterialLocation,
-  deleteQrCode
+  deleteQrCode,
+  searchQrCodesByEntity
 } from '../controllers/qrCodeController';
 
 const router = Router();
 
 // QR code routes
 router.get('/qr-codes', getAllQrCodes);
+router.get('/qr-codes/search', searchQrCodesByEntity);
 router.get('/qr-codes/:id', getQrCodeById);
 router.get('/qr-codes/code/:code', getQrCodeByCode);
 router.post('/qr-codes', createQrCode);

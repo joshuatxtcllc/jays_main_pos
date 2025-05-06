@@ -6,22 +6,22 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Loader2 } from 'lucide-react';
 
 interface InvoiceViewerProps {
-  orderGroupId?: number;
-  onClose?: () => void;
-  showControls?: boolean;
+  orderId: number;
+  onBack?: () => void;
+  qrCodeData?: string | null;
 }
 
 const InvoiceViewer: React.FC<InvoiceViewerProps> = ({ 
-  orderGroupId,
-  onClose,
-  showControls = true
+  orderId,
+  onBack,
+  qrCodeData
 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [_, setLocation] = useLocation();
   const params = useParams();
-  
+
   // Use either the prop or the URL parameter
-  const groupId = orderGroupId || Number(params.orderGroupId);
+  const groupId = orderId || Number(params.orderId);
 
   const { data, isLoading, error } = useQuery({
     queryKey: [`/api/invoices/${groupId}`],
@@ -38,8 +38,8 @@ const InvoiceViewer: React.FC<InvoiceViewerProps> = ({
 
   const handleClose = () => {
     setIsOpen(false);
-    if (onClose) {
-      onClose();
+    if (onBack) {
+      onBack();
     } else {
       // Default behavior is to go back to the previous page
       setLocation('/orders');
@@ -82,7 +82,7 @@ const InvoiceViewer: React.FC<InvoiceViewerProps> = ({
           customer={data.customer}
           orderGroup={data.orderGroup}
           onClose={handleClose}
-          showControls={showControls}
+          qrCodeData={qrCodeData} // Pass the QR code data
         />
       </DialogContent>
     </Dialog>

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { db } from '../db';
 import { qrCodes, qrCodeScans, materialLocations, insertQrCodeSchema, insertQrCodeScanSchema } from '@shared/schema';
 import { randomBytes } from 'crypto';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
 // Generate a unique QR code identifier
 function generateQrCode(): string {
@@ -209,5 +209,35 @@ export async function deleteQrCode(req: Request, res: Response) {
   } catch (error) {
     console.error('Error deleting QR code:', error);
     return res.status(500).json({ message: 'Error deleting QR code' });
+  }
+}
+
+// Search QR codes by type and entityId
+export async function searchQrCodesByEntity(req: Request, res: Response) {
+  try {
+    const { type, entityId } = req.query;
+    
+    if (!type || !entityId) {
+      return res.status(400).json({ message: 'Type and entityId are required parameters' });
+    }
+    
+    const qrCode = await db.select()
+      .from(qrCodes)
+      .where(
+        and(
+          eq(qrCodes.type, type as string),
+          eq(qrCodes.entityId, entityId as string)
+        )
+      )
+      .limit(1);
+    
+    if (qrCode.length === 0) {
+      return res.status(404).json({ message: 'QR code not found' });
+    }
+    
+    return res.status(200).json(qrCode[0]);
+  } catch (error) {
+    console.error('Error searching QR code:', error);
+    return res.status(500).json({ message: 'Error searching QR code' });
   }
 }
