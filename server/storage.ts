@@ -7,6 +7,8 @@ import {
   orderGroups, type OrderGroup, type InsertOrderGroup,
   orders, type Order, type InsertOrder, type ProductionStatus,
   orderSpecialServices, type OrderSpecialService, type InsertOrderSpecialService,
+  orderMats, type OrderMat, type InsertOrderMat,
+  orderFrames, type OrderFrame, type InsertOrderFrame,
   wholesaleOrders, type WholesaleOrder, type InsertWholesaleOrder,
   customerNotifications, type CustomerNotification, type InsertCustomerNotification,
   materialOrders, type MaterialOrder, type InsertMaterialOrder, type MaterialType, type MaterialOrderStatus,
@@ -86,6 +88,9 @@ function determineFrameColor(frame: Frame): string {
   return '#8B4513'; // Medium brown wood color
 }
 
+// Import the PricingResult type from the pricing service
+import { PricingResult } from './services/pricingService';
+
 export interface IStorage {
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
@@ -93,6 +98,9 @@ export interface IStorage {
   getAllCustomers(): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, data: Partial<Customer>): Promise<Customer>;
+  
+  // Order pricing details for analytics
+  getOrderPricingDetails(orderId: number): Promise<PricingResult | undefined>;
 
   // Frame methods
   getFrame(id: string): Promise<Frame | undefined>;
@@ -170,6 +178,105 @@ import { db } from "./db";
 import { eq, desc, sql, asc } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
+  // Order mats methods
+  async getOrderMats(orderId: number): Promise<any[]> {
+    try {
+      const result = await db
+        .select()
+        .from(orderMats)
+        .where(eq(orderMats.orderId, orderId));
+      
+      // Enhance each mat with its matboard information
+      const enhancedMats = [];
+      for (const mat of result) {
+        const matboard = await this.getMatColor(mat.matColorId);
+        if (matboard) {
+          enhancedMats.push({
+            ...mat,
+            matboard
+          });
+        }
+      }
+      
+      return enhancedMats;
+    } catch (error) {
+      console.error(`Error getting order mats for order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  // Order frames methods
+  async getOrderFrames(orderId: number): Promise<any[]> {
+    try {
+      const result = await db
+        .select()
+        .from(orderFrames)
+        .where(eq(orderFrames.orderId, orderId));
+      
+      // Enhance each frame with its frame information
+      const enhancedFrames = [];
+      for (const frameEntry of result) {
+        const frame = await this.getFrame(frameEntry.frameId);
+        if (frame) {
+          enhancedFrames.push({
+            ...frameEntry,
+            frame
+          });
+        }
+      }
+      
+      return enhancedFrames;
+    } catch (error) {
+      console.error(`Error getting order frames for order ${orderId}:`, error);
+      return [];
+    }
+  }
+  
+  // Order pricing details for analytics
+  async getOrderPricingDetails(orderId: number): Promise<PricingResult | undefined> {
+    try {
+      // Get the order
+      const order = await this.getOrder(orderId);
+      if (!order) return undefined;
+      
+      // Get pricing service
+      const { calculatePricing } = require('./services/pricingService');
+      
+      // Get order details needed for pricing
+      const frame = order.frameId ? await this.getFrame(order.frameId) : undefined;
+      const matColor = order.matColorId ? await this.getMatColor(order.matColorId) : undefined;
+      const glassOption = order.glassOptionId ? await this.getGlassOption(order.glassOptionId) : undefined;
+      
+      // Get special services
+      const specialServices = await this.getOrderSpecialServices(orderId);
+      
+      // Get order mats (with matboard details)
+      const mats = await this.getOrderMats(orderId);
+      
+      // Get order frames (with frame details)
+      const frames = await this.getOrderFrames(orderId);
+      
+      // Calculate pricing
+      const pricingParams = {
+        artworkWidth: Number(order.artworkWidth),
+        artworkHeight: Number(order.artworkHeight),
+        matWidth: Number(order.matWidth),
+        frame: frame,
+        matColor: matColor,
+        glassOption: glassOption,
+        specialServices: specialServices,
+        quantity: order.quantity || 1,
+        includeWholesalePrices: true,
+        mats: mats.length > 0 ? mats : undefined,
+        frames: frames.length > 0 ? frames : undefined
+      };
+      
+      return calculatePricing(pricingParams);
+    } catch (error) {
+      console.error('Error getting order pricing details:', error);
+      return undefined;
+    }
+  }
   // Customer methods
   async getCustomer(id: number): Promise<Customer | undefined> {
     const [customer] = await db.select().from(customers).where(eq(customers.id, id));
