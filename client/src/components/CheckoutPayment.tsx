@@ -242,6 +242,7 @@ const CheckoutPayment: React.FC<CheckoutPaymentProps> = ({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
+  const [emailSending, setEmailSending] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
@@ -367,6 +368,54 @@ const CheckoutPayment: React.FC<CheckoutPaymentProps> = ({
     });
   };
   
+  // Add functionality to email the invoice
+  const handleEmailInvoice = async () => {
+    if (!orderGroup || !orderGroup.customerId) {
+      toast({
+        title: 'Error',
+        description: 'Cannot send email - customer information not found',
+        variant: 'destructive'
+      });
+      return;
+    }
+    
+    try {
+      setEmailSending(true);
+      
+      const response = await fetch(`/api/invoices/${orderGroupId}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})  // The email will default to customer's email
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        toast({
+          title: 'Email Sent',
+          description: 'Invoice has been emailed to the customer',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: data.message || 'Failed to send invoice by email',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error sending invoice email:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send invoice by email',
+        variant: 'destructive'
+      });
+    } finally {
+      setEmailSending(false);
+    }
+  };
+  
   if (isLoading) {
     return (
       <Card className="w-full max-w-md mx-auto">
@@ -440,13 +489,32 @@ const CheckoutPayment: React.FC<CheckoutPaymentProps> = ({
               </div>
             </div>
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter className="flex flex-wrap justify-between gap-2">
             <Button variant="outline" onClick={() => window.location.href = '/'}>
               Return to Home
             </Button>
-            <Button onClick={() => setShowInvoice(true)}>
-              View Invoice
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleEmailInvoice}
+                disabled={emailSending}
+              >
+                {emailSending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Email Invoice
+                  </>
+                )}
+              </Button>
+              <Button onClick={() => setShowInvoice(true)}>
+                View Invoice
+              </Button>
+            </div>
           </CardFooter>
         </Card>
         
