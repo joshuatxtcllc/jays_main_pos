@@ -1564,6 +1564,170 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Chat and Search Routes
   app.post('/api/chat', handleChatMessage);
+  
+  // ---------------
+  // ANALYTICS ENDPOINTS
+  // ---------------
+  
+  // Fetch profit analytics data for the dashboard
+  app.get('/api/analytics/profits', async (req, res) => {
+    try {
+      // Get timeframe from query params
+      const timeRange = req.query.timeRange || '30days';
+      
+      // Calculate start date based on timeRange
+      const now = new Date();
+      let startDate = new Date();
+      
+      switch (timeRange) {
+        case '7days':
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case '30days':
+          startDate.setDate(now.getDate() - 30);
+          break; 
+        case '90days':
+          startDate.setDate(now.getDate() - 90);
+          break;
+        case '12months':
+          startDate.setMonth(now.getMonth() - 12);
+          break;
+        default:
+          startDate.setDate(now.getDate() - 30);
+      }
+      
+      // Fetch orders within the date range
+      const allOrders = await storage.getAllOrders();
+      const ordersInRange = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt);
+        return orderDate >= startDate && orderDate <= now && order.status === 'paid';
+      });
+      
+      // Fetch detailed order information
+      const orderDetails = await Promise.all(
+        ordersInRange.map(async (order) => {
+          const specialServices = await storage.getOrderSpecialServices(order.id);
+          const mats = await storage.getOrderMats(order.id);
+          const frames = await storage.getOrderFrames(order.id);
+          
+          // Calculate material cost and profit metrics
+          let materialCost = 0;
+          let laborCost = 0;
+          let profitability = null;
+          
+          // If we have the detailed order data with pricing calculation
+          const calculatedPricing = await storage.getOrderPricingDetails(order.id);
+          if (calculatedPricing && calculatedPricing.profitability) {
+            profitability = calculatedPricing.profitability;
+            materialCost = calculatedPricing.profitability.totalWholesaleCost;
+            laborCost = calculatedPricing.laborCost || 0;
+          }
+          
+          return {
+            ...order,
+            specialServices,
+            mats,
+            frames,
+            materialCost,
+            laborCost,
+            profitability
+          };
+        })
+      );
+      
+      // Calculate aggregate metrics
+      const totalSales = orderDetails.reduce((sum, order) => sum + Number(order.total), 0);
+      const totalMaterialCost = orderDetails.reduce((sum, order) => sum + Number(order.materialCost), 0);
+      const totalLaborCost = orderDetails.reduce((sum, order) => sum + Number(order.laborCost), 0);
+      const totalProfit = totalSales - totalMaterialCost - totalLaborCost;
+      const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+      
+      // Material type breakdown
+      const materialBreakdown = orderDetails.reduce((breakdown, order) => {
+        if (order.profitability) {
+          // Assuming frame cost is included in the profitability breakdown
+          breakdown.frameCost += Number(order.frames?.[0]?.frameId ? order.profitability.totalWholesaleCost * 0.5 : 0);
+          breakdown.matCost += Number(order.mats?.[0]?.matColorId ? order.profitability.totalWholesaleCost * 0.3 : 0);
+          breakdown.glassCost += Number(order.glassOptionId ? order.profitability.totalWholesaleCost * 0.2 : 0);
+        }
+        return breakdown;
+      }, { frameCost: 0, matCost: 0, glassCost: 0 });
+      
+      // Calculate average order metrics
+      const averageOrderValue = orderDetails.length > 0 ? totalSales / orderDetails.length : 0;
+      const averageProfit = orderDetails.length > 0 ? totalProfit / orderDetails.length : 0;
+      
+      // Sales and profit by date trend
+      const salesByDate = orderDetails.reduce((acc, order) => {
+        const date = new Date(order.createdAt).toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = { date, sales: 0, profit: 0, orders: 0 };
+        }
+        
+        acc[date].sales += Number(order.total);
+        const orderProfit = Number(order.total) - Number(order.materialCost) - Number(order.laborCost);
+        acc[date].profit += orderProfit;
+        acc[date].orders += 1;
+        
+        return acc;
+      }, {});
+      
+      const salesTrend = Object.values(salesByDate).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      
+      // Top profit customers
+      const customerProfits = orderDetails.reduce((acc, order) => {
+        const customerId = order.customerId;
+        if (!customerId) return acc;
+        
+        if (!acc[customerId]) {
+          acc[customerId] = { 
+            customerId,
+            totalSales: 0,
+            totalProfit: 0,
+            orderCount: 0 
+          };
+        }
+        
+        acc[customerId].totalSales += Number(order.total);
+        const orderProfit = Number(order.total) - Number(order.materialCost) - Number(order.laborCost);
+        acc[customerId].totalProfit += orderProfit;
+        acc[customerId].orderCount += 1;
+        
+        return acc;
+      }, {});
+      
+      // Get customer details and calculate top customers by profit
+      const customers = await storage.getAllCustomers();
+      const topCustomers = Object.values(customerProfits)
+        .map(cp => {
+          const customer = customers.find(c => c.id === cp.customerId);
+          return {
+            ...cp,
+            customerName: customer ? `${customer.firstName} ${customer.lastName}` : 'Unknown',
+            profitPerOrder: cp.orderCount > 0 ? cp.totalProfit / cp.orderCount : 0
+          };
+        })
+        .sort((a, b) => b.totalProfit - a.totalProfit)
+        .slice(0, 5);
+      
+      res.json({
+        totalSales,
+        totalMaterialCost,
+        totalLaborCost,
+        totalProfit,
+        profitMargin,
+        averageOrderValue,
+        averageProfit,
+        orderCount: orderDetails.length,
+        salesTrend,
+        materialBreakdown,
+        topCustomers
+      });
+    } catch (error) {
+      console.error('Error getting profit analytics:', error);
+      res.status(500).json({ message: 'Failed to retrieve profit analytics' });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
