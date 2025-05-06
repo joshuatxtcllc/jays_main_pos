@@ -58,14 +58,14 @@ async function searchFrames(keyword: string, limit: number = 5) {
       .select({
         id: frames.id,
         name: frames.name,
-        description: frames.description,
-        thumbnail: frames.imageUrl
+        manufacturer: frames.manufacturer,
+        material: frames.material,
+        catalogImage: frames.catalogImage
       })
       .from(frames)
       .where(
         or(
           like(frames.name, `%${keyword}%`),
-          like(frames.description, `%${keyword}%`),
           like(frames.manufacturer, `%${keyword}%`),
           like(frames.material, `%${keyword}%`)
         )
@@ -76,9 +76,9 @@ async function searchFrames(keyword: string, limit: number = 5) {
       id: frame.id,
       type: 'frame',
       name: frame.name,
-      description: frame.description || 'Frame',
+      description: `${frame.manufacturer || ''} ${frame.material || ''}`.trim() || 'Frame',
       route: `/frames/${frame.id}`,
-      thumbnail: frame.thumbnail
+      thumbnail: frame.catalogImage
     }));
   } catch (error) {
     console.error('Error searching frames:', error);
@@ -170,27 +170,41 @@ async function searchOrders(keyword: string, limit: number = 3) {
     // Try to parse if this is a numeric order ID
     const orderId = parseInt(keyword);
     
-    let query = db
-      .select({
-        id: orders.id,
-        customerName: customers.name,
-        amount: orderGroups.subtotal,
-        status: orders.status
-      })
-      .from(orders)
-      .leftJoin(orderGroups, eq(orders.orderGroupId, orderGroups.id))
-      .leftJoin(customers, eq(orders.customerId, customers.id))
-      .limit(limit);
+    let query;
     
     if (!isNaN(orderId)) {
-      query = query.where(eq(orders.id, orderId));
+      // If keyword is a valid order ID, search directly by ID
+      query = db
+        .select({
+          id: orders.id,
+          customerName: customers.name,
+          amount: orderGroups.subtotal,
+          status: orders.status
+        })
+        .from(orders)
+        .leftJoin(orderGroups, eq(orders.orderGroupId, orderGroups.id))
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(eq(orders.id, orderId))
+        .limit(limit);
     } else {
-      query = query.where(
-        or(
-          like(customers.name, `%${keyword}%`),
-          like(orders.status, `%${keyword}%`)
+      // Otherwise search by customer name or status
+      query = db
+        .select({
+          id: orders.id,
+          customerName: customers.name,
+          amount: orderGroups.subtotal,
+          status: orders.status
+        })
+        .from(orders)
+        .leftJoin(orderGroups, eq(orders.orderGroupId, orderGroups.id))
+        .leftJoin(customers, eq(orders.customerId, customers.id))
+        .where(
+          or(
+            like(customers.name, `%${keyword}%`),
+            like(orders.status, `%${keyword}%`)
+          )
         )
-      );
+        .limit(limit);
     }
     
     const searchResults = await query;

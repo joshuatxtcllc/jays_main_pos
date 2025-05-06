@@ -1561,6 +1561,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment-links/:id/notify', sendPaymentLinkNotification);
   app.get('/api/payment/:token/validate', validatePaymentLinkByToken);
   app.post('/api/payment/:token/complete', completePaymentForLink);
+  
+  // Chat and Search Routes
+  app.post('/api/chat', handleChatMessage);
 
   const httpServer = createServer(app);
   return httpServer;

@@ -14,7 +14,12 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipTrigger,
+  TooltipProvider
+} from '@/components/ui/tooltip';
 import { 
   Sheet,
   SheetContent,
@@ -175,21 +180,23 @@ const ChatWidget: React.FC = () => {
   return (
     <>
       {/* Chat toggle button */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            onClick={toggleChat}
-            className="rounded-full h-12 w-12 fixed bottom-6 right-6 shadow-lg"
-            size="icon"
-            variant="default"
-          >
-            <MessageSquareText className="h-6 w-6" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <p>Chat Assistant</p>
-        </TooltipContent>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={toggleChat}
+              className="rounded-full h-12 w-12 fixed bottom-6 right-6 shadow-lg"
+              size="icon"
+              variant="default"
+            >
+              <MessageSquareText className="h-6 w-6" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <p>Chat Assistant</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Chat window */}
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
