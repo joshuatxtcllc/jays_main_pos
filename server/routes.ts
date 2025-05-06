@@ -73,6 +73,7 @@ import {
   getMaterialTypes,
   getMaterialSuppliers
 } from "./controllers/materialsController";
+import { handleChatMessage } from "./controllers/chatController";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
