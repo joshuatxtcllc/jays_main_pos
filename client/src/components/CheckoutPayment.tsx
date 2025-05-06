@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency } from '@/lib/utils';
-import { Loader2, CreditCard, Banknote, FileCheck } from 'lucide-react';
+import { Loader2, CreditCard, Banknote, FileCheck, Mail } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import InvoiceViewer from './InvoiceViewer';
 import { OrderGroup } from '@shared/schema';
 
