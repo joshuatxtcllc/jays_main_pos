@@ -1,5 +1,5 @@
 
-import db from '../db';
+import { db } from '../db';
 
 /**
  * Find an order by its order number

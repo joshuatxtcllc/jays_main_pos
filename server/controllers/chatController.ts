@@ -396,17 +396,15 @@ export async function handleChatMessage(req: Request, res: Response) {
     });
   }
 }
-import { Request, Response } from 'express';
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 import { findOrderByNumber } from '../services/orderService';
 import { getOrderStatusHistory } from '../services/orderStatusHistoryService';
-import { getInventoryLevels } from '../services/inventoryService';
+import { getLowStockAlerts } from '../services/inventoryService';
 
 // Initialize OpenAI API
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
 // Sample questions and answers for common queries
 const FAQ_DATA = [
@@ -457,10 +455,10 @@ export const processMessage = async (req: Request, res: Response) => {
     // Check if it's an inventory query
     if (message.toLowerCase().includes('inventory') && 
        (message.toLowerCase().includes('low') || message.toLowerCase().includes('level'))) {
-      const lowInventory = await getInventoryLevels('low');
+      const lowInventory = await getLowStockAlerts();
       
       if (lowInventory && lowInventory.length > 0) {
-        const lowItems = lowInventory.map(item => `${item.name} (${item.quantity} remaining)`).join('\n- ');
+        const lowItems = lowInventory.map(item => `${item.name} (${item.currentStock} remaining)`).join('\n- ');
         return res.json({
           response: `Here are the items with low inventory levels:\n- ${lowItems}\n\nYou should consider reordering these items soon.`
         });
@@ -479,7 +477,7 @@ export const processMessage = async (req: Request, res: Response) => {
     }
     
     // If we get here, use the OpenAI API
-    const completion = await openai.createChatCompletion({
+    const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
@@ -492,7 +490,7 @@ export const processMessage = async (req: Request, res: Response) => {
       temperature: 0.7,
     });
     
-    const aiResponse = completion.data.choices[0]?.message?.content || 
+    const aiResponse = completion.choices[0]?.message?.content || 
       "I'm not sure how to help with that. Could you try rephrasing your question?";
     
     return res.json({ response: aiResponse });
