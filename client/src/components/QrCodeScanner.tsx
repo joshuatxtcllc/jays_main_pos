@@ -39,18 +39,18 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
           height: { ideal: 720 }
         } 
       });
-      
+
       setCameraStream(stream);
       setScanning(true);
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
-      
+
       // Start the scanning process
       scanQrCode();
-      
+
     } catch (error) {
       console.error('Error accessing camera:', error);
       toast({
@@ -79,23 +79,23 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
       // Set canvas dimensions to match video
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      
+
       // Draw current video frame to canvas
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
+
         // Here we would normally detect the QR code from the canvas
         // But since we don't have a QR code detection library that works 
         // directly with canvas data (due to compatibility issues),
         // we'll use the file upload approach as a fallback
-        
+
         // For demo purposes, we can take screenshots periodically and try to detect QR codes
         // in a production environment, we would integrate with a JS library 
         // that can detect QR codes from video frames
       }
     }
-    
+
     // Continue scanning
     if (scanning) {
       requestAnimationFrame(scanQrCode);
@@ -104,10 +104,10 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
 
   const captureAndAnalyze = () => {
     if (!canvasRef.current) return;
-    
+
     const canvas = canvasRef.current;
     const dataUrl = canvas.toDataURL('image/jpeg');
-    
+
     // For demonstration purposes, we'll handle this with manual input
     const capturedCode = prompt("Scanning functionality requires a QR code reader library. For now, please enter the QR code manually:");
     if (capturedCode) {
@@ -117,13 +117,13 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    
+
     const file = e.target.files[0];
     const reader = new FileReader();
-    
+
     reader.onload = (event) => {
       if (!event.target) return;
-      
+
       // This would normally be processed by a QR code scanner library
       // For demonstration, we'll use manual input
       const uploadedCode = prompt("Enter the QR code from the uploaded image:");
@@ -131,7 +131,7 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
         handleScannedCode(uploadedCode);
       }
     };
-    
+
     reader.readAsDataURL(file);
   };
 
@@ -139,14 +139,14 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
     try {
       setScannedCode(code);
       setLoadingData(true);
-      
+
       // Look up the QR code data
       const response = await apiRequest('GET', `/api/qr-codes/${encodeURIComponent(code)}`);
-      
+
       if (!response.ok) {
         throw new Error('QR code not found or invalid');
       }
-      
+
       // Safely parse the response
       let data;
       const contentType = response.headers.get('content-type');
@@ -158,25 +158,25 @@ export function QrCodeScanner({ onScan, className }: QrCodeScannerProps) {
         throw new Error('Invalid response format. Expected JSON but got: ' + 
           (text.substring(0, 50) + (text.length > 50 ? '...' : '')));
       }
-      
+
       setScannedData(data);
-      
+
       // Record a scan
       await apiRequest('POST', '/api/qr-codes/scan', { 
         qrCodeId: data.id,
         location: 'POS System'
       });
-      
+
       // Call the onScan callback with the data
       if (onScan) {
         onScan(data);
       }
-      
+
       toast({
         title: "QR Code Scanned",
         description: `Successfully scanned: ${data.title}`
       });
-      
+
     } catch (error) {
       console.error('Error processing QR code:', error);
       toast({

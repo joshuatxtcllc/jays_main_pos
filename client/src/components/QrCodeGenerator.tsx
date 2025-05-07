@@ -100,7 +100,7 @@ export function QrCodeGenerator({
       const svgData = new XMLSerializer().serializeToString(svg);
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
       const svgUrl = URL.createObjectURL(svgBlob);
-      
+
       // Create a link element and trigger download
       const downloadLink = document.createElement('a');
       downloadLink.href = svgUrl;
@@ -117,7 +117,7 @@ export function QrCodeGenerator({
       const svg = document.getElementById('qr-code-svg');
       if (svg) {
         const svgData = new XMLSerializer().serializeToString(svg);
-        
+
         printWindow.document.write(`
           <!DOCTYPE html>
           <html>
