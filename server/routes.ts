@@ -64,6 +64,7 @@ import vendorSettingsRoutes from "./routes/vendorSettingsRoutes";
 import qrCodeRoutes from "./routes/qrCodeRoutes";
 import vendorApiRoutes from './routes/vendorApiRoutes';
 import orderStatusHistoryRoutes from './routes/orderStatusHistoryRoutes';
+import integrationApiRoutes from './routes/integrationApiRoutes'; // Added import
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 
@@ -1538,6 +1539,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register vendor settings routes
   app.use('/api/vendor-api', vendorApiRoutes);
+  app.use('/api/integration', integrationApiRoutes); // Added integration routes
   app.use('/api/vendor-settings', vendorSettingsRoutes);
   app.use('/api/qrcode', qrCodeRoutes);
   app.use('/api/status-history', orderStatusHistoryRoutes);
@@ -1561,24 +1563,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/payment-links/:id/notify', sendPaymentLinkNotification);
   app.get('/api/payment/:token/validate', validatePaymentLinkByToken);
   app.post('/api/payment/:token/complete', completePaymentForLink);
-  
+
   // Chat and Search Routes
   app.post('/api/chat', handleChatMessage);
-  
+
   // ---------------
   // ANALYTICS ENDPOINTS
   // ---------------
-  
+
   // Fetch profit analytics data for the dashboard
   app.get('/api/analytics/profits', async (req, res) => {
     try {
       // Get timeframe from query params
       const timeRange = req.query.timeRange || '30days';
-      
+
       // Calculate start date based on timeRange
       const now = new Date();
       let startDate = new Date();
-      
+
       switch (timeRange) {
         case '7days':
           startDate.setDate(now.getDate() - 7);
@@ -1595,26 +1597,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         default:
           startDate.setDate(now.getDate() - 30);
       }
-      
+
       // Fetch orders within the date range
       const allOrders = await storage.getAllOrders();
       const ordersInRange = allOrders.filter(order => {
         const orderDate = new Date(order.createdAt);
         return orderDate >= startDate && orderDate <= now && order.status === 'paid';
       });
-      
+
       // Fetch detailed order information
       const orderDetails = await Promise.all(
         ordersInRange.map(async (order) => {
           const specialServices = await storage.getOrderSpecialServices(order.id);
           const mats = await storage.getOrderMats(order.id);
           const frames = await storage.getOrderFrames(order.id);
-          
+
           // Calculate material cost and profit metrics
           let materialCost = 0;
           let laborCost = 0;
           let profitability = null;
-          
+
           // If we have the detailed order data with pricing calculation
           const calculatedPricing = await storage.getOrderPricingDetails(order.id);
           if (calculatedPricing && calculatedPricing.profitability) {
@@ -1622,7 +1624,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             materialCost = calculatedPricing.profitability.totalWholesaleCost;
             laborCost = calculatedPricing.laborCost || 0;
           }
-          
+
           return {
             ...order,
             specialServices,
@@ -1634,14 +1636,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         })
       );
-      
+
       // Calculate aggregate metrics
       const totalSales = orderDetails.reduce((sum, order) => sum + Number(order.total), 0);
       const totalMaterialCost = orderDetails.reduce((sum, order) => sum + Number(order.materialCost), 0);
       const totalLaborCost = orderDetails.reduce((sum, order) => sum + Number(order.laborCost), 0);
       const totalProfit = totalSales - totalMaterialCost - totalLaborCost;
       const profitMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
-      
+
       // Material type breakdown
       const materialBreakdown = orderDetails.reduce((breakdown, order) => {
         if (order.profitability) {
@@ -1652,50 +1654,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         return breakdown;
       }, { frameCost: 0, matCost: 0, glassCost: 0 });
-      
+
       // Calculate average order metrics
       const averageOrderValue = orderDetails.length > 0 ? totalSales / orderDetails.length : 0;
       const averageProfit = orderDetails.length > 0 ? totalProfit / orderDetails.length : 0;
-      
+
       // Sales and profit by date trend
       const salesByDate = orderDetails.reduce((acc, order) => {
         const date = new Date(order.createdAt).toISOString().split('T')[0];
         if (!acc[date]) {
           acc[date] = { date, sales: 0, profit: 0, orders: 0 };
         }
-        
+
         acc[date].sales += Number(order.total);
         const orderProfit = Number(order.total) - Number(order.materialCost) - Number(order.laborCost);
         acc[date].profit += orderProfit;
         acc[date].orders += 1;
-        
+
         return acc;
       }, {});
-      
+
       const salesTrend = Object.values(salesByDate).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-      
+
       // Top profit customers
       const customerProfits = orderDetails.reduce((acc, order) => {
         const customerId = order.customerId;
         if (!customerId) return acc;
-        
+
         if (!acc[customerId]) {
           acc[customerId] = { 
             customerId,
             totalSales: 0,
             totalProfit: 0,
             orderCount: 0 
-          };
-        }
-        
+          };        }
+
         acc[customerId].totalSales += Number(order.total);
         const orderProfit = Number(order.total) - Number(order.materialCost) - Number(order.laborCost);
         acc[customerId].totalProfit += orderProfit;
         acc[customerId].orderCount += 1;
-        
+
         return acc;
       }, {});
-      
+
       // Get customer details and calculate top customers by profit
       const customers = await storage.getAllCustomers();
       const topCustomers = Object.values(customerProfits)
@@ -1709,7 +1710,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .sort((a, b) => b.totalProfit - a.totalProfit)
         .slice(0, 5);
-      
+
       res.json({
         totalSales,
         totalMaterialCost,

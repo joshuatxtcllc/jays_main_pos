@@ -16,7 +16,7 @@ import cookieParser from 'cookie-parser';
 export function applySecurityMiddleware(app: any) {
   // Parse cookies for CSRF protection
   app.use(cookieParser());
-  
+
   // Add security headers with Helmet
   app.use(
     helmet({
@@ -37,7 +37,7 @@ export function applySecurityMiddleware(app: any) {
       crossOriginEmbedderPolicy: false,
     })
   );
-  
+
   // Rate limiting
   const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -46,10 +46,10 @@ export function applySecurityMiddleware(app: any) {
     legacyHeaders: false, // Disable the `X-RateLimit-*` headers
     message: 'Too many requests from this IP, please try again after 15 minutes',
   });
-  
+
   // Apply rate limiting to API routes
   app.use('/api/', apiLimiter);
-  
+
   // More strict rate limiting for auth endpoints
   const authLimiter = rateLimit({
     windowMs: 60 * 60 * 1000, // 1 hour
@@ -59,10 +59,10 @@ export function applySecurityMiddleware(app: any) {
     skipSuccessfulRequests: true, // Only count failed requests
     message: 'Too many login attempts from this IP, please try again after an hour',
   });
-  
+
   // Apply stricter rate limiting to authentication routes
   app.use('/api/login', authLimiter);
-  
+
   // CSRF protection
   // Only apply to routes that handle state changes
   const csrfProtection = csrf({ cookie: { 
@@ -70,7 +70,7 @@ export function applySecurityMiddleware(app: any) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict'
   }});
-  
+
   // Helper to apply CSRF to specific routes
   const protectStateChangingRoutes = (app: any) => {
     // Apply to all POST, PUT, PATCH, DELETE endpoints except /api/webhook
@@ -79,14 +79,14 @@ export function applySecurityMiddleware(app: any) {
     app.patch('/api/*', csrfProtection);
     app.delete('/api/*', csrfProtection);
   };
-  
+
   protectStateChangingRoutes(app);
-  
+
   // CSRF Token provider
   app.get('/api/csrf-token', csrfProtection, (req: Request, res: Response) => {
     res.json({ csrfToken: req.csrfToken() });
   });
-  
+
   // Add middleware to check for JWT expiration on protected routes
   app.use('/api/*', (req: Request, res: Response, next: NextFunction) => {
     if (req.path.startsWith('/api/login') || 
@@ -95,14 +95,14 @@ export function applySecurityMiddleware(app: any) {
         req.path === '/api/csrf-token') {
       return next();
     }
-    
+
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Authentication required' });
     }
-    
+
     next();
   });
-  
+
   // Global error handler for security errors
   app.use((err: any, req: Request, res: Response, next: NextFunction) => {
     if (err.code === 'EBADCSRFTOKEN') {
@@ -111,7 +111,7 @@ export function applySecurityMiddleware(app: any) {
         error: 'Security validation failed. Please refresh the page and try again.'
       });
     }
-    
+
     next(err);
   });
 }
@@ -124,7 +124,7 @@ export function isIPBlocked(ip: string): boolean {
   const blockedIPs: string[] = [
     // Add known malicious IPs here
   ];
-  
+
   return blockedIPs.includes(ip);
 }
 
@@ -133,11 +133,11 @@ export function isIPBlocked(ip: string): boolean {
  */
 export function blockSuspiciousIPs(req: Request, res: Response, next: NextFunction) {
   const clientIP = req.ip || req.socket.remoteAddress || '';
-  
+
   if (isIPBlocked(clientIP)) {
     return res.status(403).json({ error: 'Access denied' });
   }
-  
+
   next();
 }
 
@@ -147,6 +147,29 @@ export function blockSuspiciousIPs(req: Request, res: Response, next: NextFuncti
 export function preventBruteForce(req: Request, res: Response, next: NextFunction) {
   // This is an additional layer on top of the rate limiter
   // You could implement more sophisticated brute force detection logic here
-  
+
+  next();
+}
+
+/**
+ * Verify API key for integration endpoints
+ */
+export function verifyApiKey(req: Request, res: Response, next: NextFunction) {
+  const apiKey = req.headers['x-api-key'] || req.query.api_key;
+  const validApiKey = process.env.INTEGRATION_API_KEY;
+
+  if (!apiKey) {
+    return res.status(401).json({ error: 'API key is required' });
+  }
+
+  if (!validApiKey) {
+    console.warn('INTEGRATION_API_KEY environment variable is not set');
+    return res.status(500).json({ error: 'API key validation is not configured' });
+  }
+
+  if (apiKey !== validApiKey) {
+    return res.status(403).json({ error: 'Invalid API key' });
+  }
+
   next();
 }
