@@ -218,3 +218,10 @@ export function calculateTotalPrice(
   
   return { subtotal, tax, total };
 }
+
+// Generate a simple QR code for an order
+export function generateQrCode(orderId: string | number): string {
+  // This is a simple implementation - in production, you would use a proper QR code generation library
+  // Return a placeholder for now - the actual implementation should be handled by the QR code service
+  return `order-${orderId}`;
+}
