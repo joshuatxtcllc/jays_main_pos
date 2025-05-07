@@ -396,3 +396,109 @@ export async function handleChatMessage(req: Request, res: Response) {
     });
   }
 }
+import { Request, Response } from 'express';
+import { Configuration, OpenAIApi } from 'openai';
+import { findOrderByNumber } from '../services/orderService';
+import { getOrderStatusHistory } from '../services/orderStatusHistoryService';
+import { getInventoryLevels } from '../services/inventoryService';
+
+// Initialize OpenAI API
+const configuration = new Configuration({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
+// Sample questions and answers for common queries
+const FAQ_DATA = [
+  {
+    question: "How do I add a new order?",
+    answer: "To add a new order, go to the POS System page from the main navigation menu and follow these steps:\n1. Enter customer information\n2. Add frame details and measurements\n3. Select mat, frame, and glass options\n4. Add any special services\n5. Calculate the price and submit the order"
+  },
+  {
+    question: "How do I check inventory levels?",
+    answer: "You can check inventory levels by navigating to the Inventory page. There you'll see a table of all inventory items with their current stock levels, as well as charts showing inventory trends."
+  },
+  {
+    question: "How does the pricing calculator work?",
+    answer: "The pricing calculator takes the following factors into account:\n- Frame dimensions and type\n- Mat board selections and sizes\n- Glass type\n- Special services\n- Any applicable discounts\n\nThe system automatically calculates the price based on our pricing formulas that include materials cost, labor, and markup."
+  }
+];
+
+// Threshold for detecting order number queries
+const ORDER_NUMBER_REGEX = /order\s+#?(\d+)|#(\d+)|order\s+number\s+(\d+)/i;
+
+// Process chat messages
+export const processMessage = async (req: Request, res: Response) => {
+  try {
+    const { message } = req.body;
+    
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    // Check if it's a specific order query first
+    const orderMatch = message.match(ORDER_NUMBER_REGEX);
+    if (orderMatch) {
+      const orderNumber = orderMatch[1] || orderMatch[2] || orderMatch[3];
+      const orderInfo = await findOrderByNumber(orderNumber);
+      
+      if (orderInfo) {
+        const statusHistory = await getOrderStatusHistory(orderInfo.id);
+        const currentStatus = statusHistory && statusHistory.length > 0 
+          ? statusHistory[0].status 
+          : orderInfo.status;
+          
+        return res.json({
+          response: `Order #${orderNumber} is currently ${currentStatus}. It was created on ${new Date(orderInfo.createdAt).toLocaleDateString()} for customer ${orderInfo.customerName}.\n\nThe order contains a ${orderInfo.frameWidth}" × ${orderInfo.frameHeight}" ${orderInfo.frameStyle} frame with ${orderInfo.matDescription || 'no mat'} and ${orderInfo.glassType} glass.\n\nThe total price is $${orderInfo.totalPrice.toFixed(2)}.`
+        });
+      }
+    }
+    
+    // Check if it's an inventory query
+    if (message.toLowerCase().includes('inventory') && 
+       (message.toLowerCase().includes('low') || message.toLowerCase().includes('level'))) {
+      const lowInventory = await getInventoryLevels('low');
+      
+      if (lowInventory && lowInventory.length > 0) {
+        const lowItems = lowInventory.map(item => `${item.name} (${item.quantity} remaining)`).join('\n- ');
+        return res.json({
+          response: `Here are the items with low inventory levels:\n- ${lowItems}\n\nYou should consider reordering these items soon.`
+        });
+      } else {
+        return res.json({
+          response: "Good news! There are no items with low inventory levels at the moment."
+        });
+      }
+    }
+    
+    // Check if it's a FAQ
+    for (const faq of FAQ_DATA) {
+      if (message.toLowerCase().includes(faq.question.toLowerCase().substring(0, 15))) {
+        return res.json({ response: faq.answer });
+      }
+    }
+    
+    // If we get here, use the OpenAI API
+    const completion = await openai.createChatCompletion({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an assistant for Jay's Frames custom framing shop. Your name is Jay's Frames Assistant. You help employees navigate the POS system, check order status, and provide information about framing services. Be concise and helpful. If you don't know something, suggest where they might find the information in the system."
+        },
+        { role: "user", content: message }
+      ],
+      max_tokens: 300,
+      temperature: 0.7,
+    });
+    
+    const aiResponse = completion.data.choices[0]?.message?.content || 
+      "I'm not sure how to help with that. Could you try rephrasing your question?";
+    
+    return res.json({ response: aiResponse });
+    
+  } catch (error) {
+    console.error('Error processing chat message:', error);
+    res.status(500).json({ error: 'Failed to process message. Please try again.' });
+  }
+};

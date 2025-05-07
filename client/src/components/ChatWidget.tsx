@@ -312,3 +312,299 @@ const ChatWidget: React.FC = () => {
 };
 
 export default ChatWidget;
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardContent } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { ScrollArea } from './ui/scroll-area';
+import { Avatar } from './ui/avatar';
+import { AiOutlineSend, AiOutlineClose, AiOutlineQuestionCircle, AiOutlinePushpin } from 'react-icons/ai';
+import { FiMaximize2, FiMinimize2 } from 'react-icons/fi';
+import { BiLoader } from 'react-icons/bi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useToast } from "../hooks/use-toast";
+
+interface Message {
+  id: string;
+  content: string;
+  sender: 'user' | 'assistant';
+  timestamp: Date;
+  isPinned?: boolean;
+}
+
+const ChatWidget: React.FC = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
+
+  // Initial welcome message
+  useEffect(() => {
+    if (messages.length === 0) {
+      setMessages([
+        {
+          id: '1',
+          content: "Hello! I'm your Jay's Frames assistant. I can help you navigate the system, check order status, or answer questions about framing. What can I help you with today?",
+          sender: 'assistant',
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  }, []);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // Focus input when chat opens
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const handleSendMessage = async () => {
+    if (!input.trim()) return;
+
+    // Create user message
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: input,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    // Update UI with user message
+    setMessages((prev) => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      // Send to API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
+
+      // Create assistant message
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: data.response,
+        sender: 'assistant',
+        timestamp: new Date(),
+      };
+
+      // Update UI with assistant message
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get a response. Please try again.",
+        variant: "destructive",
+      });
+
+      // Create error message
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: "I'm having trouble connecting to the server. Please try again in a moment.",
+        sender: 'assistant',
+        timestamp: new Date(),
+      };
+
+      // Update UI with error message
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
+  const togglePin = (id: string) => {
+    setMessages((prev) =>
+      prev.map((msg) => (msg.id === id ? { ...msg, isPinned: !msg.isPinned } : msg))
+    );
+  };
+
+  const clearChat = () => {
+    const pinnedMessages = messages.filter((msg) => msg.isPinned);
+    setMessages([
+      {
+        id: Date.now().toString(),
+        content: "Chat history cleared. How can I help you?",
+        sender: 'assistant',
+        timestamp: new Date(),
+      },
+      ...pinnedMessages,
+    ]);
+  };
+
+  return (
+    <>
+      {/* Chat toggle button */}
+      <Button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-4 right-4 rounded-full p-4 shadow-lg z-50 bg-primary hover:bg-primary/90"
+      >
+        {isOpen ? (
+          <AiOutlineClose className="h-6 w-6" />
+        ) : (
+          <AiOutlineQuestionCircle className="h-6 w-6" />
+        )}
+      </Button>
+
+      {/* Chat widget */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            transition={{ duration: 0.2 }}
+            className={`fixed z-40 ${
+              isExpanded ? 'top-4 right-4 left-4 bottom-20' : 'bottom-20 right-4 w-96'
+            }`}
+          >
+            <Card className="shadow-xl border-2 border-primary/20 h-full flex flex-col">
+              {/* Header */}
+              <div className="p-3 border-b flex justify-between items-center bg-muted/30">
+                <h3 className="font-semibold text-foreground">Jay's Frames Assistant</h3>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    title={isExpanded ? "Minimize" : "Maximize"}
+                  >
+                    {isExpanded ? (
+                      <FiMinimize2 className="h-4 w-4" />
+                    ) : (
+                      <FiMaximize2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearChat}
+                    title="Clear chat"
+                  >
+                    <AiOutlineClose className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <CardContent className="flex-grow p-0 overflow-hidden">
+                <ScrollArea className="h-full max-h-[500px] p-4">
+                  {messages.map((message) => (
+                    <div 
+                      key={message.id} 
+                      className={`mb-4 ${
+                        message.isPinned ? 'bg-muted/30 p-2 rounded-lg border-l-4 border-primary' : ''
+                      }`}
+                    >
+                      <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        {message.sender === 'assistant' && (
+                          <Avatar className="h-8 w-8 mr-2">
+                            <div className="bg-primary text-primary-foreground flex items-center justify-center h-full w-full rounded-full text-xs font-bold">
+                              JF
+                            </div>
+                          </Avatar>
+                        )}
+                        <div className={`max-w-[80%] ${message.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'} p-3 rounded-lg`}>
+                          <div className="whitespace-pre-wrap">{message.content}</div>
+                          <div className="text-xs opacity-70 mt-1">
+                            {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        {message.sender === 'user' && (
+                          <Avatar className="h-8 w-8 ml-2">
+                            <div className="bg-muted-foreground text-muted flex items-center justify-center h-full w-full rounded-full text-xs font-bold">
+                              ME
+                            </div>
+                          </Avatar>
+                        )}
+                      </div>
+                      {message.sender === 'assistant' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => togglePin(message.id)}
+                          className="mt-1 h-6 w-6"
+                          title={message.isPinned ? "Unpin message" : "Pin message"}
+                        >
+                          <AiOutlinePushpin className={`h-3 w-3 ${message.isPinned ? 'text-primary' : 'text-muted-foreground'}`} />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </ScrollArea>
+              </CardContent>
+
+              {/* Message loading indicator */}
+              {isLoading && (
+                <div className="px-4 py-2">
+                  <div className="flex items-center text-muted-foreground">
+                    <BiLoader className="h-4 w-4 mr-2 animate-spin" />
+                    <span className="text-sm">Assistant is typing...</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Input */}
+              <div className="p-3 border-t mt-auto">
+                <div className="flex gap-2">
+                  <Textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type your message..."
+                    className="resize-none min-h-[2.5rem] max-h-[150px]"
+                    rows={1}
+                  />
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!input.trim() || isLoading}
+                    className="shrink-0"
+                  >
+                    <AiOutlineSend className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  Press Enter to send, Shift+Enter for new line
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default ChatWidget;

@@ -75,6 +75,8 @@ import {
   getMaterialSuppliers
 } from "./controllers/materialsController";
 import { handleChatMessage } from "./controllers/chatController";
+import chatRoutes from './routes/chatRoutes'; // Added import for chat routes
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
@@ -1508,7 +1510,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Create HTTP server
   // Jays Frames Hub Integration Routes
   // Get all material orders with Hub sync status
   app.get('/api/hub/material-orders', getAllMaterialOrdersWithHubStatus);
@@ -1543,6 +1544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/vendor-settings', vendorSettingsRoutes);
   app.use('/api/qrcode', qrCodeRoutes);
   app.use('/api/status-history', orderStatusHistoryRoutes);
+  app.use('/api/chat', chatRoutes); // Added chat routes
 
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
@@ -1682,7 +1684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!customerId) return acc;
 
         if (!acc[customerId]) {
-          acc[customerId] = { 
+          acc[customerId] ={ 
             customerId,
             totalSales: 0,
             totalProfit: 0,
