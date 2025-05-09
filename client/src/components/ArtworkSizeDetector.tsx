@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader2, Upload, Camera, Ruler, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ArtworkSizeDetector as Detector, ArtworkDimensions, createImageFromFile } from '@/lib/artworkSizeDetector';
@@ -479,14 +480,34 @@ export function ArtworkSizeDetector({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Reference marker section */}
-          <div className="bg-muted p-4 rounded-md">
+          {/* Reference marker section with help icon */}
+          <div className="bg-muted p-3 rounded-md">
             <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-sm font-medium mb-1">Reference Marker (Required for Accurate Measurement)</h4>
-                <p className="text-sm text-muted-foreground">
-                  For accurate size detection, download and print this marker, then place it next to your artwork before taking a photo. For best results, make sure the marker is printed at exactly 5cm × 5cm and is clearly visible in the photo.
-                </p>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-medium">Reference Marker</h4>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                      <span className="sr-only">Help</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                        <path d="M12 17h.01" />
+                      </svg>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 text-sm">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Instructions for Accurate Measurement</h4>
+                      <p className="text-muted-foreground">
+                        Download and print this marker at exactly 5cm × 5cm size.
+                        Place it next to your artwork on the same plane before taking a photo.
+                        Ensure good lighting and that the marker is clearly visible.
+                        For best results, use the rear camera on your device.
+                      </p>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <Button onClick={downloadMarker} variant="outline" size="sm">
                 Download Marker
@@ -707,12 +728,9 @@ export function ArtworkSizeDetector({
         </div>
       </CardContent>
       <CardFooter className="text-xs text-muted-foreground">
-        <div className="flex items-start space-x-2">
-          <ImageIcon className="h-4 w-4 mt-0.5" />
-          <div>
-            <p>For best results, ensure the reference marker is clearly visible and on the same plane as your artwork.</p>
-            <p className="mt-1">The marker should be printed at exactly 5cm × 5cm size.</p>
-          </div>
+        <div className="flex items-center space-x-2">
+          <ImageIcon className="h-4 w-4" />
+          <span>Print marker at 5cm × 5cm and place next to artwork</span>
         </div>
       </CardFooter>
     </Card>
