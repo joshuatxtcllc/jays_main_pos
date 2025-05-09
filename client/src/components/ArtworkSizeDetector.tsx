@@ -494,195 +494,215 @@ export function ArtworkSizeDetector({
             </div>
           </div>
 
-          {/* Image upload/capture tabs */}
-          <Tabs value={tab} onValueChange={setTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload">
-                <Upload className="mr-2 h-4 w-4" />
-                Upload Image
-              </TabsTrigger>
-              <TabsTrigger value="webcam">
-                <Camera className="mr-2 h-4 w-4" />
-                Use Webcam
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="upload" className="space-y-4">
-              <div 
-                className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*" 
-                  onChange={handleFileInputChange}
-                  disabled={loading}
-                />
-                <div className="text-center">
-                  {loading ? (
-                    <Loader2 className="h-10 w-10 animate-spin text-muted-foreground mx-auto" />
-                  ) : (
-                    <>
-                      <Upload className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm font-medium">Click to upload artwork image</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        JPG, PNG or GIF, max 10MB
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="webcam" className="space-y-4">
-              <div className="rounded-md overflow-hidden bg-black relative">
-                <video 
-                  ref={webcamRef} 
-                  autoPlay 
-                  playsInline 
-                  className="w-full h-auto"
-                  style={{ maxHeight: '400px', objectFit: 'contain' }}
-                />
+          {/* Side-by-side layout for upload and preview */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left side: Upload controls (smaller) */}
+            <div className="lg:col-span-1 space-y-4">
+              <h4 className="text-sm font-medium">Upload Artwork</h4>
+              
+              <Tabs value={tab} onValueChange={setTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload">
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload
+                  </TabsTrigger>
+                  <TabsTrigger value="webcam">
+                    <Camera className="mr-2 h-4 w-4" />
+                    Camera
+                  </TabsTrigger>
+                </TabsList>
                 
-                {/* Camera grid overlay for alignment */}
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="w-full h-full max-w-[240px] max-h-[240px] border-2 border-white/30 grid grid-cols-3 grid-rows-3">
-                    <div className="border-r border-b border-white/30"></div>
-                    <div className="border-r border-b border-white/30"></div>
-                    <div className="border-b border-white/30"></div>
-                    <div className="border-r border-b border-white/30"></div>
-                    <div className="border-r border-b border-white/30"></div>
-                    <div className="border-b border-white/30"></div>
-                    <div className="border-r border-white/30"></div>
-                    <div className="border-r border-white/30"></div>
-                    <div></div>
+                <TabsContent value="upload" className="space-y-4">
+                  <div 
+                    className="border-2 border-dashed rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleFileInputChange}
+                      disabled={loading}
+                    />
+                    <div className="text-center">
+                      {loading ? (
+                        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto" />
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm font-medium">Click to upload</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            JPG, PNG or GIF
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                </TabsContent>
                 
-                {/* Instruction overlay */}
-                <div className="absolute top-2 left-0 right-0 text-center text-white text-sm bg-black/50 py-1 px-2">
-                  Position reference marker next to artwork and align within frame
-                </div>
-              </div>
+                <TabsContent value="webcam" className="space-y-4">
+                  <div className="rounded-md overflow-hidden bg-black relative">
+                    <video 
+                      ref={webcamRef} 
+                      autoPlay 
+                      playsInline 
+                      className="w-full h-auto"
+                      style={{ maxHeight: '220px', objectFit: 'contain' }}
+                    />
+                    
+                    {/* Camera grid overlay for alignment */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="w-full h-full max-w-[160px] max-h-[160px] border-2 border-white/30 grid grid-cols-3 grid-rows-3">
+                        <div className="border-r border-b border-white/30"></div>
+                        <div className="border-r border-b border-white/30"></div>
+                        <div className="border-b border-white/30"></div>
+                        <div className="border-r border-b border-white/30"></div>
+                        <div className="border-r border-b border-white/30"></div>
+                        <div className="border-b border-white/30"></div>
+                        <div className="border-r border-white/30"></div>
+                        <div className="border-r border-white/30"></div>
+                        <div></div>
+                      </div>
+                    </div>
+                    
+                    {/* Instruction overlay */}
+                    <div className="absolute top-2 left-0 right-0 text-center text-white text-xs bg-black/50 py-1 px-2">
+                      Position marker next to artwork
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={captureFromWebcam} 
+                      className="flex-1"
+                      size="sm"
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Camera className="mr-2 h-3 w-3" />
+                          Capture
+                        </>
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        // Stop current stream
+                        if (streamRef.current) {
+                          streamRef.current.getTracks().forEach(track => track.stop());
+                          streamRef.current = null;
+                        }
+                        // Restart webcam to switch camera
+                        setTimeout(startWebcam, 300);
+                      }}
+                      title="Switch camera"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
               
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  onClick={captureFromWebcam} 
-                  className="flex-1"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Camera className="mr-2 h-4 w-4" />
-                      Capture Image
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    // Stop current stream
-                    if (streamRef.current) {
-                      streamRef.current.getTracks().forEach(track => track.stop());
-                      streamRef.current = null;
-                    }
-                    // Restart webcam to switch camera
-                    setTimeout(startWebcam, 300);
-                  }}
-                  title="Switch camera"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+              {/* Compact photo tips */}
+              <div className="bg-muted p-2 rounded-md text-xs text-muted-foreground">
                 <p className="flex items-center">
                   <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                  For best results, ensure good lighting and place the reference marker on the same plane as the artwork.
+                  Place marker on the same plane as artwork.
                 </p>
                 <p className="mt-1 flex items-center">
                   <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
-                  If using a mobile device, use the rear camera for higher quality results.
+                  Use rear camera for best quality.
                 </p>
               </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Image preview */}
-          {imagePreview && (
-            <div className="mt-4">
-              <h4 className="text-sm font-medium mb-2">Image Preview</h4>
-              <div className="rounded-md overflow-hidden border bg-muted/20">
-                <img 
-                  src={imagePreview} 
-                  alt="Artwork preview" 
-                  className="w-full h-auto object-contain"
-                  style={{ maxHeight: '200px' }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Manual dimensions input */}
-          <div className="mt-4">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-medium">Artwork Dimensions</h4>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setManualEntry(!manualEntry)}
-              >
-                {manualEntry ? 'Hide Manual Entry' : 'Edit Manually'}
-              </Button>
             </div>
             
-            {manualEntry ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="width">Width (inches)</Label>
-                    <Input 
-                      id="width"
-                      type="number" 
-                      step="0.01"
-                      min="0.1"
-                      value={dimensions.width}
-                      onChange={(e) => handleDimensionChange('width', e.target.value)}
+            {/* Right side: Preview and dimensions (larger) */}
+            <div className="lg:col-span-2 space-y-4">
+              <h4 className="text-sm font-medium">Artwork Preview & Dimensions</h4>
+              
+              {imagePreview ? (
+                <div className="border rounded-md p-4 bg-muted/10 flex flex-col items-center">
+                  <div className="rounded-md overflow-hidden border mb-4 max-w-full">
+                    <img 
+                      src={imagePreview} 
+                      alt="Artwork preview" 
+                      className="max-w-full h-auto object-contain"
+                      style={{ maxHeight: '300px' }}
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="height">Height (inches)</Label>
-                    <Input 
-                      id="height"
-                      type="number"
-                      step="0.01"
-                      min="0.1" 
-                      value={dimensions.height}
-                      onChange={(e) => handleDimensionChange('height', e.target.value)}
-                    />
+                  
+                  <div className="w-full max-w-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium">Detected Dimensions</h4>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setManualEntry(!manualEntry)}
+                      >
+                        {manualEntry ? 'Hide Manual Entry' : 'Edit Manually'}
+                      </Button>
+                    </div>
+                    
+                    {manualEntry ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="width">Width (inches)</Label>
+                            <Input 
+                              id="width"
+                              type="number" 
+                              step="0.01"
+                              min="0.1"
+                              value={dimensions.width}
+                              onChange={(e) => handleDimensionChange('width', e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="height">Height (inches)</Label>
+                            <Input 
+                              id="height"
+                              type="number"
+                              step="0.01"
+                              min="0.1" 
+                              value={dimensions.height}
+                              onChange={(e) => handleDimensionChange('height', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <Button onClick={handleApplyManualDimensions} size="sm">
+                          Apply Dimensions
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                        <Ruler className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium">
+                          {dimensions.width}" × {dimensions.height}"
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <Button onClick={handleApplyManualDimensions} size="sm">
-                  Apply Dimensions
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                <Ruler className="h-5 w-5 text-muted-foreground" />
-                <span className="font-medium">
-                  {dimensions.width}" × {dimensions.height}"
-                </span>
-              </div>
-            )}
+              ) : (
+                <div className="border rounded-md p-8 bg-muted/10 flex flex-col items-center justify-center text-center min-h-[300px]">
+                  <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Image Selected</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Upload or capture an image of your artwork with the reference marker to see a preview and detect dimensions.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </CardContent>
