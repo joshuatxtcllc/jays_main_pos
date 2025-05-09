@@ -159,26 +159,89 @@ export function ArtworkSizeDetector({
   // Handle webcam access
   const startWebcam = async () => {
     try {
-      // Request access to the environment-facing camera (rear camera on mobile)
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
-          facingMode: { exact: "environment" },
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        } 
-      }).catch(() => {
-        // Fallback to any available camera if environment camera isn't available
-        return navigator.mediaDevices.getUserMedia({ 
+      // First, get list of available video devices
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const videoDevices = devices.filter(device => device.kind === 'videoinput');
+      
+      console.log('Available camera devices:', videoDevices.length);
+      videoDevices.forEach((device, index) => {
+        console.log(`Camera ${index}: ${device.label || 'Unnamed camera'}`);
+      });
+      
+      // Try to use the rear camera first on mobile devices (usually better quality)
+      let stream;
+      
+      try {
+        // Attempt to get environment camera (rear camera) with high resolution
+        stream = await navigator.mediaDevices.getUserMedia({ 
           video: { 
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
+            facingMode: { exact: "environment" },
+            width: { ideal: 3840 }, // 4K if available
+            height: { ideal: 2160 },
+            frameRate: { ideal: 30 }
           } 
         });
-      });
+        console.log('Successfully accessed rear-facing camera');
+      } catch (err) {
+        console.log('Could not access rear camera, trying alternative:', err);
+        
+        // If we have multiple cameras, try to find the best one (not the front-facing)
+        if (videoDevices.length > 1) {
+          // Try the second camera if available (often the rear one)
+          const backCameraId = videoDevices[videoDevices.length > 1 ? 1 : 0].deviceId;
+          
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: {
+                deviceId: { exact: backCameraId },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                frameRate: { ideal: 30 }
+              }
+            });
+            console.log('Using specific camera device:', backCameraId);
+          } catch (specificErr) {
+            console.log('Error using specific camera, falling back to default:', specificErr);
+            stream = await navigator.mediaDevices.getUserMedia({
+              video: { 
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+              }
+            });
+          }
+        } else {
+          // Fallback to any available camera
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { 
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            }
+          });
+        }
+      }
       
       if (webcamRef.current) {
         webcamRef.current.srcObject = stream;
         streamRef.current = stream;
+        
+        // Apply constraints to get the best quality
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          console.log('Video track capabilities:', videoTrack.getCapabilities());
+          
+          // Try to set focus mode to manual or continuous
+          try {
+            await videoTrack.applyConstraints({
+              advanced: [
+                { focusMode: "continuous" }, // Keep refocusing as needed
+                { whiteBalance: "continuous" },
+                { exposureMode: "continuous" }
+              ]
+            });
+          } catch (constraintErr) {
+            console.log('Could not apply advanced constraints:', constraintErr);
+          }
+        }
       }
     } catch (error) {
       console.error('Error accessing webcam:', error);
@@ -211,7 +274,7 @@ export function ArtworkSizeDetector({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // Handle webcam capture
+  // Handle webcam capture with improved quality
   const captureFromWebcam = async () => {
     if (!webcamRef.current || !streamRef.current) {
       toast({
@@ -224,7 +287,21 @@ export function ArtworkSizeDetector({
 
     setLoading(true);
     try {
-      // Create canvas to capture frame
+      // Attempt to focus before capture (if supported)
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().focusMode) {
+        try {
+          await videoTrack.applyConstraints({ 
+            advanced: [{ focusMode: "continuous" }] 
+          });
+          // Wait a moment for the camera to focus
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (focusErr) {
+          console.log('Focus before capture not supported:', focusErr);
+        }
+      }
+      
+      // Create high-resolution canvas to capture frame
       const canvas = document.createElement('canvas');
       canvas.width = webcamRef.current.videoWidth;
       canvas.height = webcamRef.current.videoHeight;
@@ -233,11 +310,27 @@ export function ArtworkSizeDetector({
         throw new Error('Failed to get canvas context');
       }
       
-      // Draw video frame to canvas
+      console.log('Capturing image at resolution:', canvas.width, 'x', canvas.height);
+      
+      // Draw video frame to canvas with image enhancement
       ctx.drawImage(webcamRef.current, 0, 0);
       
-      // Convert to data URL
-      const dataUrl = canvas.toDataURL('image/jpeg');
+      // Apply basic image enhancement
+      try {
+        // Get image data
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        
+        // Apply basic contrast enhancement for better marker detection
+        this.enhanceImageContrast(imageData.data);
+        
+        // Put enhanced image back
+        ctx.putImageData(imageData, 0, 0);
+      } catch (enhancementError) {
+        console.log('Image enhancement failed, continuing with original image:', enhancementError);
+      }
+      
+      // Convert to high-quality JPEG
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
       setImagePreview(dataUrl);
 
       if (detector) {
@@ -245,8 +338,22 @@ export function ArtworkSizeDetector({
         const img = new Image();
         img.onload = async () => {
           try {
+            console.log('Processing image for size detection, resolution:', img.width, 'x', img.height);
+            
             // Detect dimensions
             const detectedDimensions = await detector.estimateDimensions(img);
+            
+            console.log('Detection result:', detectedDimensions);
+            
+            // Create visualization of the detection
+            try {
+              const visualizationCanvas = detector.createVisualization(img, detectedDimensions);
+              const visualizationDataUrl = visualizationCanvas.toDataURL('image/jpeg');
+              setImagePreview(visualizationDataUrl);
+            } catch (visError) {
+              console.error('Error creating visualization:', visError);
+              // Continue with original image if visualization fails
+            }
             
             // Validate dimensions are within reasonable ranges for framing (5" to 40")
             const isValidSize = 
@@ -339,6 +446,21 @@ export function ArtworkSizeDetector({
       setLoading(false);
     }
   };
+  
+  // Basic image enhancement for better marker detection
+  const enhanceImageContrast = (data: Uint8ClampedArray) => {
+    // Simple contrast enhancement
+    const factor = 1.2; // Contrast factor (1.0 = no change)
+    const intercept = 128 * (1 - factor);
+    
+    for (let i = 0; i < data.length; i += 4) {
+      // Enhance RGB channels
+      data[i] = Math.min(255, Math.max(0, Math.floor(factor * data[i] + intercept)));
+      data[i+1] = Math.min(255, Math.max(0, Math.floor(factor * data[i+1] + intercept)));
+      data[i+2] = Math.min(255, Math.max(0, Math.floor(factor * data[i+2] + intercept)));
+      // Alpha channel remains unchanged
+    }
+  };
 
   // Handle download reference marker
   const downloadMarker = () => {
@@ -415,32 +537,83 @@ export function ArtworkSizeDetector({
             </TabsContent>
             
             <TabsContent value="webcam" className="space-y-4">
-              <div className="rounded-md overflow-hidden bg-black">
+              <div className="rounded-md overflow-hidden bg-black relative">
                 <video 
                   ref={webcamRef} 
                   autoPlay 
                   playsInline 
                   className="w-full h-auto"
-                  style={{ maxHeight: '300px', objectFit: 'contain' }}
+                  style={{ maxHeight: '400px', objectFit: 'contain' }}
                 />
+                
+                {/* Camera grid overlay for alignment */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-full h-full max-w-[240px] max-h-[240px] border-2 border-white/30 grid grid-cols-3 grid-rows-3">
+                    <div className="border-r border-b border-white/30"></div>
+                    <div className="border-r border-b border-white/30"></div>
+                    <div className="border-b border-white/30"></div>
+                    <div className="border-r border-b border-white/30"></div>
+                    <div className="border-r border-b border-white/30"></div>
+                    <div className="border-b border-white/30"></div>
+                    <div className="border-r border-white/30"></div>
+                    <div className="border-r border-white/30"></div>
+                    <div></div>
+                  </div>
+                </div>
+                
+                {/* Instruction overlay */}
+                <div className="absolute top-2 left-0 right-0 text-center text-white text-sm bg-black/50 py-1 px-2">
+                  Position reference marker next to artwork and align within frame
+                </div>
               </div>
-              <Button 
-                onClick={captureFromWebcam} 
-                className="w-full" 
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Camera className="mr-2 h-4 w-4" />
-                    Capture Image
-                  </>
-                )}
-              </Button>
+              
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  onClick={captureFromWebcam} 
+                  className="flex-1"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Camera className="mr-2 h-4 w-4" />
+                      Capture Image
+                    </>
+                  )}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => {
+                    // Stop current stream
+                    if (streamRef.current) {
+                      streamRef.current.getTracks().forEach(track => track.stop());
+                      streamRef.current = null;
+                    }
+                    // Restart webcam to switch camera
+                    setTimeout(startWebcam, 300);
+                  }}
+                  title="Switch camera"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="bg-muted p-3 rounded-md text-xs text-muted-foreground">
+                <p className="flex items-center">
+                  <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
+                  For best results, ensure good lighting and place the reference marker on the same plane as the artwork.
+                </p>
+                <p className="mt-1 flex items-center">
+                  <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
+                  If using a mobile device, use the rear camera for higher quality results.
+                </p>
+              </div>
             </TabsContent>
           </Tabs>
 
