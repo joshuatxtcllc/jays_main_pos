@@ -1,0 +1,128 @@
+# Frame Guru Master Business Tool - Backend Server
+
+This is the backend server implementation for the Frame Guru Master Business Tool, a comprehensive management system for custom framing businesses.
+
+## Features
+
+The server provides the following API endpoints:
+
+- **Orders API**: Create, read, update, and delete customer orders
+- **Customer API**: Manage customer information and order history
+- **Inventory API**: Track materials, stock levels, and reordering needs
+- **Suppliers API**: Manage vendor information
+- **Analytics API**: Get dashboard statistics and performance metrics
+
+## Technology Stack
+
+- Node.js
+- Express.js
+- CSV-based data storage (easily upgradable to a database)
+- RESTful API design
+
+## Installation
+
+1. Make sure you have Node.js (v14+) and npm installed
+
+2. Install dependencies:
+   ```bash
+   cd server
+   npm install
+   ```
+
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   Edit the `.env` file to configure your environment.
+
+## Running the Server
+
+### Development Mode
+
+```bash
+npm run dev
+```
+
+This will start the server with nodemon for automatic reloading when files change.
+
+### Production Mode
+
+```bash
+npm start
+```
+
+## API Documentation
+
+### Health Check
+
+- **GET /api/health** - Check if the server is running
+
+### Orders
+
+- **GET /api/orders** - Get all orders
+- **GET /api/orders/:id** - Get a specific order by ID
+- **POST /api/orders** - Create a new order
+- **PUT /api/orders/:id** - Update an existing order
+- **DELETE /api/orders/:id** - Delete an order
+
+### Customers
+
+- **GET /api/customers** - Get all customers
+- **GET /api/customers/:id** - Get a specific customer with their order history
+- **POST /api/customers** - Create a new customer
+- **PUT /api/customers/:id** - Update an existing customer
+
+### Inventory
+
+- **GET /api/inventory** - Get all inventory items
+- **POST /api/inventory** - Add a new inventory item
+- **PUT /api/inventory/:id** - Update an inventory item
+
+### Suppliers
+
+- **GET /api/suppliers** - Get all suppliers
+
+### Analytics
+
+- **GET /api/analytics/dashboard** - Get dashboard statistics
+
+## Data Storage
+
+By default, the server uses CSV files stored in the `data` directory:
+
+- `frame-data.csv` - Order information
+- `customers.csv` - Customer information
+- `inventory.csv` - Inventory and materials data
+- `suppliers.csv` - Supplier information
+
+The system will automatically create these files if they don't exist.
+
+## Extending the System
+
+### Adding New Endpoints
+
+To add a new endpoint, simply add a new route in `index.js`:
+
+```javascript
+app.get('/api/your-new-endpoint', async (req, res) => {
+  // Your implementation here
+});
+```
+
+### Switching to a Database
+
+The CSV-based storage can be replaced with a database system like MongoDB or PostgreSQL. The data reading/writing functions would need to be updated accordingly.
+
+## Error Handling
+
+All API endpoints include error handling to provide meaningful error messages when things go wrong. Errors are returned in the format:
+
+```json
+{
+  "error": "Error message"
+}
+```
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.

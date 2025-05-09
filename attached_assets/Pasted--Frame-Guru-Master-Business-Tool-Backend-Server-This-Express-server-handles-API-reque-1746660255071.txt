@@ -1,0 +1,547 @@
+/**
+ * Frame Guru Master Business Tool - Backend Server
+ * 
+ * This Express server handles API requests for the Frame Guru application,
+ * providing endpoints for orders, customers, inventory, and analytics.
+ */
+
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const fs = require('fs').promises;
+const csv = require('csv-parser');
+const { createReadStream, createWriteStream } = require('fs');
+const { parse } = require('json2csv');
+const { v4: uuidv4 } = require('uuid');
+require('dotenv').config();
+
+// Initialize Express
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files from the React app in production
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../build')));
+}
+
+// Data paths
+const DATA_DIR = path.join(__dirname, '../data');
+const ORDERS_FILE = path.join(DATA_DIR, 'frame-data.csv');
+const SUPPLIERS_FILE = path.join(DATA_DIR, 'suppliers.csv');
+const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.csv');
+const INVENTORY_FILE = path.join(DATA_DIR, 'inventory.csv');
+
+// Ensure data directory exists
+async function ensureDataDirExists() {
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    console.log('Data directory checked/created');
+  } catch (err) {
+    console.error('Error creating data directory:', err);
+  }
+}
+
+// Utility function to read CSV data
+async function readCsvData(filePath) {
+  const results = [];
+  
+  try {
+    // Check if file exists, if not create it with headers
+    try {
+      await fs.access(filePath);
+    } catch (err) {
+      // File doesn't exist, create it with appropriate headers
+      const headers = getHeadersForFile(filePath);
+      await fs.writeFile(filePath, headers);
+    }
+    
+    // Create a promise to read the CSV data
+    return new Promise((resolve, reject) => {
+      createReadStream(filePath)
+        .pipe(csv({
+          // Handle column names with spaces
+          mapHeaders: ({ header }) => header.trim(),
+          mapValues: ({ value }) => value.trim(),
+        }))
+        .on('data', (data) => results.push(data))
+        .on('end', () => {
+          resolve(results);
+        })
+        .on('error', (error) => {
+          reject(error);
+        });
+    });
+  } catch (err) {
+    console.error(`Error reading CSV data from ${filePath}:`, err);
+    throw err;
+  }
+}
+
+// Utility function to write CSV data
+async function writeCsvData(filePath, data) {
+  try {
+    if (data.length === 0) {
+      console.warn(`No data to write to ${filePath}`);
+      return;
+    }
+    
+    const csv = parse(data);
+    await fs.writeFile(filePath, csv);
+  } catch (err) {
+    console.error(`Error writing CSV data to ${filePath}:`, err);
+    throw err;
+  }
+}
+
+// Get appropriate headers based on file
+function getHeadersForFile(filePath) {
+  if (filePath.includes('frame-data')) {
+    return 'Date Due,Invoice,Order ID,Qty,Name,Phone,Designer,Location,Description,Order Type,Order Progress,Paid In Full,Order Processed,Ordered,Arrived,Cut,M. Cut,G. Cut,F. & M. Cut,Prepped,Done,Delivered,Delayed,Balance Due,Image,Real Due Date,SMS Message,SMS Sent,Pick Up SMS,Pick Up SMS Sent,Frame Location,Active,Notes,Moulding ID,Mat ID,Fabric ID,Customer ID,Payment ID,Calendar ID,POS ID\n';
+  } else if (filePath.includes('suppliers')) {
+    return 'Supplier ID,Supplier Name,Contact Person,Phone,Email,Main Products,Lead Time (Days),Minimum Order\n';
+  } else if (filePath.includes('customers')) {
+    return 'Customer ID,Name,Phone,Email,Address,Notes,Total Orders,Last Order Date\n';
+  } else if (filePath.includes('inventory')) {
+    return 'Material ID,Name,Category,Stock Level,Reorder Point,Vendor,Last Restock Date,Location,Unit Cost,Notes\n';
+  }
+  
+  // Default headers
+  return 'ID,Name,Description\n';
+}
+
+/**
+ * API Routes
+ */
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date() });
+});
+
+// Get all orders
+app.get('/api/orders', async (req, res) => {
+  try {
+    const orders = await readCsvData(ORDERS_FILE);
+    res.json(orders);
+  } catch (err) {
+    console.error('Error fetching orders:', err);
+    res.status(500).json({ error: 'Failed to fetch orders' });
+  }
+});
+
+// Get a single order by ID
+app.get('/api/orders/:id', async (req, res) => {
+  try {
+    const orders = await readCsvData(ORDERS_FILE);
+    const order = orders.find(o => o['Order ID'] === req.params.id);
+    
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    res.json(order);
+  } catch (err) {
+    console.error('Error fetching order:', err);
+    res.status(500).json({ error: 'Failed to fetch order' });
+  }
+});
+
+// Create a new order
+app.post('/api/orders', async (req, res) => {
+  try {
+    const orders = await readCsvData(ORDERS_FILE);
+    const newOrder = req.body;
+    
+    // Generate a new Order ID if not provided
+    if (!newOrder['Order ID']) {
+      newOrder['Order ID'] = Math.floor(1000 + Math.random() * 9000).toString();
+    }
+    
+    // Set default values for boolean fields
+    const booleanFields = ['Ordered', 'Arrived', 'Cut', 'M. Cut', 'G. Cut', 'F. & M. Cut', 'Prepped', 'Done', 'Delivered'];
+    booleanFields.forEach(field => {
+      if (newOrder[field] === undefined) {
+        newOrder[field] = 'FALSE';
+      } else {
+        newOrder[field] = newOrder[field] ? 'TRUE' : 'FALSE';
+      }
+    });
+    
+    // Add current date if not provided
+    if (!newOrder['Date Due']) {
+      const today = new Date();
+      newOrder['Date Due'] = today.toISOString().split('T')[0];
+    }
+    
+    orders.push(newOrder);
+    await writeCsvData(ORDERS_FILE, orders);
+    
+    res.status(201).json(newOrder);
+  } catch (err) {
+    console.error('Error creating order:', err);
+    res.status(500).json({ error: 'Failed to create order' });
+  }
+});
+
+// Update an order
+app.put('/api/orders/:id', async (req, res) => {
+  try {
+    const orders = await readCsvData(ORDERS_FILE);
+    const orderIndex = orders.findIndex(o => o['Order ID'] === req.params.id);
+    
+    if (orderIndex === -1) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    const updatedOrder = { ...orders[orderIndex], ...req.body };
+    orders[orderIndex] = updatedOrder;
+    
+    await writeCsvData(ORDERS_FILE, orders);
+    
+    res.json(updatedOrder);
+  } catch (err) {
+    console.error('Error updating order:', err);
+    res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+// Delete an order
+app.delete('/api/orders/:id', async (req, res) => {
+  try {
+    const orders = await readCsvData(ORDERS_FILE);
+    const filteredOrders = orders.filter(o => o['Order ID'] !== req.params.id);
+    
+    if (orders.length === filteredOrders.length) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+    
+    await writeCsvData(ORDERS_FILE, filteredOrders);
+    
+    res.json({ message: 'Order deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting order:', err);
+    res.status(500).json({ error: 'Failed to delete order' });
+  }
+});
+
+// Get all customers
+app.get('/api/customers', async (req, res) => {
+  try {
+    // First, try to read from customers file if it exists
+    try {
+      const customers = await readCsvData(CUSTOMERS_FILE);
+      return res.json(customers);
+    } catch (err) {
+      // If customers file doesn't exist or has an error, extract from orders
+      console.log('Extracting customers from orders data...');
+    }
+    
+    // Extract unique customers from orders
+    const orders = await readCsvData(ORDERS_FILE);
+    const customersMap = new Map();
+    
+    orders.forEach(order => {
+      if (order['Name'] && !customersMap.has(order['Name'])) {
+        customersMap.set(order['Name'], {
+          'Customer ID': order['Customer ID'] || uuidv4().substring(0, 8),
+          'Name': order['Name'],
+          'Phone': order['Phone'] || '',
+          'Email': '',
+          'Address': '',
+          'Notes': '',
+          'Total Orders': 0,
+          'Last Order Date': ''
+        });
+      }
+      
+      if (order['Name']) {
+        const customer = customersMap.get(order['Name']);
+        customer['Total Orders']++;
+        
+        // Update last order date if newer
+        if (!customer['Last Order Date'] || new Date(order['Date Due']) > new Date(customer['Last Order Date'])) {
+          customer['Last Order Date'] = order['Date Due'];
+        }
+      }
+    });
+    
+    const customers = Array.from(customersMap.values());
+    
+    // Save to customers file for future use
+    await writeCsvData(CUSTOMERS_FILE, customers);
+    
+    res.json(customers);
+  } catch (err) {
+    console.error('Error fetching customers:', err);
+    res.status(500).json({ error: 'Failed to fetch customers' });
+  }
+});
+
+// Get a single customer by ID
+app.get('/api/customers/:id', async (req, res) => {
+  try {
+    const customers = await readCsvData(CUSTOMERS_FILE);
+    const customer = customers.find(c => c['Customer ID'] === req.params.id);
+    
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    // Get customer orders
+    const orders = await readCsvData(ORDERS_FILE);
+    const customerOrders = orders.filter(o => o['Customer ID'] === req.params.id || o['Name'] === customer['Name']);
+    
+    res.json({
+      ...customer,
+      orders: customerOrders
+    });
+  } catch (err) {
+    console.error('Error fetching customer:', err);
+    res.status(500).json({ error: 'Failed to fetch customer' });
+  }
+});
+
+// Create a new customer
+app.post('/api/customers', async (req, res) => {
+  try {
+    const customers = await readCsvData(CUSTOMERS_FILE);
+    const newCustomer = req.body;
+    
+    // Generate a Customer ID if not provided
+    if (!newCustomer['Customer ID']) {
+      newCustomer['Customer ID'] = uuidv4().substring(0, 8);
+    }
+    
+    // Initialize customer stats
+    newCustomer['Total Orders'] = 0;
+    newCustomer['Last Order Date'] = '';
+    
+    customers.push(newCustomer);
+    await writeCsvData(CUSTOMERS_FILE, customers);
+    
+    res.status(201).json(newCustomer);
+  } catch (err) {
+    console.error('Error creating customer:', err);
+    res.status(500).json({ error: 'Failed to create customer' });
+  }
+});
+
+// Update a customer
+app.put('/api/customers/:id', async (req, res) => {
+  try {
+    const customers = await readCsvData(CUSTOMERS_FILE);
+    const customerIndex = customers.findIndex(c => c['Customer ID'] === req.params.id);
+    
+    if (customerIndex === -1) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+    
+    const updatedCustomer = { ...customers[customerIndex], ...req.body };
+    customers[customerIndex] = updatedCustomer;
+    
+    await writeCsvData(CUSTOMERS_FILE, customers);
+    
+    res.json(updatedCustomer);
+  } catch (err) {
+    console.error('Error updating customer:', err);
+    res.status(500).json({ error: 'Failed to update customer' });
+  }
+});
+
+// Get inventory data
+app.get('/api/inventory', async (req, res) => {
+  try {
+    // First, try to read from inventory file if it exists
+    try {
+      const inventory = await readCsvData(INVENTORY_FILE);
+      return res.json(inventory);
+    } catch (err) {
+      // If inventory file doesn't exist or has an error, generate from orders
+      console.log('Generating inventory from orders data...');
+    }
+    
+    const orders = await readCsvData(ORDERS_FILE);
+    const materialMap = new Map();
+    
+    // Extract unique materials from orders
+    orders.forEach(order => {
+      if (order['Material']) {
+        if (!materialMap.has(order['Material'])) {
+          // Determine category from material name
+          const category = determineMaterialCategory(order['Material']);
+          
+          materialMap.set(order['Material'], {
+            'Material ID': uuidv4().substring(0, 8),
+            'Name': order['Material'],
+            'Category': category,
+            'Stock Level': Math.floor(Math.random() * 100), // Demo data
+            'Reorder Point': 15,
+            'Vendor': order['Vendor'] || 'Unknown',
+            'Last Restock Date': new Date().toISOString().split('T')[0],
+            'Location': 'Main Storage',
+            'Unit Cost': (Math.random() * 50 + 10).toFixed(2),
+            'Notes': ''
+          });
+        }
+      }
+    });
+    
+    const inventory = Array.from(materialMap.values());
+    
+    // Save to inventory file for future use
+    await writeCsvData(INVENTORY_FILE, inventory);
+    
+    res.json(inventory);
+  } catch (err) {
+    console.error('Error fetching inventory:', err);
+    res.status(500).json({ error: 'Failed to fetch inventory' });
+  }
+});
+
+// Add inventory item
+app.post('/api/inventory', async (req, res) => {
+  try {
+    const inventory = await readCsvData(INVENTORY_FILE);
+    const newItem = req.body;
+    
+    // Generate a Material ID if not provided
+    if (!newItem['Material ID']) {
+      newItem['Material ID'] = uuidv4().substring(0, 8);
+    }
+    
+    inventory.push(newItem);
+    await writeCsvData(INVENTORY_FILE, inventory);
+    
+    res.status(201).json(newItem);
+  } catch (err) {
+    console.error('Error adding inventory item:', err);
+    res.status(500).json({ error: 'Failed to add inventory item' });
+  }
+});
+
+// Update inventory item
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    const inventory = await readCsvData(INVENTORY_FILE);
+    const itemIndex = inventory.findIndex(item => item['Material ID'] === req.params.id);
+    
+    if (itemIndex === -1) {
+      return res.status(404).json({ error: 'Inventory item not found' });
+    }
+    
+    const updatedItem = { ...inventory[itemIndex], ...req.body };
+    inventory[itemIndex] = updatedItem;
+    
+    await writeCsvData(INVENTORY_FILE, inventory);
+    
+    res.json(updatedItem);
+  } catch (err) {
+    console.error('Error updating inventory item:', err);
+    res.status(500).json({ error: 'Failed to update inventory item' });
+  }
+});
+
+// Get suppliers
+app.get('/api/suppliers', async (req, res) => {
+  try {
+    const suppliers = await readCsvData(SUPPLIERS_FILE);
+    res.json(suppliers);
+  } catch (err) {
+    console.error('Error fetching suppliers:', err);
+    res.status(500).json({ error: 'Failed to fetch suppliers' });
+  }
+});
+
+// Get dashboard analytics
+app.get('/api/analytics/dashboard', async (req, res) => {
+  try {
+    const orders = await readCsvData(ORDERS_FILE);
+    
+    // Calculate counts
+    const totalOrders = orders.length;
+    const completedOrders = orders.filter(order => order['Done'] === 'TRUE').length;
+    const inProgressOrders = orders.filter(order => order['Ordered'] === 'TRUE' && order['Done'] !== 'TRUE').length;
+    const pendingOrders = totalOrders - completedOrders - inProgressOrders;
+    
+    // Calculate material distribution
+    const materialCounts = {};
+    orders.forEach(order => {
+      if (order['Material']) {
+        materialCounts[order['Material']] = (materialCounts[order['Material']] || 0) + 1;
+      }
+    });
+    
+    const materialData = Object.entries(materialCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // Top 5 materials
+    
+    // Generate sample time series data (in a real app, this would come from actual dates)
+    const currentDate = new Date();
+    const progressData = [];
+    
+    // Generate data for the last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(currentDate);
+      date.setMonth(date.getMonth() - i);
+      const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      progressData.push({
+        date: monthYear,
+        completed: Math.floor(Math.random() * 20 + 10),
+        inProgress: Math.floor(Math.random() * 15 + 5),
+        new: Math.floor(Math.random() * 25 + 5)
+      });
+    }
+    
+    res.json({
+      counts: {
+        totalOrders,
+        completedOrders,
+        inProgressOrders,
+        pendingOrders
+      },
+      materialData,
+      progressData
+    });
+  } catch (err) {
+    console.error('Error generating dashboard analytics:', err);
+    res.status(500).json({ error: 'Failed to generate dashboard analytics' });
+  }
+});
+
+// Helper function to determine material category
+function determineMaterialCategory(materialName) {
+  const name = materialName.toLowerCase();
+  
+  if (name.includes('wood') || name.includes('oak') || name.includes('walnut') || name.includes('maple')) {
+    return 'Wood';
+  } else if (name.includes('metal') || name.includes('silver') || name.includes('gold') || name.includes('aluminum')) {
+    return 'Metal';
+  } else if (name.includes('glass') || name.includes('acrylic')) {
+    return 'Glass/Acrylic';
+  } else {
+    return 'Other';
+  }
+}
+
+// Serve React app in production (catch-all route)
+if (process.env.NODE_ENV === 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../build', 'index.html'));
+  });
+}
+
+// Start the server
+app.listen(PORT, async () => {
+  await ensureDataDirExists();
+  console.log(`Frame Guru Master server running on port ${PORT}`);
+  console.log(`API available at http://localhost:${PORT}/api`);
+});
+
+module.exports = app; // For testing
