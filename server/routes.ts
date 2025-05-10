@@ -827,7 +827,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Failed to update customer" });
     }
-  });app.post('/api/order-groups', async (req, res) => {
+  });
+
+  app.post('/api/order-groups', async (req, res) => {
     try {
       const validatedData = insertOrderGroupSchema.parse(req.body);
 
