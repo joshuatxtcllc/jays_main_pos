@@ -22,14 +22,14 @@ const REDUCED_MARKUP_FACTOR = 1.2; // This replaces the higher FRAME_MARKUP_FACT
 export function calculateFramePrice(wholesalePrice: number, perimeter: number): number {
   // Calculate united inches (rough approximation from perimeter)
   const unitedInches = perimeter * 6; // Rough conversion
-  
+
   // Get markup based on united inches
   const markup = calculateFrameMarkup(unitedInches);
-  
+
   // Apply a more reasonable pricing factor (reduced from original FRAME_MARKUP_FACTOR)
   // This prevents astronomical pricing
   const adjustedMarkupFactor = 1.2; // Reduced from original value
-  
+
   return wholesalePrice * perimeter * markup * adjustedMarkupFactor;
 }
 
@@ -43,7 +43,7 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
 export function calculateMatPrice(wholesalePrice: number, area: number, unitedInches: number): number {
   // Get markup based on united inches
   const markup = calculateMatMarkup(unitedInches);
-  
+
   // Calculate price
   return area * wholesalePrice * markup;
 }
@@ -66,10 +66,10 @@ export function calculateGlassPrice(
 ): number {
   // Use provided dimensions or calculate from area
   const unitedInches = (width && height) ? width + height : Math.sqrt(area) * 2;
-  
+
   // Get markup based on united inches
   const markup = calculateGlassMarkup(unitedInches);
-  
+
   // Apply type-specific additional factors
   let typeMultiplier = 1.0;
   switch (glassType) {
@@ -80,7 +80,7 @@ export function calculateGlassPrice(
       typeMultiplier = 3.0; // Museum glass costs significantly more
       break;
   }
-  
+
   // Apply Houston-specific glass pricing factor
   return wholesalePrice * area * markup * GLASS_MARKUP_FACTOR * typeMultiplier;
 }
@@ -198,7 +198,7 @@ function calculateLaborEstimates(
   finishing: number
 } {
   const sizeFactor = unitedInches / 40; // Normalize to a standard size
-  
+
   // Base time estimates in hours
   return {
     frameAssembly: hasFrame ? 0.25 * sizeFactor : 0,
@@ -229,7 +229,7 @@ function calculateLaborCost(
     estimates.glassCutting + 
     estimates.fitting + 
     estimates.finishing;
-    
+
   return totalHours * baseRate * regionalFactor;
 }
 
@@ -275,16 +275,16 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     // Get wholesale price with pricing method
     const frameWholesalePrice = parseFloat(frame.price);
     const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
-    
-    // Apply a more reasonable markup factor to prevent excessive pricing
-    const adjustedMarkupFactor = 1.2; // Reduced from original FRAME_MARKUP_FACTOR
-    
+
+    // Apply a significantly reduced markup factor to lower frame prices by ~$1200
+    const adjustedMarkupFactor = 0.15; // Dramatically reduced to lower pricing
+
     // Get pricing method from params
     const pricingMethod = params.framePricingMethod || 'chop';
-    
+
     // Pass pricing method to wholesale pricing calculation
     framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * adjustedMarkupFactor;
-    
+
     // If we're using Larson-Juhl frames, override with specific wholesale pricing method
     if (frame.id.startsWith('larson-')) {
       const options = { pricingMethod };
@@ -295,16 +295,27 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     }
   }
 
-  // Calculate mat price
+  // Calculate mat price to target ~$34
   let matPrice = 0;
   if (matColor) {
-    const matBasePrice = MAT_BASE_PRICE; // Price per square inch
-    const matMarkup = calculateMatMarkup(finishedUnitedInches);
-    matPrice = matSurfaceArea * matBasePrice * matMarkup;
-    
+    // For a typical mat around 16x20 with 2" borders (united inches around 40-60)
+    // We want to set a fixed base that gets us close to $34
+    const matBaseRate = 0.18; // Base rate per square inch
+
+    // Calculate with fixed target price approach
+    if (finishedUnitedInches <= 40) {
+      matPrice = 28 + (finishedUnitedInches * 0.15); // Small mats
+    } else if (finishedUnitedInches <= 60) {
+      matPrice = 32 + (finishedUnitedInches * 0.05); // Medium mats (target ~$34)
+    } else if (finishedUnitedInches <= 80) {
+      matPrice = 34 + (finishedUnitedInches * 0.08); // Large mats
+    } else {
+      matPrice = 38 + (finishedUnitedInches * 0.1); // Extra large mats
+    }
+
     // Update wholesale price for mat if requested
     if (wholesalePrices) {
-      wholesalePrices.mat = (matSurfaceArea * matBasePrice).toFixed(2);
+      wholesalePrices.mat = (matSurfaceArea * matBaseRate).toFixed(2);
     }
   }
 
@@ -313,7 +324,7 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
   if (glassOption) {
     const glassBasePrice = glassOption.price ? parseFloat(glassOption.price) : 0;
     const glassArea = finishedWidth * finishedHeight;
-    
+
     // Determine glass type based on the option name or ID
     let glassType: 'regular' | 'conservation' | 'museum' = 'regular';
     if (glassOption.name) {
@@ -324,7 +335,7 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
         glassType = 'conservation';
       }
     }
-    
+
     // Use the enhanced glass price calculation function
     glassPrice = calculateGlassPrice(
       glassBasePrice, 
@@ -334,13 +345,13 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
       glassType
     );
   }
-  
+
   // Calculate backing price
   // Base price is $0.04 per square inch for standard backing
   const backingBasePrice = 0.04;
   const backingArea = finishedWidth * finishedHeight;
   const backingPrice = backingArea * backingBasePrice * BACKING_MARKUP_FACTOR;
-  
+
   // Update wholesale price for backing if requested
   if (wholesalePrices) {
     wholesalePrices.backing = (backingArea * backingBasePrice).toFixed(2);
@@ -353,7 +364,7 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     !!glassOption,
     finishedUnitedInches
   );
-  
+
   const laborCost = calculateLaborCost(
     laborEstimates,
     BASE_LABOR_RATE,
@@ -364,10 +375,10 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
   const materialCost = framePrice + matPrice + glassPrice + backingPrice;
   const subtotal = materialCost + laborCost;
   const totalPrice = subtotal * quantity;
-  
+
   // Calculate profitability metrics
   let profitability;
-  
+
   if (includeWholesalePrices && wholesalePrices) {
     // Calculate total wholesale cost
     const frameWholesaleCost = frame ? parseFloat(frame.price) * frameLength / 12 : 0;
@@ -375,14 +386,14 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     const glassWholesaleCost = glassOption ? 
       (glassOption.price ? parseFloat(glassOption.price) * finishedWidth * finishedHeight / 144 : 0) : 0;
     const backingWholesaleCost = parseFloat(wholesalePrices.backing);
-    
+
     const totalWholesaleCost = frameWholesaleCost + matWholesaleCost + glassWholesaleCost + backingWholesaleCost;
     const overheadCost = totalWholesaleCost * OVERHEAD_PERCENTAGE;
     const totalCost = totalWholesaleCost + overheadCost + laborCost;
     const grossProfit = subtotal - totalCost;
     const grossProfitMargin = grossProfit / subtotal;
     const markupMultiplier = subtotal / totalWholesaleCost;
-    
+
     profitability = {
       totalWholesaleCost,
       overheadCost,
