@@ -480,45 +480,121 @@ export function ArtworkSizeDetector({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Reference marker section with help icon */}
-          <div className="bg-muted p-3 rounded-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-medium">Reference Marker</h4>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
-                      <span className="sr-only">Help</span>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                        <path d="M12 17h.01" />
-                      </svg>
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 text-sm">
-                    <div className="space-y-2">
-                      <h4 className="font-medium">Instructions for Accurate Measurement</h4>
-                      <p className="text-muted-foreground">
-                        Download and print this marker at exactly 5cm × 5cm size.
-                        Place it next to your artwork on the same plane before taking a photo.
-                        Ensure good lighting and that the marker is clearly visible.
-                        For best results, use the rear camera on your device.
-                      </p>
+          {/* Preview section as focal point (larger) */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Main preview area (focal point) */}
+            <div className="lg:col-span-3 space-y-4 order-2 lg:order-1">
+              <h4 className="text-sm font-medium">Artwork Preview & Dimensions</h4>
+              
+              {imagePreview ? (
+                <div className="border rounded-md p-4 bg-muted/10 flex flex-col items-center">
+                  <div className="rounded-md overflow-hidden border mb-4 max-w-full">
+                    <img 
+                      src={imagePreview} 
+                      alt="Artwork preview" 
+                      className="max-w-full h-auto object-contain"
+                      style={{ maxHeight: '400px' }}
+                    />
+                  </div>
+                  
+                  <div className="w-full max-w-md">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium">Detected Dimensions</h4>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setManualEntry(!manualEntry)}
+                      >
+                        {manualEntry ? 'Hide Manual Entry' : 'Edit Manually'}
+                      </Button>
                     </div>
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <Button onClick={downloadMarker} variant="outline" size="sm">
-                Download Marker
-              </Button>
+                    
+                    {manualEntry ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label htmlFor="width">Width (inches)</Label>
+                            <Input 
+                              id="width"
+                              type="number" 
+                              step="0.01"
+                              min="0.1"
+                              value={dimensions.width}
+                              onChange={(e) => handleDimensionChange('width', e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="height">Height (inches)</Label>
+                            <Input 
+                              id="height"
+                              type="number"
+                              step="0.01"
+                              min="0.1" 
+                              value={dimensions.height}
+                              onChange={(e) => handleDimensionChange('height', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <Button onClick={handleApplyManualDimensions} size="sm">
+                          Apply Dimensions
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
+                        <Ruler className="h-5 w-5 text-muted-foreground" />
+                        <span className="font-medium">
+                          {dimensions.width}" × {dimensions.height}"
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="border rounded-md p-8 bg-muted/10 flex flex-col items-center justify-center text-center min-h-[400px]">
+                  <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium mb-2">No Image Selected</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">
+                    Upload or capture an image of your artwork with the reference marker to see a preview and detect dimensions.
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
-
-          {/* Side-by-side layout for upload and preview */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left side: Upload controls (smaller) */}
-            <div className="lg:col-span-1 space-y-4">
+            
+            {/* Right side: Upload controls and marker info (smaller) */}
+            <div className="lg:col-span-1 space-y-4 order-1 lg:order-2">
+              {/* Reference marker with compact help icon */}
+              <div className="bg-muted p-3 rounded-md">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-medium">Reference Marker</h4>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                          <span className="sr-only">Help</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                            <path d="M12 17h.01" />
+                          </svg>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 text-sm">
+                        <div className="space-y-2">
+                          <h4 className="font-medium">Instructions for Accurate Measurement</h4>
+                          <p className="text-muted-foreground">
+                            Download and print this marker at exactly 5cm × 5cm size.
+                            Place it next to your artwork on the same plane before taking a photo.
+                          </p>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <Button onClick={downloadMarker} variant="outline" size="sm">
+                    Download Marker
+                  </Button>
+                </div>
+              </div>
+              
               <h4 className="text-sm font-medium">Upload Artwork</h4>
               
               <Tabs value={tab} onValueChange={setTab} className="w-full">
@@ -645,84 +721,6 @@ export function ArtworkSizeDetector({
                   Use rear camera for best quality.
                 </p>
               </div>
-            </div>
-            
-            {/* Right side: Preview and dimensions (larger) */}
-            <div className="lg:col-span-2 space-y-4">
-              <h4 className="text-sm font-medium">Artwork Preview & Dimensions</h4>
-              
-              {imagePreview ? (
-                <div className="border rounded-md p-4 bg-muted/10 flex flex-col items-center">
-                  <div className="rounded-md overflow-hidden border mb-4 max-w-full">
-                    <img 
-                      src={imagePreview} 
-                      alt="Artwork preview" 
-                      className="max-w-full h-auto object-contain"
-                      style={{ maxHeight: '300px' }}
-                    />
-                  </div>
-                  
-                  <div className="w-full max-w-md">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-medium">Detected Dimensions</h4>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setManualEntry(!manualEntry)}
-                      >
-                        {manualEntry ? 'Hide Manual Entry' : 'Edit Manually'}
-                      </Button>
-                    </div>
-                    
-                    {manualEntry ? (
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="space-y-1">
-                            <Label htmlFor="width">Width (inches)</Label>
-                            <Input 
-                              id="width"
-                              type="number" 
-                              step="0.01"
-                              min="0.1"
-                              value={dimensions.width}
-                              onChange={(e) => handleDimensionChange('width', e.target.value)}
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <Label htmlFor="height">Height (inches)</Label>
-                            <Input 
-                              id="height"
-                              type="number"
-                              step="0.01"
-                              min="0.1" 
-                              value={dimensions.height}
-                              onChange={(e) => handleDimensionChange('height', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <Button onClick={handleApplyManualDimensions} size="sm">
-                          Apply Dimensions
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2 bg-muted p-3 rounded-md">
-                        <Ruler className="h-5 w-5 text-muted-foreground" />
-                        <span className="font-medium">
-                          {dimensions.width}" × {dimensions.height}"
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="border rounded-md p-8 bg-muted/10 flex flex-col items-center justify-center text-center min-h-[300px]">
-                  <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Image Selected</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
-                    Upload or capture an image of your artwork with the reference marker to see a preview and detect dimensions.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
