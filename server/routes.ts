@@ -811,10 +811,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update customer details
-  app.patch('/api/customers/:id', async (req, res) => {
+  // Update customer details  app.patch('/api/customers/:id', async (req, res) => {
     try {
-      ```text
       const id = parseInt(req.params.id);
       const customer = await storage.getCustomer(id);
 
@@ -1671,7 +1669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const date = new Date(order.createdAt).toISOString().split('T')[0];
         if (!acc[date]) {
           acc[date] = { date, sales: 0, profit: 0, orders: 0 };
-        }```text
+        }
         acc[date].sales += Number(order.total);
         const orderProfit = Number(order.total) - Number(order.materialCost) - Number(order.laborCost);
         acc[date].profit += orderProfit;
