@@ -201,9 +201,13 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
       // Set canvas dimensions to maintain aspect ratio
       const aspectRatio = artworkWidth / artworkHeight;
       
+      // Ensure aspect ratio is respected (square if artwork is square)
+      const isSquarish = Math.abs(aspectRatio - 1) < 0.1;
+      
       // Calculate display dimensions while preserving aspect ratio
-      const displayWidth = Math.min(500, window.innerWidth * 0.8);
-      const displayHeight = displayWidth / aspectRatio;
+      const maxDimension = Math.min(600, window.innerWidth * 0.9, window.innerHeight * 0.7);
+      const displayWidth = isSquarish ? maxDimension : Math.min(maxDimension, maxDimension * aspectRatio);
+      const displayHeight = isSquarish ? maxDimension : displayWidth / aspectRatio;
       
       // Calculate total mat width
       let totalMatWidth = 0;
@@ -400,12 +404,21 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
   }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleMats, useMultipleFrames]);
 
   return (
-    <div className="frame-visualizer-container h-full w-full flex flex-col items-center justify-center p-4">
-      <canvas
-        ref={canvasRef}
-        className="max-w-full max-h-full border border-border shadow-md"
-      />
-      <div className="text-center text-sm text-muted-foreground mt-2">
+    <div className="frame-visualizer-container flex flex-col items-center justify-center p-4 w-full h-full">
+      <div className="flex-1 w-full flex items-center justify-center">
+        <canvas
+          ref={canvasRef}
+          className="border border-border shadow-md object-contain"
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '100%', 
+            aspectRatio: artworkWidth && artworkHeight ? `${artworkWidth}/${artworkHeight}` : '1/1',
+            width: 'auto', 
+            height: 'auto' 
+          }}
+        />
+      </div>
+      <div className="text-center text-sm text-muted-foreground mt-2 w-full">
         {frames.length > 0 && mats.length > 0 ? (
           <p>
             {useMultipleFrames ? `${frames.length} frames` : 'Single frame'} | 
