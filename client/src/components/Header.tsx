@@ -150,6 +150,20 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               ))}
+              <NavigationMenuItem>
+                <Link href="/customers" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Customers
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link href="/frame-education" legacyBehavior passHref>
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Frame Education
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>

@@ -76,6 +76,7 @@ import {
 } from "./controllers/materialsController";
 import { handleChatMessage } from "./controllers/chatController";
 import chatRoutes from './routes/chatRoutes'; // Added import for chat routes
+import crossVendorInventoryRoutes from './routes/crossVendorInventoryRoutes';
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -813,6 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update customer details
   app.patch('/api/customers/:id', async (req, res) => {
     try {
+      ```text
       const id = parseInt(req.params.id);
       const customer = await storage.getCustomer(id);
 
@@ -1542,6 +1544,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/vendor-api', vendorApiRoutes);
   app.use('/api/integration', integrationApiRoutes); // Added integration routes
   app.use('/api/vendor-settings', vendorSettingsRoutes);
+  app.use('/api/inventory', crossVendorInventoryRoutes);
   app.use('/api/qrcode', qrCodeRoutes);
   app.use('/api/status-history', orderStatusHistoryRoutes);
   app.use('/api/chat', chatRoutes); // Added chat routes
@@ -1666,8 +1669,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const date = new Date(order.createdAt).toISOString().split('T')[0];
         if (!acc[date]) {
           acc[date] = { date, sales: 0, profit: 0, orders: 0 };
-        }
-
+        }```text
         acc[date].sales += Number(order.total);
         const orderProfit = Number(order.total) - Number(order.materialCost) - Number(order.laborCost);
         acc[date].profit += orderProfit;

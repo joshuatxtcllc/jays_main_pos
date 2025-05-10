@@ -29,6 +29,7 @@ import { QueryErrorResetBoundary } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatWidget from "./components/ChatWidget";
+import FrameEducationPage from '@/pages/FrameEducationPage';
 
 // Error fallback component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -113,6 +114,7 @@ function App() {
                     <Route path="/customers" component={CustomerManagement} />
                     <Route path="/payment-links" component={PaymentLinks} />
                     <Route path="/payment/:token" component={Payment} />
+                    <Route path="/frame-education" component={FrameEducationPage} />
                     <Route component={NotFound} />
                   </Switch>
                 </main>
