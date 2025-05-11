@@ -10,6 +10,8 @@ export enum ErrorType {
   NOT_FOUND = 'not_found',
   SERVER = 'server',
   DATABASE = 'database',
+  TIMEOUT = 'timeout',
+  IMAGE_PROCESSING = 'image_processing',
   UNKNOWN = 'unknown'
 }
 
@@ -36,6 +38,14 @@ export function handleError(error: any, context?: string): ErrorDetails {
     errorDetails = {
       type: ErrorType.NETWORK,
       message: 'Network connection error. Please check your internet connection.',
+      originalError: error
+    };
+  }
+  // Handle timeout errors
+  else if (error?.name === 'TimeoutError' || error?.message?.includes('timeout') || error?.code === 'ETIMEDOUT' || error?.code === 'ESOCKETTIMEDOUT') {
+    errorDetails = {
+      type: ErrorType.TIMEOUT,
+      message: 'Request timed out. Please try again later.',
       originalError: error
     };
   } 
@@ -90,6 +100,20 @@ export function handleError(error: any, context?: string): ErrorDetails {
       originalError: error
     };
   }
+  // Handle image processing errors
+  else if (
+    error?.message?.includes('image') || 
+    error?.message?.includes('canvas') || 
+    error?.message?.includes('data URL') ||
+    error?.name === 'ImageError'
+  ) {
+    errorDetails = {
+      type: ErrorType.VALIDATION,
+      message: 'Error processing image. Please try a different image or format.',
+      code: 'IMAGE_PROCESSING_ERROR',
+      originalError: error
+    };
+  }
   
   return errorDetails;
 }
@@ -124,17 +148,21 @@ function getErrorTitle(errorType: ErrorType): string {
       return 'Server Error';
     case ErrorType.DATABASE:
       return 'Database Error';
+    case ErrorType.TIMEOUT:
+      return 'Request Timeout';
+    case ErrorType.IMAGE_PROCESSING:
+      return 'Image Processing Error';
     case ErrorType.UNKNOWN:
     default:
       return 'Error';
   }
 }
 
-// Centralized retry logic for API calls
+// Centralized retry logic for API calls with exponential backoff
 export async function retryOperation<T>(
   operation: () => Promise<T>,
   maxRetries: number = 3,
-  delay: number = 1000,
+  baseDelay: number = 1000,
   context?: string
 ): Promise<T> {
   let lastError: any;
@@ -156,9 +184,15 @@ export async function retryOperation<T>(
         break;
       }
       
-      // Wait before retrying
+      // Wait before retrying with exponential backoff
       if (attempt < maxRetries - 1) {
-        await new Promise(resolve => setTimeout(resolve, delay * (attempt + 1)));
+        // Calculate delay with exponential backoff and some jitter
+        const exponentialDelay = baseDelay * Math.pow(2, attempt);
+        const jitter = Math.random() * 0.3 * exponentialDelay; // Add up to 30% jitter
+        const totalDelay = exponentialDelay + jitter;
+        
+        console.log(`Retrying in ${Math.round(totalDelay)}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, totalDelay));
       }
     }
   }
