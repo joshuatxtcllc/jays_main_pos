@@ -43,7 +43,7 @@ export const useInventoryItem = (id: number) => {
 
 export const useCreateInventoryItem = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (item: InsertInventoryItem) => inventoryService.createInventoryItem(item),
     onSuccess: () => {
@@ -66,7 +66,7 @@ export const useCreateInventoryItem = () => {
 
 export const useUpdateInventoryItem = (id: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (item: Partial<InventoryItem>) => inventoryService.updateInventoryItem(id, item),
     onSuccess: () => {
@@ -90,7 +90,7 @@ export const useUpdateInventoryItem = (id: number) => {
 
 export const useDeleteInventoryItem = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (id: number) => inventoryService.deleteInventoryItem(id),
     onSuccess: () => {
@@ -146,7 +146,7 @@ export const useSupplier = (id: number) => {
 
 export const useCreateSupplier = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (supplier: InsertSupplier) => inventoryService.createSupplier(supplier),
     onSuccess: () => {
@@ -169,7 +169,7 @@ export const useCreateSupplier = () => {
 
 export const useUpdateSupplier = (id: number) => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (supplier: Partial<Supplier>) => inventoryService.updateSupplier(id, supplier),
     onSuccess: () => {
@@ -193,7 +193,7 @@ export const useUpdateSupplier = (id: number) => {
 
 export const useDeleteSupplier = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (id: number) => inventoryService.deleteSupplier(id),
     onSuccess: () => {
@@ -232,7 +232,7 @@ export const useInventoryLocation = (id: number) => {
 
 export const useCreateInventoryLocation = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (location: InsertInventoryLocation) => 
       inventoryService.createInventoryLocation(location),
@@ -271,7 +271,7 @@ export const usePurchaseOrder = (id: number) => {
 
 export const useCreatePurchaseOrder = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: ({ purchaseOrder, lines }: { 
       purchaseOrder: any, 
@@ -297,7 +297,7 @@ export const useCreatePurchaseOrder = () => {
 // Inventory Transactions hooks
 export const useCreateInventoryTransaction = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: inventoryService.createInventoryTransaction,
     onSuccess: () => {
@@ -359,7 +359,7 @@ export const useStockHistory = (itemId: number, period: 'month' | 'quarter' | 'y
 // Batch Operations hooks
 export const useBatchUpdateItems = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (updates: { ids: number[], changes: Partial<InventoryItem> }) => 
       inventoryService.batchUpdateItems(updates.ids, updates.changes),
@@ -382,7 +382,7 @@ export const useBatchUpdateItems = () => {
 
 export const useBatchDeleteItems = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (ids: number[]) => inventoryService.batchDeleteItems(ids),
     onSuccess: () => {
@@ -405,7 +405,7 @@ export const useBatchDeleteItems = () => {
 // Import/Export hooks
 export const useImportInventory = () => {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: (file: File) => inventoryService.importInventoryFromCSV(file),
     onSuccess: () => {
@@ -437,7 +437,7 @@ export const useExportInventory = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       toast({
         title: "Export successful",
         description: "Inventory items have been successfully exported to CSV.",
@@ -452,3 +452,51 @@ export const useExportInventory = () => {
     }
   });
 };
+
+export function useInventory() {
+  const [items, setItems] = useState<InventoryItem[]>([]);
+  const [locations, setLocations] = useState<InventoryLocation[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<InventoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInventoryData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Fetch inventory data with error handling for each request
+      const fetchWithErrorHandling = async (url: string) => {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${url}: ${response.status} ${response.statusText}`);
+        }
+        return response.json();
+      };
+
+      const [itemsData, locationsData, suppliersData, lowStockData] = await Promise.all([
+        fetchWithErrorHandling('/api/inventory/items'),
+        fetchWithErrorHandling('/api/inventory/locations'),
+        fetchWithErrorHandling('/api/inventory/suppliers'),
+        fetchWithErrorHandling('/api/inventory/items/low-stock')
+      ]);
+
+      setItems(itemsData || []);
+      setLocations(locationsData || []);
+      setSuppliers(suppliersData || []);
+      setLowStockItems(lowStockData || []);
+    } catch (err) {
+      console.error('Error loading data from inventory API:', err);
+      setError('The string did not match the expected pattern.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInventoryData();
+  }, [fetchInventoryData]);
+
+  return { items, locations, suppliers, lowStockItems, loading, error };
+}

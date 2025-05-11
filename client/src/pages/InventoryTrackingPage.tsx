@@ -28,31 +28,31 @@ const InventoryTrackingPage = () => {
   const queryClient = useQueryClient();
 
   // Load inventory locations
-  const { data: locations, isLoading: locationsLoading } = useQuery({
+  const { data: locations, isLoading: locationsLoading, error: locationsError } = useQuery({
     queryKey: ['/api/inventory/locations'],
     queryFn: getQueryFn({ endpoint: '/api/inventory/locations' }),
   });
 
   // Load inventory items
-  const { data: inventoryItems, isLoading: itemsLoading } = useQuery({
+  const { data: inventoryItems, isLoading: itemsLoading, error: itemsError } = useQuery({
     queryKey: ['/api/inventory/items'],
     queryFn: getQueryFn({ endpoint: '/api/inventory/items' }),
   });
 
   // Load suppliers
-  const { data: suppliers, isLoading: suppliersLoading } = useQuery({
+  const { data: suppliers, isLoading: suppliersLoading, error: suppliersError } = useQuery({
     queryKey: ['/api/inventory/suppliers'],
     queryFn: getQueryFn({ endpoint: '/api/inventory/suppliers' }),
   });
 
   // Load low stock items
-  const { data: lowStockItems, isLoading: lowStockLoading } = useQuery({
+  const { data: lowStockItems, isLoading: lowStockLoading, error: lowStockError } = useQuery({
     queryKey: ['/api/inventory/items/low-stock'],
     queryFn: getQueryFn({ endpoint: '/api/inventory/items/low-stock' }),
   });
 
   // Load QR codes
-  const { data: qrCodes, isLoading: qrCodesLoading } = useQuery({
+  const { data: qrCodes, isLoading: qrCodesLoading, error: qrCodesError } = useQuery({
     queryKey: ['/api/qr-codes'],
     queryFn: getQueryFn({ endpoint: '/api/qr-codes' }),
   });
@@ -63,7 +63,9 @@ const InventoryTrackingPage = () => {
       try {
         const response = await apiRequest('GET', endpoint);
         if (!response.ok) {
-          throw new Error(`Error fetching data from ${endpoint}`);
+          const errorData = await response.json();
+          const errorMessage = errorData.message || `Error fetching data from ${endpoint}: ${response.status} ${response.statusText}`;
+          throw new Error(errorMessage);
         }
         return await response.json();
       } catch (error) {
@@ -73,7 +75,7 @@ const InventoryTrackingPage = () => {
           description: error.message,
           variant: 'destructive',
         });
-        return [];
+        return []; // Return empty array on error
       }
     };
   }
@@ -208,10 +210,25 @@ const InventoryTrackingPage = () => {
   };
 
   // Show loading indicator while fetching data
-  if (locationsLoading || itemsLoading || suppliersLoading || qrCodesLoading) {
+  const isLoading = locationsLoading || itemsLoading || suppliersLoading || qrCodesLoading;
+  const apiError = locationsError || itemsError || suppliersError || qrCodesError;
+
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (apiError) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+          <p className="font-bold">Error loading data</p>
+          <p>{apiError.message}</p>
+        </div>
       </div>
     );
   }
@@ -228,7 +245,7 @@ const InventoryTrackingPage = () => {
         <div className="flex gap-2">
           <Dialog>
             <DialogTrigger asChild>
-              <Button variant="outline" className="text-white">
+              <Button variant="outline">
                 <QrCode className="h-4 w-4 mr-2" />
                 Generate QR Code
               </Button>
@@ -351,7 +368,7 @@ const InventoryTrackingPage = () => {
               <TabsTrigger value="suppliers">Suppliers</TabsTrigger>
               <TabsTrigger value="qrcodes">QR Codes</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="locations">
               <ScrollArea className="h-[500px]">
                 <Table>
@@ -404,7 +421,7 @@ const InventoryTrackingPage = () => {
                 </Table>
               </ScrollArea>
             </TabsContent>
-            
+
             <TabsContent value="inventory">
               <ScrollArea className="h-[500px]">
                 <Table>
@@ -466,7 +483,7 @@ const InventoryTrackingPage = () => {
                 </Table>
               </ScrollArea>
             </TabsContent>
-            
+
             <TabsContent value="suppliers">
               <ScrollArea className="h-[500px]">
                 <Table>
@@ -518,7 +535,7 @@ const InventoryTrackingPage = () => {
                 </Table>
               </ScrollArea>
             </TabsContent>
-            
+
             <TabsContent value="qrcodes">
               <ScrollArea className="h-[500px]">
                 <Table>
