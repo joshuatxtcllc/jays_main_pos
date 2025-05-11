@@ -811,7 +811,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update customer details  app.patch('/api/customers/:id', async (req, res) => {
+  // Update customer details
+  app.patch('/api/customers/:id', async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const customer = await storage.getCustomer(id);
