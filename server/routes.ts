@@ -64,7 +64,8 @@ import vendorSettingsRoutes from "./routes/vendorSettingsRoutes";
 import qrCodeRoutes from "./routes/qrCodeRoutes";
 import vendorApiRoutes from './routes/vendorApiRoutes';
 import orderStatusHistoryRoutes from './routes/orderStatusHistoryRoutes';
-import integrationApiRoutes from './routes/integrationApiRoutes'; // Added import
+import integrationApiRoutes from './routes/integrationApiRoutes';
+import webhookRoutes from './routes/webhookRoutes'; // Added import
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 
@@ -1543,7 +1544,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register vendor settings routes
   app.use('/api/vendor-api', vendorApiRoutes);
-  app.use('/api/integration', integrationApiRoutes); // Added integration routes
+  app.use('/api/integration', integrationApiRoutes);
+  app.use('/api/webhooks', webhookRoutes);
   app.use('/api/vendor-settings', vendorSettingsRoutes);
   app.use('/api/inventory', crossVendorInventoryRoutes);
   app.use('/api/qrcode', qrCodeRoutes);

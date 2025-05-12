@@ -15,6 +15,7 @@ import OrderProgressPage from "./pages/OrderProgressPage";
 import MaterialOrdersPage from "./pages/MaterialOrdersPage";
 import MaterialsPickListPage from "./pages/MaterialsPickListPage";
 import HubIntegrationPage from "./pages/HubIntegrationPage";
+import WebhookIntegrationPage from "./pages/WebhookIntegrationPage";
 import MatOptionPage from "./pages/MatOptionPage";
 import InventoryPage from "./pages/InventoryPage";
 import InventoryTrackingPage from "./pages/InventoryTrackingPage";
@@ -115,6 +116,7 @@ function App() {
                     <Route path="/payment-links" component={PaymentLinks} />
                     <Route path="/payment/:token" component={Payment} />
                     <Route path="/frame-education" component={FrameEducationPage} />
+                    <Route path="/webhook-integration" component={WebhookIntegrationPage} />
                     <Route component={NotFound} />
                   </Switch>
                 </main>

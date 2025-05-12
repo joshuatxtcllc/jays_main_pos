@@ -35,55 +35,55 @@ function determineFrameColor(frame: Frame): string {
   const { material, name } = frame;
   const materialLower = material.toLowerCase();
   const nameLower = name.toLowerCase();
-  
+
   // Gold frames
   if (materialLower.includes('gold') || nameLower.includes('gold')) {
     return '#D4AF37'; // Gold
   }
-  
+
   // Silver or metal frames
   if (materialLower.includes('silver') || materialLower.includes('metal') || 
       nameLower.includes('silver') || nameLower.includes('metal') || 
       nameLower.includes('chrome') || nameLower.includes('steel')) {
     return '#C0C0C0'; // Silver
   }
-  
+
   // Black frames
   if (materialLower.includes('black') || nameLower.includes('black') || 
       nameLower.includes('ebony') || nameLower.includes('onyx')) {
     return '#000000'; // True black for better contrast and visibility
   }
-  
+
   // White frames
   if (materialLower.includes('white') || nameLower.includes('white')) {
     return '#F5F5F5'; // White
   }
-  
+
   // Walnut frames
   if (materialLower.includes('walnut') || nameLower.includes('walnut')) {
     return '#5C4033'; // Walnut
   }
-  
+
   // Cherry frames
   if (materialLower.includes('cherry') || nameLower.includes('cherry')) {
     return '#722F37'; // Cherry
   }
-  
+
   // Oak frames
   if (materialLower.includes('oak') || nameLower.includes('oak')) {
     return '#D8BE75'; // Oak
   }
-  
+
   // Mahogany frames
   if (materialLower.includes('mahogany') || nameLower.includes('mahogany')) {
     return '#4E2728'; // Mahogany
   }
-  
+
   // Maple frames
   if (materialLower.includes('maple') || nameLower.includes('maple')) {
     return '#E8D4A9'; // Maple
   }
-  
+
   // Default wood color for anything else
   return '#8B4513'; // Medium brown wood color
 }
@@ -98,7 +98,7 @@ export interface IStorage {
   getAllCustomers(): Promise<Customer[]>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, data: Partial<Customer>): Promise<Customer>;
-  
+
   // Order pricing details for analytics
   getOrderPricingDetails(orderId: number): Promise<PricingResult | undefined>;
 
@@ -108,19 +108,19 @@ export interface IStorage {
   updateFrame(id: string, data: Partial<Frame>): Promise<Frame>;
   addFrame(frame: InsertFrame): Promise<Frame>;
   searchFramesByItemNumber(itemNumber: string): Promise<Frame[]>;
-  
+
   // Mat color methods
   getMatColor(id: string): Promise<MatColor | undefined>;
   getAllMatColors(): Promise<MatColor[]>;
-  
+
   // Glass option methods
   getGlassOption(id: string): Promise<GlassOption | undefined>;
   getAllGlassOptions(): Promise<GlassOption[]>;
-  
+
   // Special service methods
   getSpecialService(id: string): Promise<SpecialService | undefined>;
   getAllSpecialServices(): Promise<SpecialService[]>;
-  
+
   // Order group methods
   getOrderGroup(id: number): Promise<OrderGroup | undefined>;
   getActiveOrderGroupByCustomer(customerId: number): Promise<OrderGroup | undefined>;
@@ -129,35 +129,35 @@ export interface IStorage {
   updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup>;
   getOrdersByGroupId(orderGroupId: number): Promise<Order[]>;
   getOrderGroupsByCustomerId(customerId: number): Promise<OrderGroup[]>;
-  
+
   // Order methods
   getOrder(id: number): Promise<Order | undefined>;
   getAllOrders(): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: number, data: Partial<Order>): Promise<Order>;
   deleteOrder(id: number): Promise<void>;
-  
+
   // Order special service methods
   createOrderSpecialService(orderSpecialService: InsertOrderSpecialService): Promise<OrderSpecialService>;
   getOrderSpecialServices(orderId: number): Promise<SpecialService[]>;
-  
+
   // Wholesale order methods
   getWholesaleOrder(id: number): Promise<WholesaleOrder | undefined>;
   getAllWholesaleOrders(): Promise<WholesaleOrder[]>;
   createWholesaleOrder(wholesaleOrder: InsertWholesaleOrder): Promise<WholesaleOrder>;
   updateWholesaleOrder(id: number, data: Partial<WholesaleOrder>): Promise<WholesaleOrder>;
-  
+
   // Production Kanban methods
   getOrdersByProductionStatus(status: ProductionStatus): Promise<Order[]>;
   updateOrderProductionStatus(id: number, status: ProductionStatus): Promise<Order>;
   getOrdersForKanban(): Promise<Order[]>;
   scheduleOrderForProduction(id: number, estimatedDays: number): Promise<Order>;
-  
+
   // Customer notification methods
   createCustomerNotification(notification: InsertCustomerNotification): Promise<CustomerNotification>;
   getCustomerNotifications(customerId: number): Promise<CustomerNotification[]>;
   getNotificationsByOrder(orderId: number): Promise<CustomerNotification[]>;
-  
+
   // Material order methods
   getMaterialOrder(id: number): Promise<MaterialOrder | undefined>;
   getAllMaterialOrders(): Promise<MaterialOrder[]>;
@@ -166,7 +166,7 @@ export interface IStorage {
   createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder>;
   updateMaterialOrder(id: number, data: Partial<MaterialOrder>): Promise<MaterialOrder>;
   deleteMaterialOrder(id: number): Promise<void>;
-  
+
   // Materials pick list methods
   getMaterialsPickList(): Promise<any[]>; // Materials for all orders that need processing
   getMaterialsForOrder(orderId: number): Promise<any[]>; // Materials for a specific order
@@ -185,7 +185,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(orderMats)
         .where(eq(orderMats.orderId, orderId));
-      
+
       // Enhance each mat with its matboard information
       const enhancedMats = [];
       for (const mat of result) {
@@ -197,14 +197,14 @@ export class DatabaseStorage implements IStorage {
           });
         }
       }
-      
+
       return enhancedMats;
     } catch (error) {
       console.error(`Error getting order mats for order ${orderId}:`, error);
       return [];
     }
   }
-  
+
   // Order frames methods
   async getOrderFrames(orderId: number): Promise<any[]> {
     try {
@@ -212,7 +212,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(orderFrames)
         .where(eq(orderFrames.orderId, orderId));
-      
+
       // Enhance each frame with its frame information
       const enhancedFrames = [];
       for (const frameEntry of result) {
@@ -224,38 +224,38 @@ export class DatabaseStorage implements IStorage {
           });
         }
       }
-      
+
       return enhancedFrames;
     } catch (error) {
       console.error(`Error getting order frames for order ${orderId}:`, error);
       return [];
     }
   }
-  
+
   // Order pricing details for analytics
   async getOrderPricingDetails(orderId: number): Promise<PricingResult | undefined> {
     try {
       // Get the order
       const order = await this.getOrder(orderId);
       if (!order) return undefined;
-      
+
       // Get pricing service
       const { calculatePricing } = require('./services/pricingService');
-      
+
       // Get order details needed for pricing
       const frame = order.frameId ? await this.getFrame(order.frameId) : undefined;
       const matColor = order.matColorId ? await this.getMatColor(order.matColorId) : undefined;
       const glassOption = order.glassOptionId ? await this.getGlassOption(order.glassOptionId) : undefined;
-      
+
       // Get special services
       const specialServices = await this.getOrderSpecialServices(orderId);
-      
+
       // Get order mats (with matboard details)
       const mats = await this.getOrderMats(orderId);
-      
+
       // Get order frames (with frame details)
       const frames = await this.getOrderFrames(orderId);
-      
+
       // Calculate pricing
       const pricingParams = {
         artworkWidth: Number(order.artworkWidth),
@@ -270,7 +270,7 @@ export class DatabaseStorage implements IStorage {
         mats: mats.length > 0 ? mats : undefined,
         frames: frames.length > 0 ? frames : undefined
       };
-      
+
       return calculatePricing(pricingParams);
     } catch (error) {
       console.error('Error getting order pricing details:', error);
@@ -287,7 +287,7 @@ export class DatabaseStorage implements IStorage {
     const [customer] = await db.select().from(customers).where(eq(customers.email, email));
     return customer || undefined;
   }
-  
+
   async getAllCustomers(): Promise<Customer[]> {
     return await db.select().from(customers);
   }
@@ -302,18 +302,18 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newCustomer;
   }
-  
+
   async updateCustomer(id: number, data: Partial<Customer>): Promise<Customer> {
     const [updatedCustomer] = await db
       .update(customers)
       .set(data)
       .where(eq(customers.id, id))
       .returning();
-    
+
     if (!updatedCustomer) {
       throw new Error('Customer not found');
     }
-    
+
     return updatedCustomer;
   }
 
@@ -323,19 +323,19 @@ export class DatabaseStorage implements IStorage {
     try {
       // First try to get from the database
       const [frame] = await db.select().from(frames).where(eq(frames.id, id));
-      
+
       // If found in database, enhance it with real images and color
       if (frame) {
         console.log(`Storage: Found frame in database: ${frame.name}`);
-        
+
         // Determine color based on the frame's material and name
         let frameColor = determineFrameColor(frame);
-        
+
         // Find a real catalog image based on manufacturer
         let enhancedImage = frame.catalogImage;
         let realCornerImage = frame.corner || '';
         let realEdgeImage = frame.edgeTexture || '';
-        
+
         // Add more detailed wholesaler images for Larson-Juhl frames
         if (frame.manufacturer === 'Larson-Juhl') {
           // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
@@ -347,7 +347,7 @@ export class DatabaseStorage implements IStorage {
             realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
           }
         }
-        
+
         // Add more detailed wholesaler images for Nielsen frames
         if (frame.manufacturer === 'Nielsen') {
           // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
@@ -359,7 +359,7 @@ export class DatabaseStorage implements IStorage {
             realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
           }
         }
-        
+
         // Return enhanced frame with proper images and color
         return {
           ...frame,
@@ -369,21 +369,21 @@ export class DatabaseStorage implements IStorage {
           color: frameColor
         };
       }
-      
+
       // If not found in database, check catalog
       console.log(`Storage: Frame not found in database, checking catalog`);
       const catalogFrame = frameCatalog.find(f => f.id === id);
       if (catalogFrame) {
         console.log(`Storage: Found frame in catalog: ${catalogFrame.name}`);
-        
+
         // Enhance the frame with real wholesaler images
         let enhancedImage = catalogFrame.catalogImage;
         let realCornerImage = catalogFrame.corner || '';
         let realEdgeImage = catalogFrame.edgeTexture || '';
-        
+
         // Determine color based on the frame's material and name
         let frameColor = catalogFrame.color || determineFrameColor(catalogFrame);
-        
+
         // Add more detailed wholesaler images for Larson-Juhl frames
         if (catalogFrame.manufacturer === 'Larson-Juhl') {
           // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
@@ -395,7 +395,7 @@ export class DatabaseStorage implements IStorage {
             realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
           }
         }
-        
+
         // Add more detailed wholesaler images for Nielsen frames
         if (catalogFrame.manufacturer === 'Nielsen') {
           // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
@@ -407,7 +407,7 @@ export class DatabaseStorage implements IStorage {
             realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
           }
         }
-        
+
         // For database compatibility, don't include color in the object
         // saved to the database - only add it for UI rendering
         const dbSafeFrame = {
@@ -416,7 +416,7 @@ export class DatabaseStorage implements IStorage {
           corner: realCornerImage,
           edgeTexture: realEdgeImage
         };
-        
+
         // Try to insert the database-safe frame
         console.log(`Storage: Inserting enhanced frame into database: ${dbSafeFrame.name}`);
         try {
@@ -426,14 +426,14 @@ export class DatabaseStorage implements IStorage {
           console.error(`Storage: Error inserting frame into database:`, error);
           // Continue anyway, we'll return the enhanced frame
         }
-        
+
         // Return enhanced frame with color added for UI rendering
         return {
           ...dbSafeFrame,
           color: frameColor
         };
       }
-      
+
       console.log(`Storage: Frame not found in catalog`);
       return undefined;
     } catch (error) {
@@ -444,7 +444,7 @@ export class DatabaseStorage implements IStorage {
         // Add color based on frame material and name
         let frameColor = determineFrameColor(catalogFrame);
         let enhancedImage = catalogFrame.catalogImage;
-        
+
         // Add wholesaler images based on manufacturer
         if (catalogFrame.manufacturer === 'Larson-Juhl') {
           const frameNumber = catalogFrame.id.split('-')[1];
@@ -457,7 +457,7 @@ export class DatabaseStorage implements IStorage {
             enhancedImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Detail.jpg`;
           }
         }
-        
+
         return {
           ...catalogFrame,
           catalogImage: enhancedImage,
@@ -467,14 +467,14 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
-  
+
   async getAllFrames(): Promise<Frame[]> {
     console.log("Storage: Getting all frames");
     try {
       // First get frames from database
       const dbFrames = await db.select().from(frames);
       console.log(`Storage: Found ${dbFrames.length} frames in database`);
-      
+
       // If frames are in the database, enhance them with wholesaler images
       if (dbFrames.length > 0) {
         console.log("Storage: Enhancing existing frames with real wholesaler images");
@@ -482,12 +482,12 @@ export class DatabaseStorage implements IStorage {
         return dbFrames.map(frame => {
           // Determine color based on the frame's material and name
           let frameColor = determineFrameColor(frame);
-          
+
           // Find a real catalog image based on manufacturer
           let enhancedImage = frame.catalogImage;
           let realCornerImage = frame.corner || '';
           let realEdgeImage = frame.edgeTexture || '';
-          
+
           // Add more detailed wholesaler images for Larson-Juhl frames
           if (frame.manufacturer === 'Larson-Juhl') {
             // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
@@ -499,7 +499,7 @@ export class DatabaseStorage implements IStorage {
               realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
             }
           }
-          
+
           // Add more detailed wholesaler images for Nielsen frames
           if (frame.manufacturer === 'Nielsen') {
             // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
@@ -511,7 +511,7 @@ export class DatabaseStorage implements IStorage {
               realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
             }
           }
-          
+
           // Return the enhanced frame with additional properties
           return {
             ...frame,
@@ -522,7 +522,7 @@ export class DatabaseStorage implements IStorage {
           };
         });
       }
-      
+
       // If no frames in database, return enhanced catalog data
       console.log("Storage: No frames in database, returning enhanced catalog data");
       // Add wholesale frame images from external sources
@@ -532,7 +532,7 @@ export class DatabaseStorage implements IStorage {
         let realCornerImage = frame.corner || '';
         let realEdgeImage = frame.edgeTexture || '';
         let frameColor = frame.color || determineFrameColor(frame);
-        
+
         // Add more detailed wholesaler images for Larson-Juhl frames
         if (frame.manufacturer === 'Larson-Juhl') {
           // Extract the frame number from the ID (e.g., "larson-4512" -> "4512")
@@ -544,7 +544,7 @@ export class DatabaseStorage implements IStorage {
             realEdgeImage = `https://www.larsonjuhl.com/contentassets/products/mouldings/${frameNumber}_prof.jpg`;
           }
         }
-        
+
         // Add more detailed wholesaler images for Nielsen frames
         if (frame.manufacturer === 'Nielsen') {
           // Extract the frame number from the ID (e.g., "nielsen-71" -> "71")
@@ -556,7 +556,7 @@ export class DatabaseStorage implements IStorage {
             realEdgeImage = `https://www.nielsenbainbridge.com/images/products/detail/${frameNumber}-Edge.jpg`;
           }
         }
-        
+
         // For database compatibility, don't include color in the object
         // saved to the database - only add it for UI rendering
         const dbSafeFrame = {
@@ -565,7 +565,7 @@ export class DatabaseStorage implements IStorage {
           corner: realCornerImage,
           edgeTexture: realEdgeImage
         };
-        
+
         // Try to save to the database if possible - in smaller batches
         try {
           db.insert(frames).values(dbSafeFrame).execute();
@@ -573,14 +573,14 @@ export class DatabaseStorage implements IStorage {
           console.error(`Storage: Error inserting frame ${frame.id} into database:`, error);
           // Continue with the next frame, we'll still return the enhanced frame
         }
-        
+
         // Return the enhanced frame to the client with the color included
         return {
           ...dbSafeFrame,
           color: frameColor
         };
       });
-      
+
       return enhancedCatalog;
     } catch (error) {
       console.error("Storage: Error in getAllFrames:", error);
@@ -588,11 +588,11 @@ export class DatabaseStorage implements IStorage {
       return frameCatalog.map(frame => {
         // Add color based on frame material or name
         let frameColor = determineFrameColor(frame);
-        
+
         // Add consistent fallback images that don't depend on external sites
         const frameNumber = frame.id.split('-')[1];
         let enhancedImage = frame.catalogImage;
-        
+
         // No longer using direct links to wholesaler websites as they cause CORS issues
         // Instead, using placeholder images with consistent URLs that look like frame corners
         if (frame.manufacturer === 'Larson-Juhl') {
@@ -604,7 +604,7 @@ export class DatabaseStorage implements IStorage {
         } else {
           enhancedImage = `https://images.unsplash.com/photo-1518998053901-5348d3961a04?w=800&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fGZyYW1lfGVufDB8fDB8fHww`;
         }
-        
+
         return {
           ...frame,
           catalogImage: enhancedImage,
@@ -613,30 +613,30 @@ export class DatabaseStorage implements IStorage {
       });
     }
   }
-  
+
   async updateFrame(id: string, data: Partial<Frame>): Promise<Frame> {
     const [updatedFrame] = await db
       .update(frames)
       .set(data)
       .where(eq(frames.id, id))
       .returning();
-    
+
     if (!updatedFrame) {
       throw new Error('Frame not found');
     }
-    
+
     return updatedFrame;
   }
-  
+
   async addFrame(frame: InsertFrame): Promise<Frame> {
     console.log(`Storage: Adding new frame to database: ${frame.name} (${frame.id})`);
-    
+
     try {
       const [newFrame] = await db
         .insert(frames)
         .values(frame)
         .returning();
-        
+
       console.log(`Storage: Successfully added frame to database`);
       return newFrame;
     } catch (error) {
@@ -644,15 +644,15 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async searchFramesByItemNumber(itemNumber: string): Promise<Frame[]> {
     console.log(`Storage: Searching frames by item number: ${itemNumber}`);
-    
+
     try {
       // Extract all frames from database
       const allFrames = await this.getAllFrames();
       const lowerItemNumber = itemNumber.toLowerCase();
-      
+
       // Filter frames by item number
       return allFrames.filter(frame => {
         // Extract item number from the ID (e.g., "larson-210286" -> "210286")
@@ -664,12 +664,12 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   // Mat color methods
   async getMatColor(id: string): Promise<MatColor | undefined> {
     // First try to get from the database
     const [matColor] = await db.select().from(matColors).where(eq(matColors.id, id));
-    
+
     // If not found in database, check catalog
     if (!matColor) {
       const catalogMatColor = matColorCatalog.find(m => m.id === id);
@@ -679,29 +679,29 @@ export class DatabaseStorage implements IStorage {
         return catalogMatColor;
       }
     }
-    
+
     return matColor || undefined;
   }
-  
+
   async getAllMatColors(): Promise<MatColor[]> {
     // First get mat colors from database
     const dbMatColors = await db.select().from(matColors);
-    
+
     // If no mat colors in database, initialize with catalog
     if (dbMatColors.length === 0) {
       // Insert all catalog mat colors
       await db.insert(matColors).values(matColorCatalog);
       return matColorCatalog;
     }
-    
+
     return dbMatColors;
   }
-  
+
   // Glass option methods
   async getGlassOption(id: string): Promise<GlassOption | undefined> {
     // First try to get from the database
     const [glassOption] = await db.select().from(glassOptions).where(eq(glassOptions.id, id));
-    
+
     // If not found in database, check catalog
     if (!glassOption) {
       const catalogGlassOption = glassOptionCatalog.find(g => g.id === id);
@@ -711,29 +711,29 @@ export class DatabaseStorage implements IStorage {
         return catalogGlassOption;
       }
     }
-    
+
     return glassOption || undefined;
   }
-  
+
   async getAllGlassOptions(): Promise<GlassOption[]> {
     // First get glass options from database
     const dbGlassOptions = await db.select().from(glassOptions);
-    
+
     // If no glass options in database, initialize with catalog
     if (dbGlassOptions.length === 0) {
       // Insert all catalog glass options
       await db.insert(glassOptions).values(glassOptionCatalog);
       return glassOptionCatalog;
     }
-    
+
     return dbGlassOptions;
   }
-  
+
   // Special service methods
   async getSpecialService(id: string): Promise<SpecialService | undefined> {
     // First try to get from the database
     const [specialService] = await db.select().from(specialServices).where(eq(specialServices.id, id));
-    
+
     // If not found in database, check catalog
     if (!specialService) {
       const catalogSpecialService = specialServicesCatalog.find(s => s.id === id);
@@ -743,44 +743,45 @@ export class DatabaseStorage implements IStorage {
         return catalogSpecialService;
       }
     }
-    
+
     return specialService || undefined;
   }
-  
+
   async getAllSpecialServices(): Promise<SpecialService[]> {
     // First get special services from database
     const dbSpecialServices = await db.select().from(specialServices);
-    
+
     // If no special services in database, initialize with catalog
     if (dbSpecialServices.length === 0) {
       // Insert all catalog special services
       await db.insert(specialServices).values(specialServicesCatalog);
       return specialServicesCatalog;
     }
-    
+
     return dbSpecialServices;
   }
-  
+
   // Order group methods
   async getOrderGroup(id: number): Promise<OrderGroup | undefined> {
     const [orderGroup] = await db.select().from(orderGroups).where(eq(orderGroups.id, id));
     return orderGroup || undefined;
   }
-  
+
   async getActiveOrderGroupByCustomer(customerId: number): Promise<OrderGroup | undefined> {
     const [orderGroup] = await db
       .select()
-      .from(orderGroups)
+      .from(```python
+orderGroups)
       .where(eq(orderGroups.customerId, customerId));
-    
+
     // Filter in memory for the open status
     return orderGroup && orderGroup.status === 'open' ? orderGroup : undefined;
   }
-  
+
   async getAllOrderGroups(): Promise<OrderGroup[]> {
     return await db.select().from(orderGroups);
   }
-  
+
   async createOrderGroup(orderGroup: InsertOrderGroup): Promise<OrderGroup> {
     const [newOrderGroup] = await db
       .insert(orderGroups)
@@ -792,21 +793,21 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newOrderGroup;
   }
-  
+
   async updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup> {
     const [updatedOrderGroup] = await db
       .update(orderGroups)
       .set(data)
       .where(eq(orderGroups.id, id))
       .returning();
-    
+
     if (!updatedOrderGroup) {
       throw new Error('Order group not found');
     }
-    
+
     return updatedOrderGroup;
   }
-  
+
   async getOrderGroupsByCustomerId(customerId: number): Promise<OrderGroup[]> {
     try {
       console.log(`Storage: Getting order groups for customer ID: ${customerId}`);
@@ -818,7 +819,7 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async getOrdersByGroupId(orderGroupId: number): Promise<Order[]> {
     return await db
       .select()
@@ -831,11 +832,11 @@ export class DatabaseStorage implements IStorage {
     const [order] = await db.select().from(orders).where(eq(orders.id, id));
     return order || undefined;
   }
-  
+
   async getAllOrders(): Promise<Order[]> {
     return await db.select().from(orders);
   }
-  
+
   async createOrder(order: InsertOrder): Promise<Order> {
     try {
       console.log('DatabaseStorage.createOrder - Inserting order with data:', order);
@@ -854,27 +855,27 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async updateOrder(id: number, data: Partial<Order>): Promise<Order> {
     const [updatedOrder] = await db
       .update(orders)
       .set(data)
       .where(eq(orders.id, id))
       .returning();
-    
+
     if (!updatedOrder) {
       throw new Error('Order not found');
     }
-    
+
     return updatedOrder;
   }
-  
+
   async deleteOrder(id: number): Promise<void> {
     await db
       .delete(orders)
       .where(eq(orders.id, id));
   }
-  
+
   // Order special service methods
   async createOrderSpecialService(orderSpecialService: InsertOrderSpecialService): Promise<OrderSpecialService> {
     const [newOrderSpecialService] = await db
@@ -883,15 +884,15 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newOrderSpecialService;
   }
-  
+
   async getOrderSpecialServices(orderId: number): Promise<SpecialService[]> {
     const orderSpecialServicesData = await db
       .select()
       .from(orderSpecialServices)
       .where(eq(orderSpecialServices.orderId, orderId));
-    
+
     const serviceIds = orderSpecialServicesData.map(os => os.specialServiceId);
-    
+
     const result: SpecialService[] = [];
     for (const id of serviceIds) {
       if (id) { // Make sure id is not null
@@ -901,20 +902,20 @@ export class DatabaseStorage implements IStorage {
         }
       }
     }
-    
+
     return result;
   }
-  
+
   // Wholesale order methods
   async getWholesaleOrder(id: number): Promise<WholesaleOrder | undefined> {
     const [wholesaleOrder] = await db.select().from(wholesaleOrders).where(eq(wholesaleOrders.id, id));
     return wholesaleOrder || undefined;
   }
-  
+
   async getAllWholesaleOrders(): Promise<WholesaleOrder[]> {
     return await db.select().from(wholesaleOrders);
   }
-  
+
   async createWholesaleOrder(wholesaleOrder: InsertWholesaleOrder): Promise<WholesaleOrder> {
     const [newWholesaleOrder] = await db
       .insert(wholesaleOrders)
@@ -926,18 +927,18 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return newWholesaleOrder;
   }
-  
+
   async updateWholesaleOrder(id: number, data: Partial<WholesaleOrder>): Promise<WholesaleOrder> {
     const [updatedWholesaleOrder] = await db
       .update(wholesaleOrders)
       .set(data)
       .where(eq(wholesaleOrders.id, id))
       .returning();
-    
+
     if (!updatedWholesaleOrder) {
       throw new Error('Wholesale order not found');
     }
-    
+
     return updatedWholesaleOrder;
   }
 
@@ -956,14 +957,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(orders)
       .where(eq(orders.id, id));
-    
+
     if (!order) {
       throw new Error('Order not found');
     }
 
     // Record the status change
     const previousStatus = order.productionStatus;
-    
+
     // Update the order with new status
     const [updatedOrder] = await db
       .update(orders)
@@ -973,19 +974,19 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(orders.id, id))
       .returning();
-    
+
     // Check if notifications are enabled for this order
     if (updatedOrder.notificationsEnabled) {
       const [customer] = await db
         .select()
         .from(customers)
         .where(eq(customers.id, order.customerId));
-      
+
       if (customer) {
         try {
           // Import email service here to avoid circular dependencies
           const { sendOrderStatusUpdate } = await import('./services/emailService');
-          
+
           // Actually send the email notification
           const emailSent = await sendOrderStatusUpdate(
             customer.email,
@@ -995,7 +996,7 @@ export class DatabaseStorage implements IStorage {
             previousStatus,
             order.estimatedCompletionDays
           );
-          
+
           // Create a notification record in the database
           await this.createCustomerNotification({
             customerId: customer.id,
@@ -1010,11 +1011,11 @@ export class DatabaseStorage implements IStorage {
             // Store response data if needed for debugging
             responseData: emailSent ? { sent: true, timestamp: new Date().toISOString() } : { sent: false, error: 'Email failed to send' }
           });
-          
+
           console.log(`Status update email ${emailSent ? 'sent' : 'failed'} for Order #${order.id} to ${customer.email}`);
         } catch (error) {
           console.error('Error sending status update email:', error);
-          
+
           // Still record the notification attempt even if email failed
           await this.createCustomerNotification({
             customerId: customer.id,
@@ -1031,7 +1032,7 @@ export class DatabaseStorage implements IStorage {
         }
       }
     }
-    
+
     return updatedOrder;
   }
 
@@ -1045,7 +1046,7 @@ export class DatabaseStorage implements IStorage {
       .from(orders)
       .leftJoin(customers, eq(orders.customerId, customers.id))
       .orderBy(orders.lastStatusChange);
-    
+
     // Return formatted data with customer details included
     return dbOrders.map(row => ({
       ...row.order,
@@ -1061,11 +1062,11 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(orders)
       .where(eq(orders.id, id));
-    
+
     if (!order) {
       throw new Error('Order not found');
     }
-    
+
     // Update the estimated completion days
     const [updatedOrder] = await db
       .update(orders)
@@ -1075,18 +1076,18 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(orders.id, id))
       .returning();
-    
+
     // Create a notification about the scheduled production
     if (updatedOrder.notificationsEnabled) {
       const [customer] = await db
         .select()
         .from(customers)
         .where(eq(customers.id, order.customerId));
-      
+
       if (customer) {
         const estimatedCompletionDate = new Date();
         estimatedCompletionDate.setDate(estimatedCompletionDate.getDate() + estimatedDays);
-        
+
         await this.createCustomerNotification({
           customerId: customer.id,
           orderId: order.id,
@@ -1100,7 +1101,7 @@ export class DatabaseStorage implements IStorage {
         });
       }
     }
-    
+
     return updatedOrder;
   }
 
@@ -1113,7 +1114,7 @@ export class DatabaseStorage implements IStorage {
         sentAt: new Date()
       })
       .returning();
-    
+
     return newNotification;
   }
 
@@ -1150,13 +1151,13 @@ export class DatabaseStorage implements IStorage {
         FROM information_schema.columns 
         WHERE table_name = 'material_orders'
       `);
-      
+
       // Use only the columns that exist in the database
       const result = await db.execute<MaterialOrder[]>(sql`
         SELECT * FROM material_orders
         ORDER BY created_at DESC
       `);
-      
+
       return result;
     } catch (error) {
       console.error('Error in getAllMaterialOrders:', error);
@@ -1194,24 +1195,24 @@ export class DatabaseStorage implements IStorage {
 
   async createMaterialOrder(materialOrder: InsertMaterialOrder): Promise<MaterialOrder> {
     console.log('Creating material order with data:', materialOrder);
-    
+
     // Clean up any properties that shouldn't be sent to database
     const cleanData = { ...materialOrder };
-    
+
     // If vendor is present but supplierName is not, use vendor as supplierName
     if (cleanData.vendor && !cleanData.supplierName) {
       cleanData.supplierName = cleanData.vendor;
       delete cleanData.vendor; // Remove vendor as it doesn't exist in DB
     }
-    
+
     console.log('Cleaned data for material order creation:', cleanData);
-    
+
     try {
       const [newMaterialOrder] = await db
         .insert(materialOrders)
         .values(cleanData)
         .returning();
-        
+
       console.log('Successfully created material order:', newMaterialOrder.id);
       return newMaterialOrder;
     } catch (error) {
@@ -1222,12 +1223,12 @@ export class DatabaseStorage implements IStorage {
 
   async updateMaterialOrder(id: string | number, data: Partial<MaterialOrder>): Promise<MaterialOrder> {
     console.log('updateMaterialOrder called with id:', id, 'and data:', data);
-    
+
     // Convert id to number if it's a string representing a number
     const materialId = typeof id === 'string' && !isNaN(parseInt(id)) 
       ? parseInt(id) 
       : id;
-      
+
     // Clean up any properties that shouldn't be sent to database
     const cleanData = { ...data };
     // If vendor is present but supplierName is not, use vendor as supplierName
@@ -1235,16 +1236,16 @@ export class DatabaseStorage implements IStorage {
       cleanData.supplierName = cleanData.vendor;
       delete cleanData.vendor; // Remove vendor as it doesn't exist in DB
     }
-    
+
     console.log('Cleaned data for update:', cleanData);
-    
+
     try {
       const [updatedMaterialOrder] = await db
         .update(materialOrders)
         .set(cleanData)
         .where(eq(materialOrders.id, materialId as number))
         .returning();
-        
+
       console.log('Successfully updated material order:', updatedMaterialOrder.id);
       return updatedMaterialOrder;
     } catch (error) {
@@ -1306,7 +1307,7 @@ export class DatabaseStorage implements IStorage {
       if (!inventoryItem.sku) {
         inventoryItem.sku = `INV-${Date.now().toString(36).toUpperCase()}`;
       }
-      
+
       // Extract initialQuantity before inserting since it's not part of the schema
       const { initialQuantity, ...itemToInsert } = inventoryItem;
 
@@ -1314,7 +1315,7 @@ export class DatabaseStorage implements IStorage {
         .insert(inventoryItems)
         .values(itemToInsert)
         .returning();
-      
+
       // Create an initial inventory transaction if initialQuantity was provided
       if (initialQuantity) {
         await this.createInventoryTransaction({
@@ -1325,7 +1326,7 @@ export class DatabaseStorage implements IStorage {
           notes: 'Initial inventory setup'
         });
       }
-      
+
       return newItem;
     } catch (error) {
       console.error('Error in createInventoryItem:', error);
@@ -1356,7 +1357,7 @@ export class DatabaseStorage implements IStorage {
       await db
         .delete(inventoryTransactions)
         .where(eq(inventoryTransactions.itemId, id));
-      
+
       // Then delete the item itself
       await db
         .delete(inventoryItems)
@@ -1373,7 +1374,7 @@ export class DatabaseStorage implements IStorage {
       // Get all items where current stock is at or below reorder level
       const items = await db.select().from(inventoryItems);
       const lowStockItems: (InventoryItem & { currentStock: number })[] = [];
-      
+
       for (const item of items) {
         const currentStock = await this.getItemCurrentStock(item.id);
         if (currentStock <= Number(item.reorderLevel)) {
@@ -1384,7 +1385,7 @@ export class DatabaseStorage implements IStorage {
           });
         }
       }
-      
+
       return lowStockItems;
     } catch (error) {
       console.error('Error in getLowStockItems:', error);
@@ -1399,7 +1400,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(inventoryTransactions)
         .where(eq(inventoryTransactions.itemId, itemId));
-      
+
       let currentStock = 0;
       for (const transaction of transactions) {
         const quantity = Number(transaction.quantity);
@@ -1417,7 +1418,7 @@ export class DatabaseStorage implements IStorage {
           // but we're keeping it simple for now
         }
       }
-      
+
       return currentStock;
     } catch (error) {
       console.error('Error in getItemCurrentStock:', error);
@@ -1432,7 +1433,7 @@ export class DatabaseStorage implements IStorage {
         .insert(inventoryTransactions)
         .values(transaction)
         .returning();
-      
+
       // Update last count date if this is a count transaction
       if (transaction.type === 'count') {
         await db
@@ -1443,7 +1444,7 @@ export class DatabaseStorage implements IStorage {
           })
           .where(eq(inventoryItems.id, transaction.itemId));
       }
-      
+
       return newTransaction;
     } catch (error) {
       console.error('Error in createInventoryTransaction:', error);
@@ -1587,18 +1588,18 @@ export class DatabaseStorage implements IStorage {
     try {
       // Generate a PO number
       const poNumber = `PO-${Date.now().toString(36).toUpperCase()}`;
-      
+
       // Calculate totals
       let subtotal = 0;
       for (const line of lines) {
         const lineTotal = Number(line.quantity) * Number(line.unitCost);
         subtotal += lineTotal;
       }
-      
+
       // Calculate tax and total
       const tax = subtotal * 0.08; // 8% tax
       const total = subtotal + tax + Number(orderData.shipping || 0);
-      
+
       // Create the purchase order
       const [purchaseOrder] = await db
         .insert(purchaseOrders)
@@ -1610,7 +1611,7 @@ export class DatabaseStorage implements IStorage {
           total: total.toString()
         })
         .returning();
-      
+
       // Create each line item
       for (const line of lines) {
         const lineTotal = Number(line.quantity) * Number(line.unitCost);
@@ -1622,7 +1623,7 @@ export class DatabaseStorage implements IStorage {
             lineTotal: lineTotal.toString()
           });
       }
-      
+
       return purchaseOrder;
     } catch (error) {
       console.error('Error in createPurchaseOrderWithLines:', error);
@@ -1640,21 +1641,21 @@ export class DatabaseStorage implements IStorage {
       const items = await this.getAllInventoryItems();
       let totalValue = 0;
       const valueByCategory: Record<string, number> = {};
-      
+
       for (const item of items) {
         const currentStock = await this.getItemCurrentStock(item.id);
         const itemValue = currentStock * Number(item.costPerUnit);
         totalValue += itemValue;
-        
+
         // Add to category valuation
         if (item.categoryId) {
           const category = await this.getInventoryCategory(item.categoryId);
           const categoryName = category?.name || 'Uncategorized';
-          
+
           if (!valueByCategory[categoryName]) {
             valueByCategory[categoryName] = 0;
           }
-          
+
           valueByCategory[categoryName] += itemValue;
         } else {
           if (!valueByCategory['Uncategorized']) {
@@ -1663,12 +1664,12 @@ export class DatabaseStorage implements IStorage {
           valueByCategory['Uncategorized'] += itemValue;
         }
       }
-      
+
       const valuationByCategory = Object.entries(valueByCategory).map(([category, value]) => ({
         category,
         value
       }));
-      
+
       return {
         totalValue,
         itemCount: items.length,
@@ -1725,11 +1726,11 @@ export class DatabaseStorage implements IStorage {
           reorderQuantity: number;
         }[];
       }> = {};
-      
+
       for (const item of lowStockItems) {
         if (item.supplierId) {
           const supplier = await this.getSupplier(item.supplierId);
-          
+
           if (supplier) {
             if (!supplierMap[supplier.id]) {
               supplierMap[supplier.id] = {
@@ -1738,7 +1739,7 @@ export class DatabaseStorage implements IStorage {
                 items: []
               };
             }
-            
+
             supplierMap[supplier.id].items.push({
               itemId: item.id,
               name: item.name,
@@ -1750,7 +1751,7 @@ export class DatabaseStorage implements IStorage {
           }
         }
       }
-      
+
       return Object.values(supplierMap);
     } catch (error) {
       console.error('Error in generateRecommendedPurchaseOrders:', error);
@@ -1798,7 +1799,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Format material orders into a format suitable for the pick list UI
       const materials = await db.select().from(materialOrders);
-      
+
       // Transform MaterialOrder objects into MaterialItem objects for the UI
       return materials.map(material => ({
         id: material.id.toString(),
@@ -1820,19 +1821,20 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   async getMaterialsForOrder(orderId: number): Promise<any[]> {
     try {
       // Get materials for a specific order
       const materials = await db.select()
         .from(materialOrders)
         .where(eq(materialOrders.sourceOrderId, orderId));
-      
+
       // Transform MaterialOrder objects into MaterialItem objects for the UI
       return materials.map(material => ({
         id: material.id.toString(),
         orderIds: [orderId],
-        name: material.materialName,
+        ```python
+name: material.materialName,
         sku: material.materialId,
         supplier: material.supplierName || 'Unknown',
         type: material.materialType,
@@ -1849,11 +1851,11 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
-  
+
   async updateMaterialOrder(id: string | number, data: any): Promise<any> {
     try {
       const materialId = typeof id === 'string' ? parseInt(id, 10) : id;
-      
+
       // Update the material order in the database
       const [updatedMaterial] = await db
         .update(materialOrders)
@@ -1865,11 +1867,11 @@ export class DatabaseStorage implements IStorage {
         })
         .where(eq(materialOrders.id, materialId))
         .returning();
-      
+
       if (!updatedMaterial) {
         throw new Error(`Material order with ID ${id} not found`);
       }
-      
+
       // Return the updated material in UI format
       return {
         id: updatedMaterial.id.toString(),
@@ -1891,21 +1893,21 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
-  
+
   async createPurchaseOrder(materialIds: string[]): Promise<any> {
     try {
       // Convert string IDs to numbers
       const numericIds = materialIds.map(id => parseInt(id, 10));
-      
+
       // Get the material orders to include in the purchase order
       const materialsToOrder = await db.select()
         .from(materialOrders)
         .where(sql`${materialOrders.id} IN (${numericIds.join(', ')})`);
-      
+
       if (materialsToOrder.length === 0) {
         throw new Error('No material orders found with the provided IDs');
       }
-      
+
       // Group materials by supplier
       const supplierGroups: Record<string, MaterialOrder[]> = {};
       for (const material of materialsToOrder) {
@@ -1915,10 +1917,10 @@ export class DatabaseStorage implements IStorage {
         }
         supplierGroups[supplier].push(material);
       }
-      
+
       // Create purchase orders for each supplier
       const purchaseOrders = [];
-      
+
       for (const supplier in supplierGroups) {
         // Create a new purchase order
         const [purchaseOrder] = await db.insert(purchaseOrders)
@@ -1932,16 +1934,16 @@ export class DatabaseStorage implements IStorage {
             notes: `Auto-generated purchase order for ${supplierGroups[supplier].length} items`
           })
           .returning();
-          
+
         // Create purchase order lines for each material
         for (const material of supplierGroups[supplier]) {
           // Find the inventory item corresponding to the material
           const [inventoryItem] = await db.select()
             .from(inventoryItems)
             .where(sql`${inventoryItems.sku} = ${material.materialId}`);
-            
+
           const itemId = inventoryItem?.id || null;
-          
+
           // Create a purchase order line
           await db.insert(purchaseOrderLines)
             .values({
@@ -1952,7 +1954,7 @@ export class DatabaseStorage implements IStorage {
               lineTotal: material.totalCost || 0,
               notes: material.notes
             });
-          
+
           // Update the material order status to 'ordered'
           await db.update(materialOrders)
             .set({
@@ -1961,10 +1963,10 @@ export class DatabaseStorage implements IStorage {
             })
             .where(eq(materialOrders.id, material.id));
         }
-        
+
         purchaseOrders.push(purchaseOrder);
       }
-      
+
       return {
         success: true,
         message: `Created ${purchaseOrders.length} purchase orders`,
@@ -1975,6 +1977,116 @@ export class DatabaseStorage implements IStorage {
       throw error;
     }
   }
+
+  // Webhook endpoints
+  async getWebhookEndpoints() {
+    try {
+      // @ts-ignore
+      const result = await db.select().from(webhook_endpoints).orderBy(desc(webhook_endpoints.createdAt));
+      return result || [];
+    } catch (error) {
+      console.error('Error getting webhook endpoints:', error);
+      throw error;
+    }
+  }
+
+  async getWebhookEndpoint(id: number) {
+    try {
+      // @ts-ignore
+      const [result] = await db.select().from(webhook_endpoints).where(eq(webhook_endpoints.id, id));
+      return result;
+    } catch (error) {
+      console.error('Error getting webhook endpoint:', error);
+      throw error;
+    }
+  }
+
+  async getWebhookEndpointsByEvent(event: string) {
+    try {
+      // This assumes events are stored as JSON array in the database
+      // In a production environment, you might want a separate table for webhook_events
+      // @ts-ignore
+      const result = await db.select().from(webhook_endpoints).where(sql`json_extract(events, '$') LIKE '%${event}%' AND active = 1`);
+      return result || [];
+    } catch (error) {
+      console.error('Error getting webhook endpoints by event:', error);
+      throw error;
+    }
+  }
+
+  async createWebhookEndpoint(webhook: any) {
+    try {
+      const { name, url, events, active } = webhook;
+      // @ts-ignore
+      const [result] = await db.insert(webhook_endpoints).values({ name, url, events: JSON.stringify(events), active: active ? 1 : 0, createdAt: new Date() }).returning();
+
+      return {
+        id: result.id,
+        name,
+        url,
+        events,
+        active,
+        createdAt: result.createdAt
+      };
+    } catch (error) {
+      console.error('Error creating webhook endpoint:', error);
+      throw error;
+    }
+  }
+
+  async updateWebhookEndpoint(id: number, updates: any) {
+    try {
+      const webhook = await this.getWebhookEndpoint(id);
+
+      if (!webhook) {
+        throw new Error('Webhook endpoint not found');
+      }
+
+      const updateFields: any = {};
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (key === 'events' && Array.isArray(value)) {
+          updateFields[key] = JSON.stringify(value);
+        } else if (key === 'active') {
+          updateFields[key] = value ? 1 : 0;
+        } else if (key !== 'id' && key !== 'createdAt') {
+          updateFields[key] = value;
+        }
+      }
+
+      // @ts-ignore
+      const [updatedWebhook] = await db.update(webhook_endpoints).set(updateFields).where(eq(webhook_endpoints.id, id)).returning();
+
+      return { ...webhook, ...updatedWebhook };
+    } catch (error) {
+      console.error('Error updating webhook endpoint:', error);
+      throw error;
+    }
+  }
+
+  async deleteWebhookEndpoint(id: number) {
+    try {
+      // @ts-ignore
+      await db.delete(webhook_endpoints).where(eq(webhook_endpoints.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting webhook endpoint:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
+
+// Define webhook_endpoints schema here to avoid import issues, and use db.run to create the table
+// @ts-ignore
+export const webhook_endpoints = sql`
+  CREATE TABLE IF NOT EXISTS webhook_endpoints (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    events TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1,
+    createdAt DATETIME NOT NULL
+  )
+`;
