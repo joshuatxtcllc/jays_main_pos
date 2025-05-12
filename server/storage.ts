@@ -1158,7 +1158,7 @@ orderGroups)
         ORDER BY created_at DESC
       `);
 
-      return result;
+      return result as unknown as MaterialOrder[];
     } catch (error) {
       console.error('Error in getAllMaterialOrders:', error);
       // If there's an error with missing columns, return an empty array
