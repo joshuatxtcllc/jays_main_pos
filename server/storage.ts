@@ -1153,7 +1153,7 @@ orderGroups)
       `);
 
       // Use only the columns that exist in the database
-      const result = await db.execute<MaterialOrder[]>(sql`
+      const result = await db.execute(sql`
         SELECT * FROM material_orders
         ORDER BY created_at DESC
       `);
