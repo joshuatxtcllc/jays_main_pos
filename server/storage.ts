@@ -770,8 +770,7 @@ export class DatabaseStorage implements IStorage {
   async getActiveOrderGroupByCustomer(customerId: number): Promise<OrderGroup | undefined> {
     const [orderGroup] = await db
       .select()
-      .from(```python
-orderGroups)
+      .from(orderGroups)
       .where(eq(orderGroups.customerId, customerId));
 
     // Filter in memory for the open status
