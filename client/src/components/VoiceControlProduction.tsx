@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Mic, MicOff, Volume2, AlertCircle } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 import { useProductionKanban } from '@/hooks/use-production';
 import { ProductionStatus } from '@shared/schema';
 
@@ -14,34 +13,34 @@ export function VoiceControlProduction() {
   const [confidence, setConfidence] = useState(0);
   const [isSupported, setIsSupported] = useState(true);
   const { updateOrderStatus, orders } = useProductionKanban();
-  
+
   const recognitionRef = useRef<any>(null);
-  
+
   useEffect(() => {
     // Check if browser supports SpeechRecognition
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
       setIsSupported(false);
       return;
     }
-    
+
     // Initialize speech recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognitionRef.current = new SpeechRecognition();
     recognitionRef.current.continuous = true;
     recognitionRef.current.interimResults = true;
-    
+
     recognitionRef.current.onresult = (event: any) => {
       const current = event.resultIndex;
       const result = event.results[current];
       const transcriptValue = result[0].transcript;
       setTranscript(transcriptValue);
       setConfidence(result[0].confidence * 100);
-      
+
       if (result.isFinal) {
         processCommand(transcriptValue);
       }
     };
-    
+
     recognitionRef.current.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
@@ -53,14 +52,14 @@ export function VoiceControlProduction() {
         setIsListening(false);
       }
     };
-    
+
     return () => {
       if (recognitionRef.current) {
         recognitionRef.current.stop();
       }
     };
   }, []);
-  
+
   useEffect(() => {
     if (isListening) {
       recognitionRef.current?.start();
@@ -69,22 +68,22 @@ export function VoiceControlProduction() {
       setTranscript('');
     }
   }, [isListening]);
-  
+
   const toggleListening = () => {
     setIsListening(!isListening);
   };
-  
+
   const processCommand = (command: string) => {
     const lowerCommand = command.toLowerCase();
-    
+
     // Commands format: "move order {number} to {status}"
     const moveOrderRegex = /move\s+order\s+(\d+)\s+to\s+(\w+(?:\s+\w+)*)/i;
     const match = lowerCommand.match(moveOrderRegex);
-    
+
     if (match) {
       const orderId = parseInt(match[1]);
       let targetStatus = match[2].replace(/\s+/g, '_').toLowerCase();
-      
+
       // Map spoken words to valid status values
       const statusMap: Record<string, ProductionStatus> = {
         'order_processed': 'order_processed',
@@ -115,17 +114,17 @@ export function VoiceControlProduction() {
         'delay': 'delayed',
         'on_hold': 'delayed'
       };
-      
+
       // Find the order
       const order = orders?.find(o => o.id === orderId);
-      
+
       if (order) {
         if (statusMap[targetStatus]) {
           updateOrderStatus({ 
             id: orderId, 
             status: statusMap[targetStatus]
           });
-          
+
           toast({
             title: "Order Updated",
             description: `Order #${orderId} moved to ${statusMap[targetStatus].replace(/_/g, ' ')}`,
@@ -159,7 +158,7 @@ export function VoiceControlProduction() {
       });
     }
   };
-  
+
   if (!isSupported) {
     return (
       <Card className="w-full mb-4">
@@ -175,7 +174,7 @@ export function VoiceControlProduction() {
       </Card>
     );
   }
-  
+
   return (
     <Card className="w-full mb-4">
       <CardHeader>
@@ -201,7 +200,7 @@ export function VoiceControlProduction() {
             )}
           </div>
         )}
-        
+
         <div className="rounded-lg bg-secondary/30 p-3 text-xs">
           <div className="font-medium mb-1">Example commands:</div>
           <ul className="list-disc pl-4 space-y-1">
