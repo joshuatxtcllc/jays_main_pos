@@ -1,0 +1,242 @@
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { toast } from 'react-toastify';
+
+// Create context
+const OrderContext = createContext();
+
+export const OrderProvider = ({ children }) => {
+  // State for orders
+  const [orders, setOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load orders from localStorage on initial render
+  useEffect(() => {
+    const loadOrders = async () => {
+      try {
+        const savedOrders = localStorage.getItem('frameGuruOrders');
+        if (savedOrders) {
+          setOrders(JSON.parse(savedOrders));
+        }
+      } catch (error) {
+        console.error('Error loading orders from localStorage:', error);
+        toast.error('Failed to load saved orders');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadOrders();
+  }, []);
+
+  // Save orders to localStorage whenever orders state changes
+  useEffect(() => {
+    if (!isLoading) {
+      localStorage.setItem('frameGuruOrders', JSON.stringify(orders));
+    }
+  }, [orders, isLoading]);
+
+  // Add a new order
+  const addOrder = (order) => {
+    setOrders(prevOrders => [...prevOrders, order]);
+    toast.success(`Order ${order.orderId} added successfully`);
+  };
+
+  // Get a single order by ID
+  const getOrderById = (id) => {
+    return orders.find(order => order.id === id || order.orderId === id);
+  };
+
+  // Update an order's status
+  const updateOrderStatus = (id, updates) => {
+    setOrders(prevOrders => 
+      prevOrders.map(order => 
+        (order.id === id || order.orderId === id) 
+          ? { ...order, ...updates } 
+          : order
+      )
+    );
+    
+    // Find the order to get its orderId for the toast message
+    const updatedOrder = orders.find(order => order.id === id || order.orderId === id);
+    if (updatedOrder) {
+      toast.success(`Order ${updatedOrder.orderId} updated successfully`);
+    }
+  };
+
+  // Delete an order
+  const deleteOrder = (id) => {
+    // Find the order to get its orderId for the toast message
+    const orderToDelete = orders.find(order => order.id === id || order.orderId === id);
+    
+    if (orderToDelete) {
+      setOrders(prevOrders => 
+        prevOrders.filter(order => 
+          order.id !== id && order.orderId !== id
+        )
+      );
+      
+      toast.info(`Order ${orderToDelete.orderId} deleted`);
+    } else {
+      toast.error('Order not found');
+    }
+  };
+
+  // Get orders filtered by status
+  const getOrdersByStatus = (status) => {
+    if (!status || status === 'all') {
+      return orders;
+    }
+    return orders.filter(order => order.orderProgress === status);
+  };
+
+  // Get all unique order statuses
+  const getUniqueOrderStatuses = () => {
+    const statuses = new Set(orders.map(order => order.orderProgress));
+    return ['all', ...statuses];
+  };
+
+  // Get orders filtered by location
+  const getOrdersByLocation = (location) => {
+    if (!location || location === 'all') {
+      return orders;
+    }
+    return orders.filter(order => order.location === location);
+  };
+
+  // Get all unique locations
+  const getUniqueLocations = () => {
+    const locations = new Set(orders.map(order => order.location));
+    return ['all', ...locations];
+  };
+
+  // Get orders due within a certain timeframe (in days)
+  const getOrdersDueWithin = (days) => {
+    const today = new Date();
+    const futureDate = new Date();
+    futureDate.setDate(today.getDate() + days);
+    
+    return orders.filter(order => {
+      if (!order.dueDate) return false;
+      
+      const dueDate = new Date(order.dueDate);
+      return dueDate >= today && dueDate <= futureDate;
+    });
+  };
+
+  // Get overdue orders
+  const getOverdueOrders = () => {
+    const today = new Date();
+    
+    return orders.filter(order => {
+      if (!order.dueDate) return false;
+      
+      const dueDate = new Date(order.dueDate);
+      return dueDate < today && !order.delivered;
+    });
+  };
+
+  // Get orders by customer name
+  const getOrdersByCustomer = (customerName) => {
+    if (!customerName) return orders;
+    
+    const normalizedName = customerName.toLowerCase();
+    return orders.filter(order => 
+      order.customerName && order.customerName.toLowerCase().includes(normalizedName)
+    );
+  };
+  
+  // Detect potential bottlenecks in production
+  const detectBottlenecks = () => {
+    const statusCounts = {};
+    
+    // Count orders in each status
+    orders.forEach(order => {
+      const status = order.orderProgress;
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+    
+    // Find status with the highest count
+    let maxCount = 0;
+    let bottleneckStatus = null;
+    
+    Object.keys(statusCounts).forEach(status => {
+      if (statusCounts[status] > maxCount) {
+        maxCount = statusCounts[status];
+        bottleneckStatus = status;
+      }
+    });
+    
+    return {
+      bottleneckStatus,
+      count: maxCount,
+      statusCounts
+    };
+  };
+
+  // Calculate average production time for completed orders
+  const calculateAverageProductionTime = () => {
+    const completedOrders = orders.filter(order => order.done);
+    
+    if (completedOrders.length === 0) {
+      return { average: 0, unit: 'days' };
+    }
+    
+    const totalDays = completedOrders.reduce((sum, order) => {
+      const startDate = new Date(order.dateCreated);
+      
+      // Find completion date from status history
+      const doneStatus = order.statusHistory.find(status => 
+        status.status === 'QC Passed' || status.status === 'Done'
+      );
+      
+      if (!doneStatus) return sum;
+      
+      const completionDate = new Date(doneStatus.timestamp);
+      const daysDiff = (completionDate - startDate) / (1000 * 60 * 60 * 24);
+      
+      return sum + daysDiff;
+    }, 0);
+    
+    const average = totalDays / completedOrders.length;
+    
+    if (average < 1) {
+      return { average: average * 24, unit: 'hours' };
+    }
+    
+    return { average: Math.round(average * 10) / 10, unit: 'days' };
+  };
+
+  // Export the context value
+  const contextValue = {
+    orders,
+    isLoading,
+    addOrder,
+    getOrderById,
+    updateOrderStatus,
+    deleteOrder,
+    getOrdersByStatus,
+    getUniqueOrderStatuses,
+    getOrdersByLocation,
+    getUniqueLocations,
+    getOrdersDueWithin,
+    getOverdueOrders,
+    getOrdersByCustomer,
+    detectBottlenecks,
+    calculateAverageProductionTime
+  };
+
+  return (
+    <OrderContext.Provider value={contextValue}>
+      {children}
+    </OrderContext.Provider>
+  );
+};
+
+// Custom hook to use the order context
+export const useOrder = () => {
+  const context = useContext(OrderContext);
+  if (!context) {
+    throw new Error('useOrder must be used within an OrderProvider');
+  }
+  return context;
+};

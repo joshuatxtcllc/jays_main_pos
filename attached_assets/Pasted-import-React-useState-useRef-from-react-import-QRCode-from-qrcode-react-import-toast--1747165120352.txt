@@ -1,0 +1,357 @@
+import React, { useState, useRef } from 'react';
+import QRCode from 'qrcode.react';
+import { toast } from 'react-toastify';
+import { v4 as uuidv4 } from 'uuid';
+import { useOrder } from '../../contexts/OrderContext';
+import './QRGenerator.css';
+
+const QRGenerator = () => {
+  const { addOrder } = useOrder();
+  const [orderData, setOrderData] = useState({
+    orderId: '',
+    customerName: '',
+    phone: '',
+    description: '',
+    frameSize: '',
+    material: '',
+    dueDate: '',
+    designer: '',
+    location: 'Main Store'
+  });
+  
+  const [qrGenerated, setQrGenerated] = useState(false);
+  const qrRef = useRef(null);
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setOrderData({
+      ...orderData,
+      [name]: value
+    });
+  };
+  
+  const generateQrCode = (e) => {
+    e.preventDefault();
+    
+    // Generate a unique order ID if not provided
+    const uniqueOrderId = orderData.orderId || `JF-${Date.now().toString().slice(-6)}`;
+    
+    // Create the order object with additional fields
+    const newOrder = {
+      ...orderData,
+      orderId: uniqueOrderId,
+      orderProgress: 'Order Received',
+      dateCreated: new Date().toISOString(),
+      dueDate: orderData.dueDate,
+      statusHistory: [
+        {
+          status: 'Order Received',
+          timestamp: new Date().toISOString(),
+          notes: 'Order created with QR code'
+        }
+      ],
+      ordered: false,
+      arrived: false,
+      cut: false,
+      prepped: false,
+      done: false,
+      delivered: false,
+      id: uuidv4()
+    };
+    
+    // Save the order to context/storage
+    addOrder(newOrder);
+    
+    // Update state to show QR code
+    setOrderData(newOrder);
+    setQrGenerated(true);
+    
+    toast.success('QR Code generated successfully!');
+  };
+  
+  const downloadQRCode = () => {
+    const canvas = qrRef.current.querySelector('canvas');
+    if (canvas) {
+      const pngUrl = canvas
+        .toDataURL('image/png')
+        .replace('image/png', 'image/octet-stream');
+      
+      let downloadLink = document.createElement('a');
+      downloadLink.href = pngUrl;
+      downloadLink.download = `${orderData.orderId}_QR.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      toast.info('QR Code downloaded');
+    }
+  };
+  
+  const printQRCode = () => {
+    const printContent = document.getElementById('qr-print-content');
+    const windowUrl = 'about:blank';
+    const uniqueName = new Date().getTime();
+    
+    const printWindow = window.open(windowUrl, uniqueName, 'height=400,width=600');
+    printWindow.document.write('<html><head><title>Print QR Code</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write(`
+      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+      .print-container { max-width: 300px; margin: 0 auto; border: 1px solid #ccc; padding: 20px; }
+      h2 { font-size: 16px; margin-bottom: 5px; }
+      .order-id { font-weight: bold; font-size: 18px; margin-bottom: 10px; }
+      .order-details { font-size: 12px; margin-bottom: 15px; text-align: left; }
+      .qr-code { margin-bottom: 10px; }
+      .company-info { font-size: 10px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+    `);
+    printWindow.document.write('</style></head><body>');
+    printWindow.document.write('<div class="print-container">');
+    printWindow.document.write('<h2>Jay\'s Frames Order</h2>');
+    printWindow.document.write(`<div class="order-id">Order #: ${orderData.orderId}</div>`);
+    printWindow.document.write('<div class="order-details">');
+    printWindow.document.write(`<p>Customer: ${orderData.customerName}</p>`);
+    printWindow.document.write(`<p>Due Date: ${new Date(orderData.dueDate).toLocaleDateString()}</p>`);
+    printWindow.document.write(`<p>Frame Size: ${orderData.frameSize}</p>`);
+    printWindow.document.write(`<p>Material: ${orderData.material}</p>`);
+    printWindow.document.write('</div>');
+    printWindow.document.write('<div class="qr-code">');
+    printWindow.document.write(printContent.innerHTML);
+    printWindow.document.write('</div>');
+    printWindow.document.write('<div class="company-info">');
+    printWindow.document.write('Jay\'s Frames - Track your order at frames.jays.com');
+    printWindow.document.write('</div>');
+    printWindow.document.write('</div>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    
+    printWindow.onload = function() {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+  };
+  
+  const resetForm = () => {
+    setOrderData({
+      orderId: '',
+      customerName: '',
+      phone: '',
+      description: '',
+      frameSize: '',
+      material: '',
+      dueDate: '',
+      designer: '',
+      location: 'Main Store'
+    });
+    setQrGenerated(false);
+  };
+  
+  return (
+    <div className="qr-generator-container">
+      <h2 className="section-title">QR Code Generator</h2>
+      
+      <div className="generator-grid">
+        <div className="form-column">
+          <div className="card">
+            <h3>Order Details</h3>
+            <form onSubmit={generateQrCode}>
+              <div className="form-group">
+                <label htmlFor="orderId">Order ID (optional)</label>
+                <input
+                  type="text"
+                  id="orderId"
+                  name="orderId"
+                  value={orderData.orderId}
+                  onChange={handleInputChange}
+                  placeholder="Leave blank to auto-generate"
+                  disabled={qrGenerated}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="customerName">Customer Name *</label>
+                <input
+                  type="text"
+                  id="customerName"
+                  name="customerName"
+                  value={orderData.customerName}
+                  onChange={handleInputChange}
+                  required
+                  disabled={qrGenerated}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="phone">Phone</label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  value={orderData.phone}
+                  onChange={handleInputChange}
+                  disabled={qrGenerated}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="description">Description *</label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={orderData.description}
+                  onChange={handleInputChange}
+                  required
+                  disabled={qrGenerated}
+                ></textarea>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="frameSize">Frame Size *</label>
+                  <input
+                    type="text"
+                    id="frameSize"
+                    name="frameSize"
+                    value={orderData.frameSize}
+                    onChange={handleInputChange}
+                    required
+                    disabled={qrGenerated}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="material">Material *</label>
+                  <select
+                    id="material"
+                    name="material"
+                    value={orderData.material}
+                    onChange={handleInputChange}
+                    required
+                    disabled={qrGenerated}
+                  >
+                    <option value="">Select Material</option>
+                    <option value="Wood">Wood</option>
+                    <option value="Metal">Metal</option>
+                    <option value="Acrylic">Acrylic</option>
+                    <option value="Composite">Composite</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="dueDate">Due Date *</label>
+                  <input
+                    type="date"
+                    id="dueDate"
+                    name="dueDate"
+                    value={orderData.dueDate}
+                    onChange={handleInputChange}
+                    required
+                    disabled={qrGenerated}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="designer">Designer</label>
+                  <input
+                    type="text"
+                    id="designer"
+                    name="designer"
+                    value={orderData.designer}
+                    onChange={handleInputChange}
+                    disabled={qrGenerated}
+                  />
+                </div>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="location">Location</label>
+                <select
+                  id="location"
+                  name="location"
+                  value={orderData.location}
+                  onChange={handleInputChange}
+                  disabled={qrGenerated}
+                >
+                  <option value="Main Store">Main Store</option>
+                  <option value="Downtown">Downtown</option>
+                  <option value="Westside">Westside</option>
+                </select>
+              </div>
+              
+              {!qrGenerated ? (
+                <button type="submit" className="btn btn-primary">Generate QR Code</button>
+              ) : (
+                <button type="button" className="btn btn-secondary" onClick={resetForm}>Create Another QR Code</button>
+              )}
+            </form>
+          </div>
+        </div>
+        
+        <div className="qr-column">
+          <div className="card">
+            <h3>QR Code Output</h3>
+            
+            {qrGenerated ? (
+              <div className="qr-result">
+                <div id="qr-print-content" ref={qrRef} className="qr-code">
+                  <QRCode
+                    value={JSON.stringify({
+                      orderId: orderData.orderId,
+                      customerName: orderData.customerName,
+                      dueDate: orderData.dueDate,
+                      type: 'order-tracking'
+                    })}
+                    size={200}
+                    level="H"
+                    includeMargin={true}
+                    imageSettings={{
+                      src: '/images/logo.png',
+                      excavate: true,
+                      width: 40,
+                      height: 40,
+                    }}
+                  />
+                </div>
+                
+                <div className="qr-info">
+                  <h4>Order #{orderData.orderId}</h4>
+                  <p><strong>Customer:</strong> {orderData.customerName}</p>
+                  <p><strong>Due Date:</strong> {new Date(orderData.dueDate).toLocaleDateString()}</p>
+                </div>
+                
+                <div className="qr-actions">
+                  <button className="btn btn-primary" onClick={downloadQRCode}>
+                    Download QR
+                  </button>
+                  <button className="btn btn-secondary" onClick={printQRCode}>
+                    Print QR
+                  </button>
+                </div>
+                
+                <div className="qr-instructions">
+                  <h4>Instructions:</h4>
+                  <ol>
+                    <li>Print this QR code and attach it to the order materials</li>
+                    <li>Scan this code at each production stage to update status</li>
+                    <li>Use the Frame Guru app to track this order's progress</li>
+                  </ol>
+                </div>
+              </div>
+            ) : (
+              <div className="qr-placeholder">
+                <div className="placeholder-icon">
+                  <i className="fa fa-qrcode"></i>
+                </div>
+                <p>Complete the form to generate a QR code for your order</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QRGenerator;

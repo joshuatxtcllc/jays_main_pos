@@ -1,0 +1,396 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useOrder } from '../../contexts/OrderContext';
+import './Dashboard.css';
+
+const Dashboard = () => {
+  const { 
+    orders, 
+    getOrdersDueWithin, 
+    getOverdueOrders,
+    detectBottlenecks,
+    calculateAverageProductionTime
+  } = useOrder();
+  
+  const [orderMetrics, setOrderMetrics] = useState({
+    total: 0,
+    inProgress: 0,
+    completed: 0,
+    overdue: 0,
+    dueToday: 0,
+    dueTomorrow: 0
+  });
+  
+  const [statusData, setStatusData] = useState([]);
+  const [materialData, setMaterialData] = useState([]);
+  const [bottleneckData, setBottleneckData] = useState(null);
+  const [productionTime, setProductionTime] = useState({ average: 0, unit: 'days' });
+  
+  // COLORS for charts
+  const COLORS = ['#00ADB5', '#E31E6A', '#21C685', '#F8C630', '#3949ab', '#ff5722', '#9c27b0', '#607d8b', '#795548'];
+
+  useEffect(() => {
+    // Calculate order metrics
+    const total = orders.length;
+    const completed = orders.filter(order => order.delivered).length;
+    const inProgress = orders.filter(order => order.ordered && !order.delivered).length;
+    const overdue = getOverdueOrders().length;
+    const dueToday = getOrdersDueWithin(1).filter(order => !order.delivered).length;
+    const dueTomorrow = getOrdersDueWithin(2).filter(order => {
+      const dueDate = new Date(order.dueDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      return dueDate.getTime() === tomorrow.getTime() && !order.delivered;
+    }).length;
+    
+    setOrderMetrics({
+      total,
+      inProgress,
+      completed,
+      overdue,
+      dueToday,
+      dueTomorrow
+    });
+
+    // Generate status data for chart
+    const statusCounts = {};
+    orders.forEach(order => {
+      const status = order.orderProgress || 'Unknown';
+      statusCounts[status] = (statusCounts[status] || 0) + 1;
+    });
+
+    const statusChartData = Object.keys(statusCounts).map(status => ({
+      name: status,
+      value: statusCounts[status]
+    }));
+    
+    setStatusData(statusChartData);
+
+    // Generate material data for chart
+    const materialCounts = {};
+    orders.forEach(order => {
+      const material = order.material || 'Not specified';
+      materialCounts[material] = (materialCounts[material] || 0) + 1;
+    });
+
+    const materialChartData = Object.keys(materialCounts).map(material => ({
+      name: material,
+      value: materialCounts[material]
+    }));
+    
+    setMaterialData(materialChartData);
+
+    // Get bottleneck data
+    setBottleneckData(detectBottlenecks());
+
+    // Get average production time
+    setProductionTime(calculateAverageProductionTime());
+
+  }, [orders, getOrdersDueWithin, getOverdueOrders, detectBottlenecks, calculateAverageProductionTime]);
+
+  // Format date for display
+  const formatDate = (date) => {
+    return format(new Date(date), 'MMM dd, yyyy');
+  };
+
+  return (
+    <div className="dashboard-container">
+      <h2 className="section-title">Frame Guru Dashboard</h2>
+      
+      {/* Quick action buttons */}
+      <div className="quick-actions">
+        <Link to="/generate" className="action-card new-order">
+          <div className="action-icon">
+            <i className="fa fa-plus-circle"></i>
+          </div>
+          <h3>New Order</h3>
+          <p>Create a new order with QR code</p>
+        </Link>
+        
+        <Link to="/materials" className="action-card scan-qr">
+          <div className="action-icon">
+            <i className="fa fa-qrcode"></i>
+          </div>
+          <h3>Scan QR</h3>
+          <p>Update order status by scanning</p>
+        </Link>
+        
+        <Link to="/orders" className="action-card view-orders">
+          <div className="action-icon">
+            <i className="fa fa-list-alt"></i>
+          </div>
+          <h3>Orders</h3>
+          <p>View and manage all orders</p>
+        </Link>
+      </div>
+      
+      {/* Stats cards */}
+      <div className="stats-grid">
+        <div className="card stats-card">
+          <div className="stat-value">{orderMetrics.total}</div>
+          <div className="stat-label">Total Orders</div>
+        </div>
+        
+        <div className="card stats-card">
+          <div className="stat-value">{orderMetrics.inProgress}</div>
+          <div className="stat-label">In Progress</div>
+        </div>
+        
+        <div className="card stats-card">
+          <div className="stat-value">{orderMetrics.completed}</div>
+          <div className="stat-label">Completed</div>
+        </div>
+        
+        <div className="card stats-card">
+          <div className="stat-value error">{orderMetrics.overdue}</div>
+          <div className="stat-label">Overdue</div>
+        </div>
+      </div>
+      
+      {/* Due orders section */}
+      <div className="card due-today-card">
+        <h3>Urgent: Due Today ({orderMetrics.dueToday})</h3>
+        
+        <div className="due-orders-list">
+          {getOrdersDueWithin(1).filter(order => !order.delivered).length > 0 ? (
+            <table className="due-orders-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Customer</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {getOrdersDueWithin(1).filter(order => !order.delivered).map(order => (
+                  <tr key={order.id}>
+                    <td>{order.orderId}</td>
+                    <td>{order.customerName}</td>
+                    <td>
+                      <span className={`status-pill ${getStatusClass(order.orderProgress)}`}>
+                        {order.orderProgress}
+                      </span>
+                    </td>
+                    <td>
+                      <Link to={`/orders/${order.id}`} className="btn-view-small">
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="empty-state">
+              <p>No orders due today!</p>
+            </div>
+          )}
+        </div>
+      </div>
+      
+      {/* Charts grid */}
+      <div className="charts-grid">
+        <div className="card chart-card">
+          <h3>Order Status Distribution</h3>
+          
+          <div className="chart-container">
+            {statusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} orders`, 'Count']} />
+                  <Legend layout="vertical" verticalAlign="bottom" align="center" />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">
+                <p>Not enough data to display chart</p>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="card chart-card">
+          <h3>Materials Breakdown</h3>
+          
+          <div className="chart-container">
+            {materialData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={materialData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} />
+                  <YAxis />
+                  <Tooltip formatter={(value) => [`${value} orders`, 'Count']} />
+                  <Bar dataKey="value" fill="#00ADB5">
+                    {materialData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="empty-chart">
+                <p>Not enough data to display chart</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Production insights */}
+      <div className="insights-grid">
+        <div className="card insights-card">
+          <h3>Production Insights</h3>
+          
+          <div className="insights-content">
+            <div className="insight-item">
+              <div className="insight-icon">
+                <i className="fa fa-clock"></i>
+              </div>
+              <div className="insight-info">
+                <h4>Average Production Time</h4>
+                <p>
+                  {productionTime.average > 0 
+                    ? `${productionTime.average.toFixed(1)} ${productionTime.unit}`
+                    : 'No completed orders yet'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="insight-item">
+              <div className="insight-icon">
+                <i className="fa fa-hourglass-half"></i>
+              </div>
+              <div className="insight-info">
+                <h4>Production Bottleneck</h4>
+                <p>
+                  {bottleneckData && bottleneckData.bottleneckStatus
+                    ? `${bottleneckData.bottleneckStatus} (${bottleneckData.count} orders)`
+                    : 'No bottlenecks detected'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="insight-item">
+              <div className="insight-icon">
+                <i className="fa fa-calendar-check"></i>
+              </div>
+              <div className="insight-info">
+                <h4>Completion Rate</h4>
+                <p>
+                  {orderMetrics.total > 0
+                    ? `${((orderMetrics.completed / orderMetrics.total) * 100).toFixed(0)}%`
+                    : '0%'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card recent-updates-card">
+          <h3>Recent Status Updates</h3>
+          
+          <div className="recent-updates">
+            {getRecentUpdates(orders, 5).length > 0 ? (
+              <ul className="updates-list">
+                {getRecentUpdates(orders, 5).map((update, index) => (
+                  <li key={index} className="update-item">
+                    <div className="update-time">
+                      {formatDate(update.timestamp)}
+                    </div>
+                    <div className="update-info">
+                      <span className="update-order">Order #{update.orderId}</span>
+                      <span className="update-status">
+                        {update.status}
+                      </span>
+                    </div>
+                    <Link to={`/orders/${update.orderId}`} className="update-link">
+                      <i className="fa fa-chevron-right"></i>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="empty-state">
+                <p>No recent updates</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Helper function to get recent status updates
+const getRecentUpdates = (orders, limit = 5) => {
+  // Collect all status updates from all orders
+  const allUpdates = orders.flatMap(order => 
+    order.statusHistory
+      ? order.statusHistory.map(update => ({
+          ...update,
+          orderId: order.id,
+          orderNumber: order.orderId
+        }))
+      : []
+  );
+  
+  // Sort by timestamp (newest first)
+  const sortedUpdates = allUpdates.sort((a, b) => 
+    new Date(b.timestamp) - new Date(a.timestamp)
+  );
+  
+  // Return the most recent updates (limited by the limit parameter)
+  return sortedUpdates.slice(0, limit);
+};
+
+// Helper function to get status class for CSS
+const getStatusClass = (status) => {
+  switch (status) {
+    case 'Order Received':
+      return 'status-new';
+    case 'Materials Received':
+    case 'Materials Inspected':
+      return 'status-materials';
+    case 'Mounting Complete':
+    case 'Mat Cut':
+    case 'Frame Assembled':
+    case 'Glazing Complete':
+      return 'status-in-progress';
+    case 'Assembly Complete':
+    case 'Cleaning Complete':
+      return 'status-assembly';
+    case 'QC Passed':
+      return 'status-qc';
+    case 'Packaged':
+      return 'status-packaged';
+    case 'Delivered':
+      return 'status-delivered';
+    default:
+      return 'status-default';
+  }
+};
+
+export default Dashboard;

@@ -1,0 +1,281 @@
+import React, { useState, useEffect } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
+import { toast } from 'react-toastify';
+import { useOrder } from '../../contexts/OrderContext';
+import './MaterialScanner.css';
+
+const MaterialScanner = () => {
+  const { orders, updateOrderStatus } = useOrder();
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+  const [selectedStation, setSelectedStation] = useState('');
+  const [note, setNote] = useState('');
+  const [scanner, setScanner] = useState(null);
+  
+  const stations = [
+    { id: 'receiveInspect', name: 'Receiving & Artwork Inspection', status: 'Order Received', statusField: 'received' },
+    { id: 'frameReceive', name: 'Frame Receiving', status: 'Materials Received', statusField: 'ordered' },
+    { id: 'frameQC', name: 'Frame Quality Inspection', status: 'Materials Inspected', statusField: 'inspected' },
+    { id: 'mounting', name: 'Mounting', status: 'Mounting Complete', statusField: null },
+    { id: 'matCutting', name: 'Mat Cutting', status: 'Mat Cut', statusField: 'cut' },
+    { id: 'frameAssembly', name: 'Frame Assembly', status: 'Frame Assembled', statusField: null },
+    { id: 'glazing', name: 'Glazing', status: 'Glazing Complete', statusField: null },
+    { id: 'finalAssembly', name: 'Final Assembly', status: 'Assembly Complete', statusField: 'prepped' },
+    { id: 'cleaning', name: 'Cleaning', status: 'Cleaning Complete', statusField: null },
+    { id: 'finalQC', name: 'Final Quality Control', status: 'QC Passed', statusField: 'done' },
+    { id: 'packaging', name: 'Packaging', status: 'Packaged', statusField: null },
+    { id: 'customerPickup', name: 'Customer Pickup', status: 'Delivered', statusField: 'delivered' }
+  ];
+
+  useEffect(() => {
+    return () => {
+      if (scanner) {
+        scanner.clear();
+      }
+    };
+  }, [scanner]);
+
+  const startScanner = () => {
+    if (!selectedStation) {
+      toast.error('Please select a station first');
+      return;
+    }
+
+    const qrCodeScanner = new Html5QrcodeScanner(
+      'reader',
+      { fps: 10, qrbox: 250 },
+      false
+    );
+
+    const success = (decodedText) => {
+      try {
+        const result = JSON.parse(decodedText);
+        
+        // Check if this is an order QR code
+        if (result.orderId && result.type === 'order-tracking') {
+          qrCodeScanner.clear();
+          setScanner(null);
+          setScanResult(result);
+          
+          const matchedOrder = orders.find(order => order.orderId === result.orderId);
+          
+          if (matchedOrder) {
+            toast.success(`Found order: ${matchedOrder.orderId} for ${matchedOrder.customerName}`);
+          } else {
+            toast.error(`Order ${result.orderId} not found in the system`);
+          }
+        } else {
+          toast.error('Invalid QR code format. Please scan an order QR code.');
+        }
+      } catch (error) {
+        toast.error('Could not process QR code. Please try again.');
+      }
+    };
+
+    const error = (err) => {
+      console.error(err);
+    };
+
+    qrCodeScanner.render(success, error);
+    setScanner(qrCodeScanner);
+    setScanning(true);
+  };
+
+  const stopScanner = () => {
+    if (scanner) {
+      scanner.clear();
+      setScanner(null);
+    }
+    setScanning(false);
+  };
+
+  const resetScan = () => {
+    stopScanner();
+    setScanResult(null);
+    setNote('');
+  };
+
+  const updateStatus = () => {
+    if (!scanResult) {
+      toast.error('No scan result available');
+      return;
+    }
+
+    const order = orders.find(o => o.orderId === scanResult.orderId);
+    if (!order) {
+      toast.error('Order not found in system');
+      return;
+    }
+
+    const station = stations.find(s => s.id === selectedStation);
+    if (!station) {
+      toast.error('Invalid station selected');
+      return;
+    }
+
+    // Create status update data
+    const statusUpdate = {
+      status: station.status,
+      timestamp: new Date().toISOString(),
+      notes: note,
+      station: station.name
+    };
+
+    // Create updated fields object
+    const updatedFields = {
+      orderProgress: station.status,
+      statusHistory: [...order.statusHistory, statusUpdate]
+    };
+
+    // If this station updates a specific status field, update it
+    if (station.statusField) {
+      updatedFields[station.statusField] = true;
+    }
+
+    // Update the order
+    updateOrderStatus(order.id, updatedFields);
+    
+    toast.success(`Status updated to: ${station.status}`);
+    resetScan();
+  };
+
+  return (
+    <div className="material-scanner-container">
+      <h2 className="section-title">Production Scan Station</h2>
+      
+      <div className="scanner-grid">
+        <div className="scanner-column">
+          <div className="card scanner-card">
+            <h3>Scan Order QR Code</h3>
+            
+            <div className="station-selector">
+              <label htmlFor="station">Select Production Station:</label>
+              <select 
+                id="station" 
+                value={selectedStation} 
+                onChange={(e) => setSelectedStation(e.target.value)}
+                disabled={scanning || scanResult}
+              >
+                <option value="">-- Select Station --</option>
+                {stations.map(station => (
+                  <option key={station.id} value={station.id}>
+                    {station.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {!scanning && !scanResult && (
+              <div className="scanner-placeholder">
+                <p>Select a station and click "Start Scanner" to begin</p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={startScanner}
+                  disabled={!selectedStation}
+                >
+                  Start Scanner
+                </button>
+              </div>
+            )}
+            
+            {scanning && !scanResult && (
+              <div className="scanner-active">
+                <div id="reader"></div>
+                <button className="btn btn-secondary" onClick={stopScanner}>
+                  Cancel Scanning
+                </button>
+              </div>
+            )}
+            
+            {scanResult && (
+              <div className="scan-result">
+                <div className="scan-result-details">
+                  <h4>Order Scanned Successfully</h4>
+                  <p><strong>Order ID:</strong> {scanResult.orderId}</p>
+                  <p><strong>Customer:</strong> {scanResult.customerName}</p>
+                  <p><strong>Due Date:</strong> {new Date(scanResult.dueDate).toLocaleDateString()}</p>
+                </div>
+                
+                <div className="status-update-form">
+                  <div className="form-group">
+                    <label htmlFor="note">Add Note (optional):</label>
+                    <textarea
+                      id="note"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Add any production notes here..."
+                    ></textarea>
+                  </div>
+                  
+                  <div className="scan-actions">
+                    <button className="btn btn-primary" onClick={updateStatus}>
+                      Update Status
+                    </button>
+                    <button className="btn btn-secondary" onClick={resetScan}>
+                      Scan Different Order
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="info-column">
+          <div className="card info-card">
+            <h3>Scanning Instructions</h3>
+            <div className="instructions">
+              <h4>How to use the scanner:</h4>
+              <ol>
+                <li>Select your current production station from the dropdown menu</li>
+                <li>Click "Start Scanner" to activate the camera</li>
+                <li>Position the QR code in the scanning area until it's detected</li>
+                <li>Once the order information appears, verify it's correct</li>
+                <li>Add any relevant notes about this production step</li>
+                <li>Click "Update Status" to record this production stage</li>
+              </ol>
+              
+              <div className="station-info">
+                <h4>Current Station: {selectedStation ? stations.find(s => s.id === selectedStation)?.name : 'Not Selected'}</h4>
+                {selectedStation && (
+                  <p>
+                    <strong>Updates Status To:</strong> {stations.find(s => s.id === selectedStation)?.status}
+                  </p>
+                )}
+              </div>
+              
+              <div className="scanner-tips">
+                <h4>Tips:</h4>
+                <ul>
+                  <li>Ensure good lighting for better QR code detection</li>
+                  <li>Keep the camera steady while scanning</li>
+                  <li>Make sure the QR code is clean and undamaged</li>
+                  <li>If scanning fails, try cleaning the QR code or improving lighting</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div className="card workflow-card">
+            <h3>Production Workflow</h3>
+            <div className="workflow-diagram">
+              <div className="workflow-stations">
+                {stations.map((station, index) => (
+                  <div 
+                    key={station.id} 
+                    className={`workflow-station ${selectedStation === station.id ? 'active' : ''}`}
+                  >
+                    <div className="station-number">{index + 1}</div>
+                    <div className="station-name">{station.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default MaterialScanner;

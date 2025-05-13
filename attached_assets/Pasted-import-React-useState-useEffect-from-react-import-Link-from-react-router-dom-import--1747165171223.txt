@@ -1,0 +1,306 @@
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import { useOrder } from '../../contexts/OrderContext';
+import './OrderTracker.css';
+
+const OrderTracker = () => {
+  const { 
+    orders, 
+    getOrdersByStatus, 
+    getUniqueOrderStatuses,
+    getOrdersByLocation,
+    getUniqueLocations,
+    getOverdueOrders
+  } = useOrder();
+  
+  const [filteredOrders, setFilteredOrders] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [locationFilter, setLocationFilter] = useState('all');
+  const [sortField, setSortField] = useState('dueDate');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [showOnlyOverdue, setShowOnlyOverdue] = useState(false);
+  
+  const statusOptions = getUniqueOrderStatuses();
+  const locationOptions = getUniqueLocations();
+
+  // Apply filters and sorting
+  useEffect(() => {
+    let result = [...orders];
+    
+    // Show only overdue orders if selected
+    if (showOnlyOverdue) {
+      result = getOverdueOrders();
+    } 
+    // Otherwise, apply normal filters
+    else {
+      // Apply status filter
+      if (statusFilter !== 'all') {
+        result = getOrdersByStatus(statusFilter);
+      }
+      
+      // Apply location filter
+      if (locationFilter !== 'all') {
+        result = getOrdersByLocation(locationFilter);
+      }
+    }
+    
+    // Apply search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      result = result.filter(order => 
+        (order.orderId && order.orderId.toLowerCase().includes(term)) ||
+        (order.customerName && order.customerName.toLowerCase().includes(term)) ||
+        (order.description && order.description.toLowerCase().includes(term))
+      );
+    }
+    
+    // Sort the results
+    result.sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+      
+      // Handle dates
+      if (sortField === 'dueDate' || sortField === 'dateCreated') {
+        aValue = aValue ? new Date(aValue) : new Date(0);
+        bValue = bValue ? new Date(bValue) : new Date(0);
+      }
+      
+      // Handle nullish values
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+      
+      // Compare the values
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    setFilteredOrders(result);
+  }, [orders, searchTerm, statusFilter, locationFilter, sortField, sortDirection, showOnlyOverdue, getOrdersByStatus, getOrdersByLocation, getOverdueOrders]);
+
+  // Handle search input
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
+  };
+  
+  // Handle status filter change
+  const handleStatusFilter = (e) => {
+    setStatusFilter(e.target.value);
+    if (e.target.value !== 'all') {
+      setShowOnlyOverdue(false);
+    }
+  };
+  
+  // Handle location filter change
+  const handleLocationFilter = (e) => {
+    setLocationFilter(e.target.value);
+    if (e.target.value !== 'all') {
+      setShowOnlyOverdue(false);
+    }
+  };
+  
+  // Handle sort field change
+  const handleSortChange = (field) => {
+    if (field === sortField) {
+      // Toggle sort direction if clicking on the same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Default to ascending order for new field
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+  
+  // Toggle overdue only filter
+  const toggleOverdueFilter = () => {
+    setShowOnlyOverdue(!showOnlyOverdue);
+    if (!showOnlyOverdue) {
+      // Reset other filters when enabling overdue filter
+      setStatusFilter('all');
+      setLocationFilter('all');
+    }
+  };
+
+  return (
+    <div className="order-tracker-container">
+      <h2 className="section-title">Order Tracker</h2>
+      
+      <div className="filters-bar">
+        <div className="search-filter">
+          <input
+            type="text"
+            placeholder="Search by order ID, customer name, or description..."
+            value={searchTerm}
+            onChange={handleSearch}
+          />
+        </div>
+        
+        <div className="filter-selects">
+          <div className="filter-select">
+            <label htmlFor="status-filter">Status:</label>
+            <select
+              id="status-filter"
+              value={statusFilter}
+              onChange={handleStatusFilter}
+              disabled={showOnlyOverdue}
+            >
+              {statusOptions.map(status => (
+                <option key={status} value={status}>
+                  {status === 'all' ? 'All Statuses' : status}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="filter-select">
+            <label htmlFor="location-filter">Location:</label>
+            <select
+              id="location-filter"
+              value={locationFilter}
+              onChange={handleLocationFilter}
+              disabled={showOnlyOverdue}
+            >
+              {locationOptions.map(location => (
+                <option key={location} value={location}>
+                  {location === 'all' ? 'All Locations' : location}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <div className="filter-toggle">
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={showOnlyOverdue}
+              onChange={toggleOverdueFilter}
+            />
+            <span className="toggle-slider"></span>
+          </label>
+          <span className="toggle-label">Show Overdue Only</span>
+        </div>
+      </div>
+      
+      <div className="orders-count-info">
+        <span>{filteredOrders.length} {filteredOrders.length === 1 ? 'order' : 'orders'} found</span>
+      </div>
+      
+      <div className="orders-table-container">
+        <table className="orders-table">
+          <thead>
+            <tr>
+              <th onClick={() => handleSortChange('orderId')} className={sortField === 'orderId' ? 'sorted' : ''}>
+                Order ID
+                {sortField === 'orderId' && (
+                  <span className="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th onClick={() => handleSortChange('customerName')} className={sortField === 'customerName' ? 'sorted' : ''}>
+                Customer
+                {sortField === 'customerName' && (
+                  <span className="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th onClick={() => handleSortChange('description')} className={sortField === 'description' ? 'sorted' : ''}>
+                Description
+                {sortField === 'description' && (
+                  <span className="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th onClick={() => handleSortChange('dueDate')} className={sortField === 'dueDate' ? 'sorted' : ''}>
+                Due Date
+                {sortField === 'dueDate' && (
+                  <span className="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th onClick={() => handleSortChange('orderProgress')} className={sortField === 'orderProgress' ? 'sorted' : ''}>
+                Status
+                {sortField === 'orderProgress' && (
+                  <span className="sort-indicator">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredOrders.length > 0 ? (
+              filteredOrders.map(order => (
+                <tr key={order.id} className={isOverdue(order) ? 'overdue-row' : ''}>
+                  <td>{order.orderId}</td>
+                  <td>{order.customerName}</td>
+                  <td className="description-cell">
+                    <div className="truncated-text">{order.description}</div>
+                  </td>
+                  <td className={isOverdue(order) ? 'overdue-date' : ''}>
+                    {order.dueDate ? format(new Date(order.dueDate), 'MM/dd/yyyy') : 'No date'}
+                  </td>
+                  <td>
+                    <span className={`status-pill ${getStatusClass(order.orderProgress)}`}>
+                      {order.orderProgress}
+                    </span>
+                  </td>
+                  <td>
+                    <Link to={`/orders/${order.id}`} className="btn-view">
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="6" className="no-orders">
+                  <div className="empty-state">
+                    <i className="fa fa-search"></i>
+                    <p>No orders match your search criteria</p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// Helper function to check if an order is overdue
+const isOverdue = (order) => {
+  if (!order.dueDate || order.delivered) return false;
+  
+  const today = new Date();
+  const dueDate = new Date(order.dueDate);
+  
+  return dueDate < today;
+};
+
+// Helper function to get CSS class for status
+const getStatusClass = (status) => {
+  switch (status) {
+    case 'Order Received':
+      return 'status-new';
+    case 'Materials Received':
+    case 'Materials Inspected':
+      return 'status-materials';
+    case 'Mounting Complete':
+    case 'Mat Cut':
+    case 'Frame Assembled':
+    case 'Glazing Complete':
+      return 'status-in-progress';
+    case 'Assembly Complete':
+    case 'Cleaning Complete':
+      return 'status-assembly';
+    case 'QC Passed':
+      return 'status-qc';
+    case 'Packaged':
+      return 'status-packaged';
+    case 'Delivered':
+      return 'status-delivered';
+    default:
+      return 'status-default';
+  }
+};
+
+export default OrderTracker;

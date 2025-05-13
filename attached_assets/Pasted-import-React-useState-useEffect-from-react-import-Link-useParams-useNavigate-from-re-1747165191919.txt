@@ -1,0 +1,626 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { toast } from 'react-toastify';
+import { useOrder } from '../../contexts/OrderContext';
+import QRCode from 'qrcode.react';
+import './OrderDetails.css';
+
+const OrderDetails = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { getOrderById, updateOrderStatus, deleteOrder } = useOrder();
+  const [order, setOrder] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [editedOrder, setEditedOrder] = useState({});
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  useEffect(() => {
+    const loadOrder = () => {
+      const foundOrder = getOrderById(id);
+      if (foundOrder) {
+        setOrder(foundOrder);
+        setEditedOrder(foundOrder);
+      } else {
+        toast.error('Order not found');
+        navigate('/orders');
+      }
+      setIsLoading(false);
+    };
+    
+    loadOrder();
+  }, [id, getOrderById, navigate]);
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditedOrder({
+      ...editedOrder,
+      [name]: value
+    });
+  };
+  
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    setEditedOrder({
+      ...editedOrder,
+      [name]: checked
+    });
+  };
+  
+  const saveChanges = () => {
+    updateOrderStatus(order.id, editedOrder);
+    setOrder(editedOrder);
+    setEditMode(false);
+    toast.success('Order updated successfully');
+  };
+  
+  const cancelEdit = () => {
+    setEditedOrder(order);
+    setEditMode(false);
+  };
+  
+  const confirmDelete = () => {
+    setShowDeleteModal(true);
+  };
+  
+  const handleDelete = () => {
+    deleteOrder(order.id);
+    setShowDeleteModal(false);
+    navigate('/orders');
+    toast.info('Order has been deleted');
+  };
+  
+  const printQRCode = () => {
+    const printContent = document.getElementById('qr-print-content');
+    const windowUrl = 'about:blank';
+    const uniqueName = new Date().getTime();
+    
+    const printWindow = window.open(windowUrl, uniqueName, 'height=400,width=600');
+    printWindow.document.write('<html><head><title>Print QR Code</title>');
+    printWindow.document.write('<style>');
+    printWindow.document.write(`
+      body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+      .print-container { max-width: 300px; margin: 0 auto; border: 1px solid #ccc; padding: 20px; }
+      h2 { font-size: 16px; margin-bottom: 5px; }
+      .order-id { font-weight: bold; font-size: 18px; margin-bottom: 10px; }
+      .order-details { font-size: 12px; margin-bottom: 15px; text-align: left; }
+      .qr-code { margin-bottom: 10px; }
+      .company-info { font-size: 10px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 10px; }
+    `);
+    printWindow.document.write('</style></head><body>');
+    printWindow.document.write('<div class="print-container">');
+    printWindow.document.write('<h2>Jay\'s Frames Order</h2>');
+    printWindow.document.write(`<div class="order-id">Order #: ${order.orderId}</div>`);
+    printWindow.document.write('<div class="order-details">');
+    printWindow.document.write(`<p>Customer: ${order.customerName}</p>`);
+    printWindow.document.write(`<p>Due Date: ${new Date(order.dueDate).toLocaleDateString()}</p>`);
+    printWindow.document.write(`<p>Frame Size: ${order.frameSize}</p>`);
+    printWindow.document.write(`<p>Material: ${order.material}</p>`);
+    printWindow.document.write('</div>');
+    printWindow.document.write('<div class="qr-code">');
+    printWindow.document.write(printContent.innerHTML);
+    printWindow.document.write('</div>');
+    printWindow.document.write('<div class="company-info">');
+    printWindow.document.write('Jay\'s Frames - Track your order at frames.jays.com');
+    printWindow.document.write('</div>');
+    printWindow.document.write('</div>');
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    
+    printWindow.onload = function() {
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    };
+  };
+  
+  if (isLoading) {
+    return (
+      <div className="order-details-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading order details...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!order) {
+    return (
+      <div className="order-details-container">
+        <div className="not-found">
+          <h3>Order Not Found</h3>
+          <p>The order you're looking for does not exist or has been deleted.</p>
+          <Link to="/orders" className="btn btn-primary">Back to Orders</Link>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="order-details-container">
+      <div className="details-header">
+        <div className="header-left">
+          <Link to="/orders" className="back-button">
+            &larr; Back to Orders
+          </Link>
+          <h2>Order #{order.orderId}</h2>
+        </div>
+        
+        <div className="header-actions">
+          {!editMode ? (
+            <>
+              <button className="btn btn-edit" onClick={() => setEditMode(true)}>
+                Edit Order
+              </button>
+              <button className="btn btn-delete" onClick={confirmDelete}>
+                Delete
+              </button>
+              <button className="btn btn-print" onClick={printQRCode}>
+                Print QR
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn btn-save" onClick={saveChanges}>
+                Save Changes
+              </button>
+              <button className="btn btn-cancel" onClick={cancelEdit}>
+                Cancel
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+      
+      <div className="details-grid">
+        <div className="details-main">
+          <div className="card details-card">
+            <div className="card-section">
+              <h3>Order Information</h3>
+              
+              <div className="info-grid">
+                <div className="info-item">
+                  <label>Order ID</label>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="orderId"
+                      value={editedOrder.orderId}
+                      onChange={handleInputChange}
+                      disabled
+                    />
+                  ) : (
+                    <p>{order.orderId}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="card-section">
+              <h3>Frame Details</h3>
+              
+              <div className="info-grid">
+                <div className="info-item">
+                  <label>Frame Size</label>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="frameSize"
+                      value={editedOrder.frameSize || ''}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{order.frameSize || 'N/A'}</p>
+                  )}
+                </div>
+                
+                <div className="info-item">
+                  <label>Material</label>
+                  {editMode ? (
+                    <select
+                      name="material"
+                      value={editedOrder.material || ''}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select Material</option>
+                      <option value="Wood">Wood</option>
+                      <option value="Metal">Metal</option>
+                      <option value="Acrylic">Acrylic</option>
+                      <option value="Composite">Composite</option>
+                    </select>
+                  ) : (
+                    <p>{order.material || 'N/A'}</p>
+                  )}
+                </div>
+                
+                <div className="info-item full-width">
+                  <label>Description</label>
+                  {editMode ? (
+                    <textarea
+                      name="description"
+                      value={editedOrder.description || ''}
+                      onChange={handleInputChange}
+                    ></textarea>
+                  ) : (
+                    <p>{order.description || 'N/A'}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="card-section">
+              <h3>Production Status</h3>
+              
+              <div className="status-grid">
+                <div className="status-item">
+                  <label>Current Status</label>
+                  {editMode ? (
+                    <select
+                      name="orderProgress"
+                      value={editedOrder.orderProgress || ''}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Order Received">Order Received</option>
+                      <option value="Materials Received">Materials Received</option>
+                      <option value="Materials Inspected">Materials Inspected</option>
+                      <option value="Mounting Complete">Mounting Complete</option>
+                      <option value="Mat Cut">Mat Cut</option>
+                      <option value="Frame Assembled">Frame Assembled</option>
+                      <option value="Glazing Complete">Glazing Complete</option>
+                      <option value="Assembly Complete">Assembly Complete</option>
+                      <option value="Cleaning Complete">Cleaning Complete</option>
+                      <option value="QC Passed">QC Passed</option>
+                      <option value="Packaged">Packaged</option>
+                      <option value="Delivered">Delivered</option>
+                    </select>
+                  ) : (
+                    <p className={`status-value ${getStatusClass(order.orderProgress)}`}>
+                      {order.orderProgress || 'N/A'}
+                    </p>
+                  )}
+                </div>
+                
+                <div className="status-checkboxes">
+                  <div className="checkbox-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="ordered"
+                        checked={editMode ? editedOrder.ordered : order.ordered}
+                        onChange={handleCheckboxChange}
+                        disabled={!editMode}
+                      />
+                      <span>Ordered</span>
+                    </label>
+                  </div>
+                  
+                  <div className="checkbox-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="arrived"
+                        checked={editMode ? editedOrder.arrived : order.arrived}
+                        onChange={handleCheckboxChange}
+                        disabled={!editMode}
+                      />
+                      <span>Arrived</span>
+                    </label>
+                  </div>
+                  
+                  <div className="checkbox-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="cut"
+                        checked={editMode ? editedOrder.cut : order.cut}
+                        onChange={handleCheckboxChange}
+                        disabled={!editMode}
+                      />
+                      <span>Cut</span>
+                    </label>
+                  </div>
+                  
+                  <div className="checkbox-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="prepped"
+                        checked={editMode ? editedOrder.prepped : order.prepped}
+                        onChange={handleCheckboxChange}
+                        disabled={!editMode}
+                      />
+                      <span>Prepped</span>
+                    </label>
+                  </div>
+                  
+                  <div className="checkbox-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="done"
+                        checked={editMode ? editedOrder.done : order.done}
+                        onChange={handleCheckboxChange}
+                        disabled={!editMode}
+                      />
+                      <span>Done</span>
+                    </label>
+                  </div>
+                  
+                  <div className="checkbox-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        name="delivered"
+                        checked={editMode ? editedOrder.delivered : order.delivered}
+                        onChange={handleCheckboxChange}
+                        disabled={!editMode}
+                      />
+                      <span>Delivered</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="card timeline-card">
+            <h3>Order Timeline</h3>
+            
+            <div className="order-timeline">
+              {order.statusHistory && order.statusHistory.length > 0 ? (
+                <div className="timeline">
+                  {order.statusHistory.map((statusUpdate, index) => (
+                    <div key={index} className="timeline-item">
+                      <div className="timeline-marker"></div>
+                      <div className="timeline-content">
+                        <div className="timeline-date">
+                          {statusUpdate.timestamp
+                            ? format(new Date(statusUpdate.timestamp), 'MM/dd/yyyy h:mm a')
+                            : 'Unknown date'}
+                        </div>
+                        <h4 className="timeline-title">{statusUpdate.status}</h4>
+                        {statusUpdate.station && (
+                          <div className="timeline-station">Station: {statusUpdate.station}</div>
+                        )}
+                        {statusUpdate.notes && (
+                          <p className="timeline-notes">{statusUpdate.notes}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-timeline">
+                  <p>No status updates recorded yet.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <div className="details-sidebar">
+          <div className="card qr-card">
+            <h3>Order QR Code</h3>
+            <div className="qr-container" id="qr-print-content">
+              <QRCode
+                value={JSON.stringify({
+                  orderId: order.orderId,
+                  customerName: order.customerName,
+                  dueDate: order.dueDate,
+                  type: 'order-tracking'
+                })}
+                size={200}
+                level="H"
+                includeMargin={true}
+                imageSettings={{
+                  src: '/images/logo.png',
+                  excavate: true,
+                  width: 40,
+                  height: 40
+                }}
+              />
+            </div>
+            <p className="qr-instructions">
+              Scan this QR code at any production station to update the order status.
+            </p>
+            <button className="btn btn-primary btn-block" onClick={printQRCode}>
+              Print QR Code
+            </button>
+          </div>
+          
+          <div className="card production-card">
+            <h3>Production Suggestions</h3>
+            <div className="production-tips">
+              <div className="tip">
+                <div className="tip-icon priority-icon">
+                  <i className="fa fa-flag"></i>
+                </div>
+                <div className="tip-content">
+                  <h4>Priority Status</h4>
+                  <p>{isOverdue(order) ? 'High Priority - Overdue!' : 'Normal Priority'}</p>
+                </div>
+              </div>
+              
+              <div className="tip">
+                <div className="tip-icon time-icon">
+                  <i className="fa fa-clock"></i>
+                </div>
+                <div className="tip-content">
+                  <h4>Suggested Next Steps</h4>
+                  <p>{getNextStep(order)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Delete Order</h3>
+            <p>Are you sure you want to delete order #{order.orderId}?</p>
+            <p className="warning">This action cannot be undone.</p>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setShowDeleteModal(false)}>
+                Cancel
+              </button>
+              <button className="btn btn-delete" onClick={handleDelete}>
+                Delete Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Helper functions
+const isOverdue = (order) => {
+  if (!order.dueDate || order.delivered) return false;
+  
+  const today = new Date();
+  const dueDate = new Date(order.dueDate);
+  
+  return dueDate < today;
+};
+
+const getStatusClass = (status) => {
+  switch (status) {
+    case 'Order Received':
+      return 'status-new';
+    case 'Materials Received':
+    case 'Materials Inspected':
+      return 'status-materials';
+    case 'Mounting Complete':
+    case 'Mat Cut':
+    case 'Frame Assembled':
+    case 'Glazing Complete':
+      return 'status-in-progress';
+    case 'Assembly Complete':
+    case 'Cleaning Complete':
+      return 'status-assembly';
+    case 'QC Passed':
+      return 'status-qc';
+    case 'Packaged':
+      return 'status-packaged';
+    case 'Delivered':
+      return 'status-delivered';
+    default:
+      return 'status-default';
+  }
+};
+
+const getNextStep = (order) => {
+  if (order.delivered) {
+    return 'Order complete and delivered to customer.';
+  }
+  
+  if (order.done) {
+    return 'Order is ready for pickup/delivery.';
+  }
+  
+  if (order.prepped) {
+    return 'Perform final quality control check.';
+  }
+  
+  if (order.cut) {
+    return 'Complete frame assembly and final prep.';
+  }
+  
+  if (order.arrived) {
+    return 'Proceed with mat cutting and frame preparation.';
+  }
+  
+  if (order.ordered) {
+    return 'Waiting for materials to arrive.';
+  }
+  
+  return 'Order materials from suppliers.';
+};
+
+export default OrderDetails;
+                </div>
+                
+                <div className="info-item">
+                  <label>Customer Name</label>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="customerName"
+                      value={editedOrder.customerName}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{order.customerName}</p>
+                  )}
+                </div>
+                
+                <div className="info-item">
+                  <label>Phone</label>
+                  {editMode ? (
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={editedOrder.phone || ''}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{order.phone || 'N/A'}</p>
+                  )}
+                </div>
+                
+                <div className="info-item">
+                  <label>Location</label>
+                  {editMode ? (
+                    <select
+                      name="location"
+                      value={editedOrder.location}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Main Store">Main Store</option>
+                      <option value="Downtown">Downtown</option>
+                      <option value="Westside">Westside</option>
+                    </select>
+                  ) : (
+                    <p>{order.location}</p>
+                  )}
+                </div>
+                
+                <div className="info-item">
+                  <label>Designer</label>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      name="designer"
+                      value={editedOrder.designer || ''}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{order.designer || 'N/A'}</p>
+                  )}
+                </div>
+                
+                <div className="info-item">
+                  <label>Order Date</label>
+                  <p>{order.dateCreated ? format(new Date(order.dateCreated), 'MM/dd/yyyy') : 'N/A'}</p>
+                </div>
+                
+                <div className="info-item">
+                  <label>Due Date</label>
+                  {editMode ? (
+                    <input
+                      type="date"
+                      name="dueDate"
+                      value={editedOrder.dueDate}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p className={isOverdue(order) ? 'overdue' : ''}>
+                      {order.dueDate ? format(new Date(order.dueDate), 'MM/dd/yyyy') : 'N/A'}
+                    </p>
+                  )}
