@@ -79,6 +79,7 @@ import {
 import { handleChatMessage } from "./controllers/chatController";
 import chatRoutes from './routes/chatRoutes'; // Added import for chat routes
 import crossVendorInventoryRoutes from './routes/crossVendorInventoryRoutes';
+import fileRoutes from './routes/fileRoutes';
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1553,6 +1554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/status-history', orderStatusHistoryRoutes);
   app.use('/api/chat', chatRoutes); // Added chat routes
   app.use('/api/schemas', schemaRoutes); // Added schema validation routes
+  app.use('/api/files', fileRoutes);
 
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
