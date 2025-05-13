@@ -1832,8 +1832,7 @@ export class DatabaseStorage implements IStorage {
       return materials.map(material => ({
         id: material.id.toString(),
         orderIds: [orderId],
-        ```python
-name: material.materialName,
+        name: material.materialName,
         sku: material.materialId,
         supplier: material.supplierName || 'Unknown',
         type: material.materialType,

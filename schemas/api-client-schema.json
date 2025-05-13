@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "API Client Configuration",
+  "description": "Configuration schema for the Jays Frames API client",
+  "type": "object",
+  "required": ["baseUrl", "apiKey", "timeout"],
+  "properties": {
+    "baseUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "The base URL for the API server"
+    },
+    "apiKey": {
+      "type": "string",
+      "description": "API key for authentication"
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 60000,
+      "default": 30000,
+      "description": "Request timeout in milliseconds"
+    },
+    "retryConfig": {
+      "type": "object",
+      "description": "Configuration for request retries",
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 3,
+          "description": "Maximum number of retry attempts"
+        },
+        "retryDelay": {
+          "type": "integer",
+          "minimum": 100,
+          "default": 1000,
+          "description": "Delay between retries in milliseconds"
+        },
+        "retryStatusCodes": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "default": [408, 429, 500, 502, 503, 504],
+          "description": "HTTP status codes to retry on"
+        }
+      },
+      "required": ["maxRetries", "retryDelay"]
+    },
+    "headers": {
+      "type": "object",
+      "description": "Additional HTTP headers to include with each request",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "debug": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable debug logging"
+    },
+    "userAgent": {
+      "type": "string",
+      "description": "User agent string for the client",
+      "default": "JaysFrames-API-Client/1.0"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "baseUrl": "https://api.jaysframes.com/v1",
+      "apiKey": "api_12345678",
+      "timeout": 30000,
+      "retryConfig": {
+        "maxRetries": 3,
+        "retryDelay": 1000
+      },
+      "headers": {
+        "X-Custom-Header": "custom-value"
+      },
+      "debug": true,
+      "userAgent": "JaysFrames-API-Client/1.0"
+    }
+  ]
+}

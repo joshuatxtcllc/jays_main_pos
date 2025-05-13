@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Webhook Handler Configuration",
+  "description": "Configuration schema for webhook handlers in Jays Frames",
+  "type": "object",
+  "required": ["name", "url", "events", "active"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "description": "Descriptive name for the webhook endpoint"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to which webhook events will be sent"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "order.created",
+          "order.updated",
+          "order.statusChanged",
+          "order.completed",
+          "payment.received",
+          "payment.failed",
+          "customer.created",
+          "customer.updated",
+          "material.ordered",
+          "material.received",
+          "inventory.low",
+          "inventory.updated"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true,
+      "description": "Events that will trigger this webhook"
+    },
+    "active": {
+      "type": "boolean",
+      "description": "Whether this webhook endpoint is currently active",
+      "default": true
+    },
+    "secret": {
+      "type": "string",
+      "description": "Secret key used to sign webhook payloads"
+    },
+    "retrySettings": {
+      "type": "object",
+      "properties": {
+        "maxRetries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 10,
+          "default": 3,
+          "description": "Maximum number of retry attempts"
+        },
+        "retryInterval": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 3600,
+          "default": 300,
+          "description": "Interval between retries in seconds"
+        }
+      },
+      "description": "Settings for retry behavior when webhook delivery fails"
+    },
+    "timeout": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 30,
+      "default": 5,
+      "description": "Timeout for webhook requests in seconds"
+    },
+    "headers": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Custom HTTP headers to include with webhook requests"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Optional description explaining the purpose of this webhook"
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "name": "Order Notification Webhook",
+      "url": "https://example.com/webhook/orders",
+      "events": ["order.created", "order.statusChanged", "order.completed"],
+      "active": true,
+      "secret": "whsec_abc123xyz789",
+      "retrySettings": {
+        "maxRetries": 3,
+        "retryInterval": 300
+      },
+      "timeout": 5,
+      "headers": {
+        "X-Custom-Source": "jaysframes-pos"
+      },
+      "description": "Sends notifications about order status changes to the fulfillment system"
+    }
+  ]
+}

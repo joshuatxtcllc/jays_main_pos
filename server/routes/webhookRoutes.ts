@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import * as webhookController from '../controllers/webhookController';
-import { authenticateAdmin } from '../middleware/security';
+import { authenticateAdmin } from '../middleware/auth';
 
 const router = Router();
 

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Check, Copy, ExternalLink, Plus, RefreshCw, Trash2, AlertCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -34,6 +34,7 @@ interface ApiKeyInfo {
 
 export default function WebhookIntegrationPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [apiKey, setApiKey] = useState<ApiKeyInfo | null>(null);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookName, setWebhookName] = useState('');
@@ -224,7 +225,7 @@ export default function WebhookIntegrationPage() {
                             <div className="text-sm text-gray-500 truncate max-w-[200px]">{endpoint.url}</div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant={endpoint.active ? "success" : "secondary"}>
+                            <Badge variant={endpoint.active ? "default" : "secondary"}>
                               {endpoint.active ? "Active" : "Inactive"}
                             </Badge>
                           </TableCell>

@@ -66,6 +66,7 @@ import vendorApiRoutes from './routes/vendorApiRoutes';
 import orderStatusHistoryRoutes from './routes/orderStatusHistoryRoutes';
 import integrationApiRoutes from './routes/integrationApiRoutes';
 import webhookRoutes from './routes/webhookRoutes'; // Added import
+import schemaRoutes from './routes/schemaRoutes'; // Added import for schema routes
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 
@@ -1551,6 +1552,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/qrcode', qrCodeRoutes);
   app.use('/api/status-history', orderStatusHistoryRoutes);
   app.use('/api/chat', chatRoutes); // Added chat routes
+  app.use('/api/schemas', schemaRoutes); // Added schema validation routes
 
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
