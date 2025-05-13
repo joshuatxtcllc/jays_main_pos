@@ -1,5 +1,5 @@
 
-import { apiRequest } from '@/lib/utils';
+import { apiRequest } from '@/lib/queryClient';
 
 /**
  * Integration Service

@@ -1,5 +1,5 @@
 
-import { apiRequest } from '@/lib/utils';
+import { apiRequest } from '@/lib/queryClient';
 
 export interface WebhookEndpoint {
   id: number;
