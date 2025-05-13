@@ -1831,7 +1831,7 @@ export class DatabaseStorage implements IStorage {
       // Transform MaterialOrder objects into MaterialItem objects for the UI
       return materials.map(material => ({
         id: material.id.toString(),
-        orderIds: [orderId],
+                orderIds: [orderId],
         name: material.materialName,
         sku: material.materialId,
         supplier: material.supplierName || 'Unknown',
