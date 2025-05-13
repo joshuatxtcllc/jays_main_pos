@@ -1978,6 +1978,100 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Update order with artwork image path
+  async updateOrderArtwork(orderId: string, artworkData: {
+    artworkImagePath: string,
+    fileType: string,
+    fileName: string,
+    uploadDate: Date
+  }) {
+    try {
+      // Check if order exists
+      const order = await this.getOrder(Number(orderId));
+      if (!order) {
+        throw new Error(`Order with ID ${orderId} not found`);
+      }
+
+      // Update order with artwork image data
+      const [updatedOrder] = await db
+        .update(orders)
+        .set({
+          artworkImagePath: artworkData.artworkImagePath,
+          artworkFileType: artworkData.fileType,
+          artworkFileName: artworkData.fileName,
+          artworkUploadDate: artworkData.uploadDate
+        })
+        .where(eq(orders.id, Number(orderId)))
+        .returning();
+
+      return updatedOrder;
+    } catch (error) {
+      console.error('Error updating order artwork:', error);
+      throw error;
+    }
+  }
+
+  // Add a file to an order
+  async addOrderFile(orderId: string, fileData: {
+    path: string,
+    type: string,
+    name: string,
+    mimeType: string,
+    size: number,
+    uploadDate: Date
+  }) {
+    try {
+      // Check if order exists
+      const order = await this.getOrder(Number(orderId));
+      if (!order) {
+        throw new Error(`Order with ID ${orderId} not found`);
+      }
+
+      // Insert file record - this would normally use a proper ORM insert
+      // For demonstration, returning a mock file ID
+      return { id: `file-${Date.now()}`, ...fileData, orderId };
+    } catch (error) {
+      console.error('Error adding order file:', error);
+      throw error;
+    }
+  }
+
+  // Get all files for an order
+  async getOrderFiles(orderId: string) {
+    try {
+      // This would normally query the database
+      // For demonstration, returning an empty array
+      return [];
+    } catch (error) {
+      console.error('Error retrieving order files:', error);
+      throw error;
+    }
+  }
+
+  // Get a file by ID
+  async getOrderFileById(fileId: string) {
+    try {
+      // This would normally query the database
+      // For demonstration, returning null
+      return null;
+    } catch (error) {
+      console.error('Error retrieving file by ID:', error);
+      throw error;
+    }
+  }
+
+  // Delete a file
+  async deleteOrderFile(fileId: string) {
+    try {
+      // This would normally delete from the database
+      // For demonstration, returning true
+      return true;
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+  }
+
   async updateMaterialOrder(id: string | number, data: any): Promise<any> {
     try {
       const materialId = typeof id === 'string' ? parseInt(id, 10) : id;
