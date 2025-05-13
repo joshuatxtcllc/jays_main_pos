@@ -1832,6 +1832,134 @@ export class DatabaseStorage implements IStorage {
       return materials.map(material => ({
         id: material.id.toString(),
                 orderIds: [orderId],
+
+  // Update order with artwork image path
+  async updateOrderArtwork(orderId: string, artworkData: {
+    artworkImagePath: string,
+    fileType: string,
+    fileName: string,
+    uploadDate: Date
+  }) {
+    try {
+      // Check if order exists
+      const order = await this.getOrderById(orderId);
+      if (!order) {
+        throw new Error(`Order with ID ${orderId} not found`);
+      }
+
+      // Update order with artwork image data
+      await db.query(
+        `UPDATE orders 
+         SET artwork_image_path = $1, 
+             artwork_file_type = $2, 
+             artwork_file_name = $3, 
+             artwork_upload_date = $4 
+         WHERE id = $5`,
+        [
+          artworkData.artworkImagePath,
+          artworkData.fileType,
+          artworkData.fileName,
+          artworkData.uploadDate,
+          orderId
+        ]
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error updating order artwork:', error);
+      throw error;
+    }
+  }
+
+  // Add a file to an order
+  async addOrderFile(orderId: string, fileData: {
+    path: string,
+    type: string,
+    name: string,
+    mimeType: string,
+    size: number,
+    uploadDate: Date
+  }) {
+    try {
+      // Check if order exists
+      const order = await this.getOrderById(orderId);
+      if (!order) {
+        throw new Error(`Order with ID ${orderId} not found`);
+      }
+
+      // Insert file record
+      const result = await db.query(
+        `INSERT INTO order_files 
+         (order_id, file_path, file_type, file_name, mime_type, file_size, upload_date) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7) 
+         RETURNING id`,
+        [
+          orderId,
+          fileData.path,
+          fileData.type,
+          fileData.name,
+          fileData.mimeType,
+          fileData.size,
+          fileData.uploadDate
+        ]
+      );
+
+      return result.rows[0].id;
+    } catch (error) {
+      console.error('Error adding order file:', error);
+      throw error;
+    }
+  }
+
+  // Get all files for an order
+  async getOrderFiles(orderId: string) {
+    try {
+      const result = await db.query(
+        `SELECT * FROM order_files 
+         WHERE order_id = $1 
+         ORDER BY upload_date DESC`,
+        [orderId]
+      );
+
+      return result.rows;
+    } catch (error) {
+      console.error('Error retrieving order files:', error);
+      throw error;
+    }
+  }
+
+  // Get a file by ID
+  async getOrderFileById(fileId: string) {
+    try {
+      const result = await db.query(
+        `SELECT * FROM order_files 
+         WHERE id = $1`,
+        [fileId]
+      );
+
+      return result.rows[0] || null;
+    } catch (error) {
+      console.error('Error retrieving file by ID:', error);
+      throw error;
+    }
+  }
+
+  // Delete a file
+  async deleteOrderFile(fileId: string) {
+    try {
+      await db.query(
+        `DELETE FROM order_files 
+         WHERE id = $1`,
+        [fileId]
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      throw error;
+    }
+  }
+
         name: material.materialName,
         sku: material.materialId,
         supplier: material.supplierName || 'Unknown',

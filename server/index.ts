@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import path from 'path';
+import fs from 'fs';
 
 const app = express();
 app.use(express.json());
@@ -44,7 +46,7 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     res.status(status).json({ message });
-    
+
     // Log the error instead of re-throwing it
     log(`Error: ${message} (${status})`, "error");
     console.error(err);
@@ -63,6 +65,19 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
+
+    // Create uploads directory if it doesn't exist
+    const uploadsDir = path.join(__dirname, '../uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    // Apply middleware
+    //app.use(cors()); // Assuming cors is handled by Vite
+    app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+    app.use('/uploads', express.static(uploadsDir));
+
   server.listen({
     port,
     host: "0.0.0.0",

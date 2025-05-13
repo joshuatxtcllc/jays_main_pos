@@ -184,3 +184,162 @@ export async function saveFramePreview(req: Request, res: Response) {
     return res.status(500).json({ message: 'Error saving frame preview' });
   }
 }
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
+import { Express, Request, Response } from 'express';
+import { storage } from '../storage';
+
+// Configure storage for uploaded files
+const fileStorage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    const orderId = req.params.orderId || req.body.orderId;
+    const uploadDir = path.join(__dirname, '../../uploads', orderId);
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: function(req, file, cb) {
+    const fileExt = path.extname(file.originalname);
+    const fileName = `${Date.now()}-${file.fieldname}${fileExt}`;
+    cb(null, fileName);
+  }
+});
+
+// Filter for accepted file types
+const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only JPG, PNG, WEBP, and PDF files are allowed.'));
+  }
+};
+
+// Initialize upload middleware
+export const upload = multer({ 
+  storage: fileStorage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max file size
+  },
+  fileFilter: fileFilter
+});
+
+// Upload artwork for an order
+export const uploadOrderArtwork = async (req: Request, res: Response) => {
+  const orderId = req.params.orderId;
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    
+    const filePath = req.file.path.replace(/\\/g, '/').replace('uploads/', '');
+    
+    // Update order with artwork image path
+    await storage.updateOrderArtwork(orderId, {
+      artworkImagePath: filePath,
+      fileType: req.file.mimetype,
+      fileName: req.file.originalname,
+      uploadDate: new Date()
+    });
+    
+    res.status(200).json({ 
+      message: 'Artwork uploaded successfully',
+      file: {
+        path: filePath,
+        name: req.file.originalname,
+        type: req.file.mimetype,
+        size: req.file.size
+      }
+    });
+  } catch (error) {
+    console.error('Error uploading artwork:', error);
+    res.status(500).json({ message: 'Failed to upload artwork' });
+  }
+};
+
+// Upload additional files for an order (QR codes, work orders, invoices)
+export const uploadOrderFile = async (req: Request, res: Response) => {
+  const orderId = req.params.orderId;
+  const fileType = req.body.fileType || 'other'; // qr-code, work-order, invoice, virtual-frame, other
+  
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    
+    const filePath = req.file.path.replace(/\\/g, '/').replace('uploads/', '');
+    
+    // Save file metadata to database
+    const fileId = await storage.addOrderFile(orderId, {
+      path: filePath,
+      type: fileType,
+      name: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      uploadDate: new Date()
+    });
+    
+    res.status(200).json({
+      message: 'File uploaded successfully',
+      fileId,
+      file: {
+        path: filePath,
+        type: fileType,
+        name: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size
+      }
+    });
+  } catch (error) {
+    console.error('Error uploading order file:', error);
+    res.status(500).json({ message: 'Failed to upload file' });
+  }
+};
+
+// Get all files for an order
+export const getOrderFiles = async (req: Request, res: Response) => {
+  const orderId = req.params.orderId;
+  
+  try {
+    const files = await storage.getOrderFiles(orderId);
+    res.status(200).json(files);
+  } catch (error) {
+    console.error('Error retrieving order files:', error);
+    res.status(500).json({ message: 'Failed to retrieve order files' });
+  }
+};
+
+// Delete an order file
+export const deleteOrderFile = async (req: Request, res: Response) => {
+  const fileId = req.params.fileId;
+  
+  try {
+    const file = await storage.getOrderFileById(fileId);
+    
+    if (!file) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+    
+    // Delete file from filesystem
+    const filePath = path.join(__dirname, '../../uploads', file.path);
+    
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    
+    // Delete file record from database
+    await storage.deleteOrderFile(fileId);
+    
+    res.status(200).json({ message: 'File deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    res.status(500).json({ message: 'Failed to delete file' });
+  }
+};
