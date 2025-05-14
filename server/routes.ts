@@ -1671,7 +1671,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const salesByDate = orderDetails.reduce((acc, order) => {
         const date = new Date(order.createdAt).toISOString().split('T')[0];
         if (!acc[date]) {
-```text
           acc[date] = { date, sales: 0, profit: 0, orders: 0 };
         }
         acc[date].sales += Number(order.total);
