@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { getOrderFiles } from '@/services/fileService';
 import { 
@@ -202,7 +201,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
     try {
       setLoadingFiles(true);
       const response = await apiRequest('GET', `/api/orders/${orderId}/files`);
-      
+
       if (response.ok) {
         const data = await response.json();
         setFiles(data);
@@ -347,13 +346,13 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
   const deleteFile = async (fileId: string) => {
     try {
       const response = await apiRequest('DELETE', `/api/files/${fileId}`);
-      
+
       if (response.ok) {
         toast({
           title: 'Success',
           description: 'File deleted successfully',
         });
-        
+
         // Update local state
         setFiles(files.filter(file => file.id !== fileId));
       } else {
@@ -378,7 +377,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
   const downloadFile = (file: OrderFile) => {
     const baseUrl = window.location.origin;
     const fileUrl = `${baseUrl}/uploads/${file.file_path}`;
-    
+
     // Create a temporary anchor element
     const link = document.createElement('a');
     link.href = fileUrl;
@@ -447,7 +446,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
       <CardHeader>
         <CardTitle>Order Files</CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         <Tabs defaultValue="artwork" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4">
@@ -456,7 +455,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="other">Other Files</TabsTrigger>
           </TabsList>
-          
+
           {/* Artwork Tab */}
           <TabsContent value="artwork">
             <div className="space-y-4">
@@ -482,7 +481,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
                   </p>
                 )}
               </div>
-              
+
               <div className="file-list">
                 {loadingFiles ? (
                   <div className="text-center py-4">Loading files...</div>
@@ -541,7 +540,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
               </div>
             </div>
           </TabsContent>
-          
+
           {/* Other Tabs have similar structure */}
           <TabsContent value="qr-codes">
             <div className="space-y-4">
@@ -604,7 +603,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="documents">
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-md">
@@ -641,7 +640,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
                   </p>
                 )}
               </div>
-              
+
               {/* File List */}
               <div className="file-list">
                 {loadingFiles ? (
@@ -701,7 +700,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="other">
             <div className="space-y-4">
               <div className="bg-slate-50 p-4 rounded-md">
@@ -736,7 +735,7 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
                   </p>
                 )}
               </div>
-              
+
               {/* File List */}
               <div className="file-list">
                 {loadingFiles ? (
