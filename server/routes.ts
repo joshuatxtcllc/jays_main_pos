@@ -64,9 +64,7 @@ import vendorSettingsRoutes from "./routes/vendorSettingsRoutes";
 import qrCodeRoutes from "./routes/qrCodeRoutes";
 import vendorApiRoutes from './routes/vendorApiRoutes';
 import orderStatusHistoryRoutes from './routes/orderStatusHistoryRoutes';
-import integrationApiRoutes from './routes/integrationApiRoutes';
-import webhookRoutes from './routes/webhookRoutes'; // Added import
-import schemaRoutes from './routes/schemaRoutes'; // Added import for schema routes
+import integrationApiRoutes from './routes/integrationApiRoutes'; // Added import
 import { 
   getMaterialsPickList, 
   getMaterialsBySupplier, 
@@ -79,7 +77,6 @@ import {
 import { handleChatMessage } from "./controllers/chatController";
 import chatRoutes from './routes/chatRoutes'; // Added import for chat routes
 import crossVendorInventoryRoutes from './routes/crossVendorInventoryRoutes';
-import fileRoutes from './routes/fileRoutes';
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -810,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(orderHistory);
     } catch (error) {
       console.error('Error fetching customer order history:', error);
-      res.status(500).json({ message: "Failed tofetch customer order history" });
+      res.status(500).json({ message: "Failed to fetch customer order history" });
     }
   });
 
@@ -1546,15 +1543,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register vendor settings routes
   app.use('/api/vendor-api', vendorApiRoutes);
-  app.use('/api/integration', integrationApiRoutes);
-  app.use('/api/webhooks', webhookRoutes);
+  app.use('/api/integration', integrationApiRoutes); // Added integration routes
   app.use('/api/vendor-settings', vendorSettingsRoutes);
   app.use('/api/inventory', crossVendorInventoryRoutes);
   app.use('/api/qrcode', qrCodeRoutes);
   app.use('/api/status-history', orderStatusHistoryRoutes);
   app.use('/api/chat', chatRoutes); // Added chat routes
-  app.use('/api/schemas', schemaRoutes); // Added schema validation routes
-  app.use('/api/files', fileRoutes);
 
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
