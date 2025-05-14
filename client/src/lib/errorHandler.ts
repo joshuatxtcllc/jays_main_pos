@@ -122,6 +122,8 @@ export function handleError(error: any, context?: string): ErrorDetails {
 export function displayErrorToast(error: any, context?: string) {
   const errorDetails = handleError(error, context);
   
+  import { toast } from '@/hooks/use-toast';
+  
   toast({
     title: getErrorTitle(errorDetails.type),
     description: errorDetails.message,
