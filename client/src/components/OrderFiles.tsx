@@ -187,7 +187,7 @@ export function SimpleOrderFiles({ orderId }: OrderFilesProps) {
 
 // Enhanced OrderFiles component (default export)
 const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded }) => {
-  const { toast } = useToast();
+  const toast = useToast();
   const [files, setFiles] = useState<OrderFile[]>([]);
   const [activeTab, setActiveTab] = useState<string>('artwork');
   const [uploading, setUploading] = useState<boolean>(false);
