@@ -20,12 +20,37 @@ import {
 } from "@/components/ui/table";
 import { formatBytes } from '@/lib/utils';
 import { Download, FileIcon, Image, FileText, FilePdf } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Input } from './ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { apiRequest } from '@/lib/utils';
+import { QrCodeIcon, DownloadIcon, TrashIcon, UploadIcon, ImageIcon, FileTextIcon, FileCheck2Icon } from 'lucide-react';
 
+// First component interface
 interface OrderFilesProps {
   orderId: number;
 }
 
-export default function OrderFiles({ orderId }: OrderFilesProps) {
+// Second component interface 
+interface EnhancedOrderFilesProps {
+  orderId: string;
+  onFileUploaded?: () => void;
+}
+
+interface OrderFile {
+  id: string;
+  file_name: string;
+  file_type: string;
+  mime_type: string;
+  file_path: string;
+  upload_date: string;
+  file_size: number;
+}
+
+// Original OrderFiles component
+export function SimpleOrderFiles({ orderId }: OrderFilesProps) {
   const [files, setFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -160,33 +185,9 @@ export default function OrderFiles({ orderId }: OrderFilesProps) {
     </Card>
   );
 }
-import React, { useState, useEffect } from 'react';
-import { useToast } from '../hooks/use-toast';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { apiRequest } from '../lib/utils';
-import { FileIcon, DownloadIcon, TrashIcon, UploadIcon, ImageIcon, FileTextIcon, FileCheck2Icon, QrCodeIcon } from 'lucide-react';
 
-interface OrderFilesProps {
-  orderId: string;
-  onFileUploaded?: () => void;
-}
-
-interface OrderFile {
-  id: string;
-  file_name: string;
-  file_type: string;
-  mime_type: string;
-  file_path: string;
-  upload_date: string;
-  file_size: number;
-}
-
-const OrderFiles: React.FC<OrderFilesProps> = ({ orderId, onFileUploaded }) => {
+// Enhanced OrderFiles component (default export)
+const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded }) => {
   const { toast } = useToast();
   const [files, setFiles] = useState<OrderFile[]>([]);
   const [activeTab, setActiveTab] = useState<string>('artwork');
