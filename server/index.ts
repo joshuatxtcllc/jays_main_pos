@@ -3,6 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 const app = express();
 app.use(express.json());
@@ -67,9 +69,6 @@ app.use((req, res, next) => {
   const port = 5000;
 
     // Create uploads directory if it doesn't exist
-    import { fileURLToPath } from 'url';
-    import { dirname } from 'path';
-    
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
     
