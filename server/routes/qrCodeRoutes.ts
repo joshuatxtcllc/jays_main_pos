@@ -18,6 +18,7 @@ router.get('/qr-codes', getAllQrCodes);
 router.get('/qr-codes/search', searchQrCodesByEntity);
 router.get('/qr-codes/:id', getQrCodeById);
 router.get('/qr-codes/code/:code', getQrCodeByCode);
+router.get('/orders/:orderId/qr-codes', getQrCodesByOrder);
 router.post('/qr-codes', createQrCode);
 router.post('/qr-codes/scan', recordQrCodeScan);
 router.get('/qr-codes/:id/scans', getQrCodeScans);

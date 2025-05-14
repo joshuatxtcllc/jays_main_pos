@@ -77,6 +77,7 @@ import {
 import { handleChatMessage } from "./controllers/chatController";
 import chatRoutes from './routes/chatRoutes'; // Added import for chat routes
 import crossVendorInventoryRoutes from './routes/crossVendorInventoryRoutes';
+import artworkLocationRoutes from './routes/artworkLocationRoutes';
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1549,6 +1550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/qrcode', qrCodeRoutes);
   app.use('/api/status-history', orderStatusHistoryRoutes);
   app.use('/api/chat', chatRoutes); // Added chat routes
+  app.use('/api', artworkLocationRoutes);
 
   // Houston Heights location-specific pricing routes
   app.post('/api/pricing/calculate', calculatePrice);
@@ -1669,6 +1671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const salesByDate = orderDetails.reduce((acc, order) => {
         const date = new Date(order.createdAt).toISOString().split('T')[0];
         if (!acc[date]) {
+```text
           acc[date] = { date, sales: 0, profit: 0, orders: 0 };
         }
         acc[date].sales += Number(order.total);

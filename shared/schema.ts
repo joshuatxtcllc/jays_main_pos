@@ -631,7 +631,8 @@ export const qrCodeTypes = [
   "inventory_item",
   "material_order", 
   "customer_order",
-  "production_status"
+  "production_status",
+  'artwork_location'
 ] as const;
 
 export type QrCodeType = typeof qrCodeTypes[number];

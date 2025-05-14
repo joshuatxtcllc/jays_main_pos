@@ -5,7 +5,7 @@ import { useOrders } from '@/hooks/use-orders';
 import OrderProgress from '@/components/OrderProgress';
 import NotificationHistory from '@/components/NotificationHistory';
 import { OrderEditDialog } from '@/components/OrderEditDialog';
-import { OrderStatusHistory } from '@/components/OrderStatusHistory'; 
+import { OrderStatusHistory } from '@/components/OrderStatusHistory';
 import OrderFiles from '@/components/OrderFiles';
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { AlertCircle, ArrowLeft, Clock, Edit, ShoppingBag } from 'lucide-react';
 import { getQrCodeByEntity } from '@/services/qrCodeService'; // Added import
+import ArtworkLocationTracker from '@/components/ArtworkLocationTracker';
 
 
 export default function OrderDetailsPage() {

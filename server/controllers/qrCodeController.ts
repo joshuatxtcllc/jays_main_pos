@@ -44,6 +44,45 @@ export async function getQrCodeByCode(req: Request, res: Response) {
     const { code } = req.params;
     const qrCode = await db.select().from(qrCodes).where(eq(qrCodes.code, code)).limit(1);
     
+
+// Get QR codes for a specific order
+export async function getQrCodesByOrder(req: Request, res: Response) {
+  try {
+    const { orderId } = req.params;
+    
+    if (!orderId) {
+      return res.status(400).json({ message: 'Order ID is required' });
+    }
+    
+    // Get all QR codes for this order (including location tracking)
+    const orderQrCodes = await db.select()
+      .from(qrCodes)
+      .where(
+        and(
+          eq(qrCodes.type, 'order'),
+          eq(qrCodes.entityId, orderId)
+        )
+      );
+      
+    const locationQrCodes = await db.select()
+      .from(qrCodes)
+      .where(
+        and(
+          eq(qrCodes.type, 'artwork_location'),
+          eq(qrCodes.entityId, `order-${orderId}`)
+        )
+      );
+    
+    // Combine results
+    const allQrCodes = [...orderQrCodes, ...locationQrCodes];
+    
+    return res.status(200).json(allQrCodes);
+  } catch (error) {
+    console.error('Error fetching QR codes for order:', error);
+    return res.status(500).json({ message: 'Error fetching QR codes' });
+  }
+}
+
     if (qrCode.length === 0) {
       return res.status(404).json({ message: 'QR code not found' });
     }
