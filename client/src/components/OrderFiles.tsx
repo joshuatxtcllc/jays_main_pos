@@ -252,13 +252,11 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
       const formData = new FormData();
       formData.append('artwork', artworkFile);
 
-      const response = await apiRequest(
-        'POST', 
-        `/api/orders/${orderId}/artwork`, 
-        undefined, 
-        formData,
-        false
-      );
+      const response = await fetch(`/api/orders/${orderId}/artwork`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
 
       if (response.ok) {
         toast({
@@ -306,13 +304,11 @@ const OrderFiles: React.FC<EnhancedOrderFilesProps> = ({ orderId, onFileUploaded
       formData.append('file', additionalFile);
       formData.append('fileType', fileType);
 
-      const response = await apiRequest(
-        'POST', 
-        `/api/orders/${orderId}/files`, 
-        undefined, 
-        formData,
-        false
-      );
+      const response = await fetch(`/api/orders/${orderId}/files`, {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
 
       if (response.ok) {
         toast({
