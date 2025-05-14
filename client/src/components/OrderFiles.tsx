@@ -18,7 +18,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatBytes } from '@/lib/utils';
-import { Download, FileIcon, Image, FileText, FilePdf } from 'lucide-react';
+import { Download, FileIcon, Image, FileText, FileType } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
@@ -77,7 +77,7 @@ export function SimpleOrderFiles({ orderId }: OrderFilesProps) {
     if (fileType.startsWith('image/')) {
       return <Image className="h-4 w-4" />;
     } else if (fileType === 'application/pdf') {
-      return <FilePdf className="h-4 w-4" />;
+      return <FileType className="h-4 w-4" />;
     } else {
       return <FileText className="h-4 w-4" />;
     }

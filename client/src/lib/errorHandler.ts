@@ -234,7 +234,7 @@ export function setupGlobalErrorHandling() {
     // Only log it for now
   });
 }
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 // Generic error handling function
 export const handleError = (error: unknown, customMessage?: string) => {
@@ -245,12 +245,18 @@ export const handleError = (error: unknown, customMessage?: string) => {
     (error instanceof Error ? error.message : 
     typeof error === 'string' ? error : 'Unknown error occurred');
   
+  // Get toast from hook - Note: This function should be used within React components
+  // that have access to the useToast hook
+  const { toast } = useToast();
+  
   // Show toast notification
-  toast({
-    variant: "destructive",
-    title: "Error",
-    description: errorMessage,
-  });
+  if (toast) {
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: errorMessage,
+    });
+  }
   
   return errorMessage; // Return for potential further handling
 };
