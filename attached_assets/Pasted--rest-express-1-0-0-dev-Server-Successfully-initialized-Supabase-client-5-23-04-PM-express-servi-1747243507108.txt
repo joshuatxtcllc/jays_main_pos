@@ -1,0 +1,47 @@
+> rest-express@1.0.0 dev
+Server: Successfully initialized Supabase client
+5:23:04 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+5:23:09 PM [vite] Pre-transform error: /home/runner/workspace/client/src/components/OrderFiles.tsx: Identifier 'React' has already been declared. (163:7)
+
+  161 |   );
+  162 | }
+> 163 | import React, { useState, useEffect } from 'react';
+      |        ^
+  164 | import { useToast } from '../hooks/use-toast';
+  165 | import { Button } from './ui/button';
+  166 | import { Input } from './ui/input';
+Vite server error: Pre-transform error: /home/runner/workspace/client/src/components/OrderFiles.tsx: Identifier 'React' has already been declared. (163:7)
+
+  161 |   );
+  162 | }
+> 163 | import React, { useState, useEffect } from 'react';
+      |        ^
+  164 | import { useToast } from '../hooks/use-toast';
+  165 | import { Button } from './ui/button';
+  166 | import { Input } from './ui/input';
+5:23:13 PM [vite] Internal server error: /home/runner/workspace/client/src/components/OrderFiles.tsx: Identifier 'React' has already been declared. (163:7)
+
+  161 |   );
+  162 | }
+> 163 | import React, { useState, useEffect } from 'react';
+      |        ^
+  164 | import { useToast } from '../hooks/use-toast';
+  165 | import { Button } from './ui/button';
+  166 | import { Input } from './ui/input';
+  Plugin: vite:react-babel
+  File: /home/runner/workspace/client/src/components/OrderFiles.tsx:163:7
+  161|    );
+  162|  }
+  163|  import React, { useState, useEffect } from 'react';
+     |         ^
+  164|  import { useToast } from '../hooks/use-toast';
+  165|  import { Button } from './ui/button';
+      at toParseError (/home/runner/workspace/node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at raise (/home/runner/workspace/node_modules/@babel/parser/src/tokenizer/index.ts:1497:19)
+      at checkRedeclarationInScope (/home/runner/workspace/node_modules/@babel/parser/src/util/scope.ts:155:19)
+      at declareName (/home/runner/workspace/node_modules/@babel/parser/src/util/scope.ts:109:12)
+      at declareName (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/scope.ts:89:11)
+      at declareNameFromIdentifier (/home/runner/workspace/node_modules/@babel/parser/src/parser/lval.ts:739:16)
