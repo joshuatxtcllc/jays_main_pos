@@ -96,7 +96,6 @@ export async function getQrCodesByOrder(req: Request, res: Response) {
     console.error('Error fetching QR code:', error);
     return res.status(500).json({ message: 'Error fetching QR code' });
   }
-}
 
 // Create a new QR code
 export async function createQrCode(req: Request, res: Response) {
