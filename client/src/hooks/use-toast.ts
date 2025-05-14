@@ -1,3 +1,4 @@
+
 import {
   Toast,
   ToastActionElement,
@@ -15,7 +16,7 @@ export interface ToastOptions extends ToastProps {
 
 export const useToast = useToastOriginal;
 
-// Direct export of toast function for easier imports
+// Export the toast function properly
 export const toast = (options: ToastOptions) => {
   const { toast } = useToastOriginal();
   return toast(options);

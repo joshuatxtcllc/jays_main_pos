@@ -234,3 +234,34 @@ export function setupGlobalErrorHandling() {
     // Only log it for now
   });
 }
+import { toast } from "@/hooks/use-toast";
+
+// Generic error handling function
+export const handleError = (error: unknown, customMessage?: string) => {
+  console.error(error);
+  
+  // Extract error message
+  const errorMessage = customMessage || 
+    (error instanceof Error ? error.message : 
+    typeof error === 'string' ? error : 'Unknown error occurred');
+  
+  // Show toast notification
+  toast({
+    variant: "destructive",
+    title: "Error",
+    description: errorMessage,
+  });
+  
+  return errorMessage; // Return for potential further handling
+};
+
+// Function for API error handling
+export const handleApiError = (error: unknown) => {
+  // Handle specific API errors differently if needed
+  return handleError(error, 'API request failed. Please try again.');
+};
+
+// Function for validation errors
+export const handleValidationError = (error: unknown) => {
+  return handleError(error, 'Validation failed. Please check your inputs.');
+};
