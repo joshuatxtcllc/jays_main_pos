@@ -66,6 +66,26 @@ app.use((req, res, next) => {
   // Use PORT from environment or fallback to alternative port if 5000 is busy
   const port = process.env.PORT || 5000;
 
+  // Graceful error handling for port already in use
+  const startServer = () => {
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port}`);
+    }).on('error', (e: any) => {
+      if (e.code === 'EADDRINUSE') {
+        log(`Port ${port} is already in use, trying port ${port + 1}`, "warning");
+        process.env.PORT = String(port + 1);
+        startServer(); // Recursively try the next port
+      } else {
+        log(`Server error: ${e.message}`, "error");
+        console.error(e);
+      }
+    });
+  };
+
     // Create uploads directory if it doesn't exist
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = dirname(__filename);
@@ -81,11 +101,5 @@ app.use((req, res, next) => {
     app.use(express.urlencoded({ extended: true }));
     app.use('/uploads', express.static(uploadsDir));
 
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+  startServer();
 })();
