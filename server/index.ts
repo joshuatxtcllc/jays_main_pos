@@ -64,26 +64,35 @@ app.use((req, res, next) => {
   }
 
   // Use PORT from environment or fallback to alternative port if 5000 is busy
-  const port = process.env.PORT || 5000;
+  let port = parseInt(process.env.PORT || "5000");
 
-  // Graceful error handling for port already in use
+  // Function to find an available port
   const startServer = () => {
-    server.listen({
+    // Create a new server instance
+    const serverInstance = server.listen({
       port,
       host: "0.0.0.0",
       reusePort: true,
     }, () => {
       log(`serving on port ${port}`);
+      // Store the port in environment for other components to use
+      process.env.PORT = String(port);
     }).on('error', (e: any) => {
       if (e.code === 'EADDRINUSE') {
         log(`Port ${port} is already in use, trying port ${port + 1}`, "warning");
-        process.env.PORT = String(port + 1);
-        startServer(); // Recursively try the next port
+        // Close the current server attempt
+        serverInstance.close();
+        // Try with the next port
+        port += 1;
+        // Don't wait, just try the next port immediately
+        setImmediate(startServer);
       } else {
         log(`Server error: ${e.message}`, "error");
         console.error(e);
       }
     });
+    
+    return serverInstance;
   };
 
     // Create uploads directory if it doesn't exist

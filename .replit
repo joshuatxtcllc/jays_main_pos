@@ -15,6 +15,10 @@ build = ["sh", "-c", "npm run build"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5001
+externalPort = 5001
+
 [workflows]
 runButton = "Run Jay's Frames App"
 
