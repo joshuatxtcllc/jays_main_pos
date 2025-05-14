@@ -18,13 +18,13 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { formatBytes } from '@/lib/utils';
+import { apiRequest } from '@/lib/queryClient';
 import { Download, FileIcon, Image, FileText, FileType } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from './ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { apiRequest } from '@/lib/utils';
 import { QrCodeIcon, DownloadIcon, TrashIcon, UploadIcon, ImageIcon, FileTextIcon, FileCheck2Icon } from 'lucide-react';
 
 // First component interface
