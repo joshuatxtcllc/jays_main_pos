@@ -1,4 +1,4 @@
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 
 // Error types to handle specific cases
@@ -23,113 +23,114 @@ interface ErrorDetails {
   originalError?: any;
 }
 
-// Main error handler function
-export function handleError(error: any, context?: string): ErrorDetails {
-  console.error(`Error in ${context || 'application'}:`, error);
-  
-  let errorDetails: ErrorDetails = {
-    type: ErrorType.UNKNOWN,
-    message: 'An unknown error occurred',
-    originalError: error
-  };
-  
-  // Handle network errors
-  if (error?.name === 'NetworkError' || error?.message?.includes('Network') || error?.message?.includes('Failed to fetch')) {
-    errorDetails = {
+// Handle and normalize different error types
+function handleError(error: any, context?: string): ErrorDetails {
+  console.error(`Error ${context ? `in ${context}` : ''}:`, error);
+
+  // Network error
+  if (error.name === 'AxiosError' && !error.response) {
+    return {
       type: ErrorType.NETWORK,
-      message: 'Network connection error. Please check your internet connection.',
+      message: 'Unable to connect to the server. Please check your internet connection.',
+      code: 'NETWORK_ERROR',
       originalError: error
     };
   }
-  // Handle timeout errors
-  else if (error?.name === 'TimeoutError' || error?.message?.includes('timeout') || error?.code === 'ETIMEDOUT' || error?.code === 'ESOCKETTIMEDOUT') {
-    errorDetails = {
-      type: ErrorType.TIMEOUT,
-      message: 'Request timed out. Please try again later.',
+
+  // Server errors (500 range)
+  if (error.response && error.response.status >= 500) {
+    return {
+      type: ErrorType.SERVER,
+      message: 'The server encountered an error. Please try again later.',
+      code: `SERVER_${error.response.status}`,
       originalError: error
     };
-  } 
-  // Handle authentication errors
-  else if (error?.status === 401 || error?.response?.status === 401) {
-    errorDetails = {
+  }
+
+  // Authentication errors (401)
+  if (error.response && error.response.status === 401) {
+    return {
       type: ErrorType.AUTHENTICATION,
-      message: 'Authentication error. Please log in again.',
+      message: 'You need to be logged in to perform this action.',
+      code: 'UNAUTHENTICATED',
       originalError: error
     };
-    
-    // Redirect to login page if needed
-    // window.location.href = '/login';
-  } 
-  // Handle authorization errors
-  else if (error?.status === 403 || error?.response?.status === 403) {
-    errorDetails = {
+  }
+
+  // Authorization errors (403)
+  if (error.response && error.response.status === 403) {
+    return {
       type: ErrorType.AUTHORIZATION,
       message: 'You do not have permission to perform this action.',
-      originalError: error
-    };
-  } 
-  // Handle validation errors
-  else if (error?.status === 422 || error?.response?.status === 422 || error?.name === 'ValidationError') {
-    errorDetails = {
-      type: ErrorType.VALIDATION,
-      message: error.message || 'Validation error. Please check your input.',
-      originalError: error
-    };
-  } 
-  // Handle not found errors
-  else if (error?.status === 404 || error?.response?.status === 404) {
-    errorDetails = {
-      type: ErrorType.NOT_FOUND,
-      message: 'The requested resource was not found.',
-      originalError: error
-    };
-  } 
-  // Handle server errors
-  else if (error?.status >= 500 || error?.response?.status >= 500) {
-    errorDetails = {
-      type: ErrorType.SERVER,
-      message: 'Server error. Please try again later.',
-      originalError: error
-    };
-  } 
-  // Handle database errors
-  else if (error?.message?.includes('database') || error?.message?.includes('SQL')) {
-    errorDetails = {
-      type: ErrorType.DATABASE,
-      message: 'Database error. Please try again later.',
+      code: 'UNAUTHORIZED',
       originalError: error
     };
   }
-  // Handle image processing errors
-  else if (
-    error?.message?.includes('image') || 
-    error?.message?.includes('canvas') || 
-    error?.message?.includes('data URL') ||
-    error?.name === 'ImageError'
-  ) {
-    errorDetails = {
+
+  // Not found errors (404)
+  if (error.response && error.response.status === 404) {
+    return {
+      type: ErrorType.NOT_FOUND,
+      message: 'The requested resource was not found.',
+      code: 'NOT_FOUND',
+      originalError: error
+    };
+  }
+
+  // Validation errors (400, 422)
+  if (error.response && (error.response.status === 400 || error.response.status === 422)) {
+    return {
       type: ErrorType.VALIDATION,
-      message: 'Error processing image. Please try a different image or format.',
+      message: error.response.data?.message || 'The submitted data is invalid.',
+      code: 'VALIDATION_ERROR',
+      originalError: error
+    };
+  }
+
+  // Timeout errors
+  if (error.code === 'ECONNABORTED' || (error.message && error.message.includes('timeout'))) {
+    return {
+      type: ErrorType.TIMEOUT,
+      message: 'The request took too long to complete. Please try again.',
+      code: 'REQUEST_TIMEOUT',
+      originalError: error
+    };
+  }
+
+  // Image processing errors
+  if (error.message && (
+    error.message.includes('image') || 
+    error.message.includes('file') || 
+    error.message.includes('upload')
+  )) {
+    return {
+      type: ErrorType.IMAGE_PROCESSING,
+      message: 'There was a problem processing your image. Please try again with a different file.',
       code: 'IMAGE_PROCESSING_ERROR',
       originalError: error
     };
   }
-  
-  return errorDetails;
+
+  return {
+    type: ErrorType.UNKNOWN,
+    message: error.message || 'An unexpected error occurred.',
+    originalError: error
+  };
 }
 
 // Display error toast with appropriate message
 export function displayErrorToast(error: any, context?: string) {
   const errorDetails = handleError(error, context);
-  
-  import { toast } from '@/hooks/use-toast';
-  
+
+  // Get toast from the hook
+  const { toast } = useToast();
+
   toast({
     title: getErrorTitle(errorDetails.type),
     description: errorDetails.message,
     variant: "destructive",
   });
-  
+
   return errorDetails;
 }
 
