@@ -63,10 +63,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // Use PORT from environment or fallback to alternative port if 5000 is busy
+  const port = process.env.PORT || 5000;
 
     // Create uploads directory if it doesn't exist
     const __filename = fileURLToPath(import.meta.url);
