@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams } from 'wouter';
+import { useParams, useLocation } from 'wouter';
 import { useProduction } from '@/hooks/use-production';
 import OrderProgress from '@/components/OrderProgress';
 import NotificationHistory from '@/components/NotificationHistory';
@@ -19,7 +19,12 @@ import { Link } from 'wouter';
 
 export default function OrderProgressPage() {
   const { orderId } = useParams<{ orderId: string }>();
+  const [location] = useLocation();
   const { toast } = useToast();
+
+  // Debug log to see what params we're getting
+  console.log('OrderProgressPage received orderId:', orderId);
+  console.log('Current location:', location);
 
   const {
     order,

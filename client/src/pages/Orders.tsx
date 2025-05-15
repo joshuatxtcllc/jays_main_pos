@@ -382,7 +382,7 @@ const Orders = () => {
                               size="sm"
                               onClick={() => setLocation(`/order-progress/${order.id}`)}
                             >
-                              Track Progress
+                              Track Progresss
                             </Button>
                             <Button 
                               variant="default" 
