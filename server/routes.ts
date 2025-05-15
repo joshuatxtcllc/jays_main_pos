@@ -1,5 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import express from "express";
+import { replitAuth, optionalReplitAuth } from './middleware/replitAuth';
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -82,6 +84,23 @@ import artworkLocationRoutes from './routes/artworkLocationRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
+
+const app = express();
+
+  // Add auth check endpoint
+  app.get('/api/auth/status', optionalReplitAuth, (req, res) => {
+    if (req.user) {
+      return res.json({
+        authenticated: true,
+        user: {
+          id: req.user.id,
+          name: req.user.name,
+          profileImage: req.user.profileImage
+        }
+      });
+    }
+    return res.json({ authenticated: false });
+  });
 
   // Customers
   app.get('/api/customers', async (req, res) => {
@@ -1660,7 +1679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           breakdown.matCost += Number(order.mats?.[0]?.matColorId ? order.profitability.totalWholesaleCost * 0.3 : 0);
           breakdown.glassCost += Number(order.glassOptionId ? order.profitability.totalWholesaleCost * 0.2 : 0);
         }
-        return breakdown;
+        return breakdown.
       }, { frameCost: 0, matCost: 0, glassCost: 0 });
 
       // Calculate average order metrics

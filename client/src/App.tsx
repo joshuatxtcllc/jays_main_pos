@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatWidget from "./components/ChatWidget";
 import FrameEducationPage from '@/pages/FrameEducationPage';
+import { AuthProvider } from './hooks/use-auth';
 
 // Error fallback component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -90,40 +91,42 @@ function App() {
           }}
         >
           <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
-                <Header darkMode={darkMode} toggleTheme={toggleTheme} />
-                <main className="container pt-24 pb-10">
-                  <Switch>
-                    <Route path="/" component={PosSystem} />
-                    <Route path="/orders" component={Orders} />
-                    <Route path="/dashboard" component={Dashboard} />
-                    <Route path="/production" component={ProductionPage} />
-                    <Route path="/materials" component={MaterialOrdersPage} />
-                    <Route path="/materials-pick-list" component={MaterialsPickListPage} />
-                    <Route path="/inventory" component={InventoryPage} />
-                    <Route path="/inventory-tracking" component={InventoryTrackingPage} />
-                    <Route path="/hub" component={HubIntegrationPage} />
-                    <Route path="/pricing" component={PricingPage} />
-                    <Route path="/vendor-settings" component={VendorSettings} />
-                    <Route path="/mat-test" component={MatOptionPage} />
-                    <Route path="/checkout/:orderGroupId" component={Checkout} />
-                    <Route path="/payment-status" component={PaymentStatus} />
-                    <Route path="/order-progress/:orderId" component={OrderProgressPage} />
-                    <Route path="/orders/:orderId" component={OrderDetailsPage} />
-                    <Route path="/customers/:id" component={CustomerManagement} />
-                    <Route path="/customers" component={CustomerManagement} />
-                    <Route path="/payment-links" component={PaymentLinks} />
-                    <Route path="/payment/:token" component={Payment} />
-                    <Route path="/frame-education" component={FrameEducationPage} />
-                    <Route path="/webhook-integration" component={WebhookIntegrationPage} />
-                    <Route component={NotFound} />
-                  </Switch>
-                </main>
-                <ChatWidget />
-              </div>
-              <Toaster />
-            </TooltipProvider>
+            <AuthProvider>
+              <TooltipProvider>
+                <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+                  <Header darkMode={darkMode} toggleTheme={toggleTheme} />
+                  <main className="container pt-24 pb-10">
+                    <Switch>
+                      <Route path="/" component={PosSystem} />
+                      <Route path="/orders" component={Orders} />
+                      <Route path="/dashboard" component={Dashboard} />
+                      <Route path="/production" component={ProductionPage} />
+                      <Route path="/materials" component={MaterialOrdersPage} />
+                      <Route path="/materials-pick-list" component={MaterialsPickListPage} />
+                      <Route path="/inventory" component={InventoryPage} />
+                      <Route path="/inventory-tracking" component={InventoryTrackingPage} />
+                      <Route path="/hub" component={HubIntegrationPage} />
+                      <Route path="/pricing" component={PricingPage} />
+                      <Route path="/vendor-settings" component={VendorSettings} />
+                      <Route path="/mat-test" component={MatOptionPage} />
+                      <Route path="/checkout/:orderGroupId" component={Checkout} />
+                      <Route path="/payment-status" component={PaymentStatus} />
+                      <Route path="/order-progress/:orderId" component={OrderProgressPage} />
+                      <Route path="/orders/:orderId" component={OrderDetailsPage} />
+                      <Route path="/customers/:id" component={CustomerManagement} />
+                      <Route path="/customers" component={CustomerManagement} />
+                      <Route path="/payment-links" component={PaymentLinks} />
+                      <Route path="/payment/:token" component={Payment} />
+                      <Route path="/frame-education" component={FrameEducationPage} />
+                      <Route path="/webhook-integration" component={WebhookIntegrationPage} />
+                      <Route component={NotFound} />
+                    </Switch>
+                  </main>
+                  <ChatWidget />
+                </div>
+                <Toaster />
+              </TooltipProvider>
+            </AuthProvider>
           </QueryClientProvider>
         </ErrorBoundary>
       )}
