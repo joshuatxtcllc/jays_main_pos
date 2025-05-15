@@ -3,6 +3,7 @@ import {
   getAllQrCodes,
   getQrCodeById,
   getQrCodeByCode,
+  getQrCodesByOrder,
   createQrCode,
   recordQrCodeScan,
   getQrCodeScans,
