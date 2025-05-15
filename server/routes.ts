@@ -85,8 +85,6 @@ import artworkLocationRoutes from './routes/artworkLocationRoutes';
 export async function registerRoutes(app: Express): Promise<Server> {
   // API routes prefixed with /api
 
-const app = express();
-
   // Add auth check endpoint
   app.get('/api/auth/status', optionalReplitAuth, (req, res) => {
     if (req.user) {
@@ -1679,7 +1677,7 @@ const app = express();
           breakdown.matCost += Number(order.mats?.[0]?.matColorId ? order.profitability.totalWholesaleCost * 0.3 : 0);
           breakdown.glassCost += Number(order.glassOptionId ? order.profitability.totalWholesaleCost * 0.2 : 0);
         }
-        return breakdown.
+        return breakdown;
       }, { frameCost: 0, matCost: 0, glassCost: 0 });
 
       // Calculate average order metrics
