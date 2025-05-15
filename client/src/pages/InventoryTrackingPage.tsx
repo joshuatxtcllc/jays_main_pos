@@ -53,8 +53,13 @@ const InventoryTrackingPage = () => {
 
   // Load QR codes
   const { data: qrCodes, isLoading: qrCodesLoading, error: qrCodesError } = useQuery({
-    queryKey: ['/api/qr-codes'],
+    queryKey: ['qrCodes'],
     queryFn: getQueryFn({ endpoint: '/api/qr-codes' }),
+    retry: 2,
+    retryDelay: 1000,
+    onError: (error) => {
+      console.error('Error fetching QR codes:', error);
+    }
   });
 
   // Helper function for API queries
@@ -63,8 +68,13 @@ const InventoryTrackingPage = () => {
       try {
         const response = await apiRequest('GET', endpoint);
         if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage = errorData.message || `Error fetching data from ${endpoint}: ${response.status} ${response.statusText}`;
+          let errorMessage;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || `Error fetching data from ${endpoint}: ${response.status} ${response.statusText}`;
+          } catch (e) {
+            errorMessage = `Error fetching data from ${endpoint}: ${response.status} ${response.statusText}`;
+          }
           throw new Error(errorMessage);
         }
         return await response.json();
@@ -72,7 +82,7 @@ const InventoryTrackingPage = () => {
         console.error(`Error loading data from ${endpoint}:`, error);
         toast({
           title: 'Error loading data',
-          description: error.message,
+          description: error.message || 'Unknown error occurred',
           variant: 'destructive',
         });
         return []; // Return empty array on error

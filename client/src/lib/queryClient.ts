@@ -7,32 +7,46 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-export async function apiRequest(
-  method: string,
-  url: string,
-  data?: any,
-  options?: RequestInit
-): Promise<Response> {
-  const defaultOptions: RequestInit = {
+export async function apiRequest(method: string, url: string, data?: any) {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  };
+
+  const config: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
+    headers,
     credentials: 'include',
   };
 
   if (data) {
-    defaultOptions.body = JSON.stringify(data);
+    config.body = JSON.stringify(data);
   }
 
-  const requestOptions = { ...defaultOptions, ...options };
-  try {
-    return await fetch(url, requestOptions);
-  } catch (error) {
-    console.error(`API request error for ${method} ${url}:`, error);
-    throw error;
+  const response = await fetch(url, config);
+
+  // Check if the response is JSON before returning
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response;
+  } else if (!response.ok) {
+    // If not JSON and not OK, create a better error response
+    const text = await response.text();
+    console.error('Non-JSON response:', text.substring(0, 500)); // Log part of the text
+
+    // Create a new Response with appropriate JSON error
+    return new Response(
+      JSON.stringify({ 
+        message: `Server returned non-JSON response with status ${response.status}` 
+      }), 
+      { 
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
+
+  return response;
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
