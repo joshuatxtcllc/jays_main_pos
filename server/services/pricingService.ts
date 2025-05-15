@@ -66,10 +66,10 @@ export function calculateGlassPrice(
 ): number {
   // Use provided dimensions or calculate from area
   const unitedInches = (width && height) ? width + height : Math.sqrt(area) * 2;
-
+  
   // Get markup based on united inches
   const markup = calculateGlassMarkup(unitedInches);
-
+  
   // Apply type-specific additional factors
   let typeMultiplier = 1.0;
   switch (glassType) {
@@ -77,12 +77,19 @@ export function calculateGlassPrice(
       typeMultiplier = 1.5; // Conservation glass costs more
       break;
     case 'museum':
-      typeMultiplier = 3.0; // Museum glass costs significantly more
+      typeMultiplier = 2.0; // Museum glass costs more but not 3x (reduced from 3.0)
       break;
   }
-
-  // Apply Houston-specific glass pricing factor
-  return wholesalePrice * area * markup * GLASS_MARKUP_FACTOR * typeMultiplier;
+  
+  // Convert area from square inches to square feet for more reasonable pricing
+  const areaInSqFt = area / 144;
+  
+  // Apply a drastically reduced markup factor to fix the $2,200 overpricing issue
+  // This uses a fixed base price plus a small per-square-foot increase
+  // formula: base price + (area in sq ft * wholesale price * modest markup)
+  const basePrice = unitedInches <= 40 ? 35 : 45; // Base price depends on size
+  
+  return basePrice + (areaInSqFt * wholesalePrice * markup * 0.05 * typeMultiplier);
 }
 
 // Types
