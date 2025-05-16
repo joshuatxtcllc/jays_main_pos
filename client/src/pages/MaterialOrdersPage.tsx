@@ -28,7 +28,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { MaterialType, MaterialOrderStatus } from "../types";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { CalendarIcon, AlertCircle, RotateCw, CheckCircle2, Trash2, RefreshCw, Package, Filter, PlusCircle, TrendingUp, ActivityIcon } from "lucide-react";
+import { CalendarIcon, AlertCircle, RotateCw, CheckCircle2, Trash2, RefreshCw, Package, Filter, PlusCircle, TrendingUp, ActivityIcon, Wrench } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import OrderStatusProgress from "../components/OrderStatusProgress";
@@ -200,7 +200,7 @@ const MaterialOrdersPage: React.FC = () => {
       setSelectedOrder(null);
     }
   };
-  
+
   const handleStatusDialogOpenChange = (open: boolean) => {
     setIsStatusDialogOpen(open);
     if (!open) {
@@ -211,7 +211,7 @@ const MaterialOrdersPage: React.FC = () => {
   // Edit material order
   const handleEditOrder = (order: MaterialOrder) => {
     setSelectedOrder(order);
-    
+
     // Set default values for the edit form
     editForm.reset({
       quantity: order.quantity,
@@ -227,10 +227,10 @@ const MaterialOrdersPage: React.FC = () => {
       expectedDeliveryDate: order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate) : undefined,
       priority: order.priority as any,
     });
-    
+
     setIsEditDialogOpen(true);
   };
-  
+
   // View order status progress
   const handleViewProgress = (order: MaterialOrder) => {
     setSelectedOrder(order);
@@ -403,7 +403,7 @@ const MaterialOrdersPage: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
                 <FormField
                   control={createForm.control}
                   name="materialName"
@@ -417,7 +417,7 @@ const MaterialOrdersPage: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={createForm.control}
@@ -446,7 +446,7 @@ const MaterialOrdersPage: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={createForm.control}
@@ -475,7 +475,7 @@ const MaterialOrdersPage: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={createForm.control}
@@ -531,7 +531,7 @@ const MaterialOrdersPage: React.FC = () => {
                     )}
                   />
                 </div>
-                
+
                 <FormField
                   control={createForm.control}
                   name="expectedDeliveryDate"
@@ -570,7 +570,7 @@ const MaterialOrdersPage: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={createForm.control}
                   name="notes"
@@ -584,7 +584,7 @@ const MaterialOrdersPage: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                
+
                 <DialogFooter>
                   <Button type="submit" disabled={createMaterialOrderMutation.isPending}>
                     {createMaterialOrderMutation.isPending && (
@@ -741,7 +741,7 @@ const MaterialOrdersPage: React.FC = () => {
                 )}
               </div>
               <OrderStatusProgress status={selectedOrder.status} className="mt-6" />
-              
+
               <div className="mt-6 space-y-2">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -773,7 +773,7 @@ const MaterialOrdersPage: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Material Order Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogOpenChange}>
         <DialogContent className="sm:max-w-[500px]">
@@ -828,7 +828,7 @@ const MaterialOrdersPage: React.FC = () => {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={editForm.control}
                 name="materialName"
@@ -842,7 +842,7 @@ const MaterialOrdersPage: React.FC = () => {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
@@ -871,7 +871,7 @@ const MaterialOrdersPage: React.FC = () => {
                   )}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
@@ -900,7 +900,7 @@ const MaterialOrdersPage: React.FC = () => {
                   )}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
@@ -956,7 +956,7 @@ const MaterialOrdersPage: React.FC = () => {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={editForm.control}
                 name="expectedDeliveryDate"
@@ -995,7 +995,7 @@ const MaterialOrdersPage: React.FC = () => {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editForm.control}
                 name="notes"
@@ -1009,7 +1009,7 @@ const MaterialOrdersPage: React.FC = () => {
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
                 <Button type="submit" disabled={updateMaterialOrderMutation.isPending}>
                   {updateMaterialOrderMutation.isPending && (
