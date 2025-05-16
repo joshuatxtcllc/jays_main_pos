@@ -80,6 +80,8 @@ import { handleChatMessage } from "./controllers/chatController";
 import chatRoutes from './routes/chatRoutes'; // Added import for chat routes
 import crossVendorInventoryRoutes from './routes/crossVendorInventoryRoutes';
 import artworkLocationRoutes from './routes/artworkLocationRoutes';
+import customerNotificationRoutes from './routes/customerNotificationRoutes';
+import customerPreferencesRoutes from './routes/customerPreferencesRoutes';
 
 
 export async function registerRoutes(app: Express): Promise<Server> {

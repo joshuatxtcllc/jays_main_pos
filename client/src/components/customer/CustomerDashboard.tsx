@@ -400,10 +400,9 @@ export default function CustomerDashboard({ customerId }: { customerId: number }
       {/* Customer Invoices Section */}
       <CustomerInvoicesList customerId={customerId} />
 
-      {/* Order Status History Section */}
+      {/* Customer Activity Timeline */}
       <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Order Status Updates</h3>
-        <CustomerStatusHistory customerId={customerId} />
+        <CustomerActivityTimeline customerId={customerId} />
       </div>
     </div>
   );

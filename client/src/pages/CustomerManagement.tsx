@@ -16,12 +16,16 @@ import {
   LayoutDashboard, 
   Settings, 
   CreditCard,
-  FileClock
+  FileClock,
+  List,
+  FileText
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import CustomerDashboard from "@/components/customer/CustomerDashboard";
 import CustomerInvoicesList from "@/components/customer/CustomerInvoicesList";
+import CustomerPreferences from "@/components/customer/CustomerPreferences";
+import CustomerActivityTimeline from "@/components/customer/CustomerActivityTimeline";
 import { Separator } from "@/components/ui/separator";
 
 interface CustomerInfo {
@@ -435,7 +439,7 @@ export default function CustomerManagement() {
         
         {/* Tabs for different sections */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-4 grid grid-cols-4 md:w-auto md:grid-cols-4">
+          <TabsList className="mb-4 grid grid-cols-3 md:w-auto md:grid-cols-6">
             <TabsTrigger value="dashboard" className="flex items-center">
               <LayoutDashboard className="h-4 w-4 mr-2" />
               Dashboard
@@ -447,6 +451,14 @@ export default function CustomerManagement() {
             <TabsTrigger value="invoices" className="flex items-center">
               <FileClock className="h-4 w-4 mr-2" />
               Invoices
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="flex items-center">
+              <List className="h-4 w-4 mr-2" />
+              Activity
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center">
+              <Settings className="h-4 w-4 mr-2" />
+              Preferences
             </TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center">
               <CreditCard className="h-4 w-4 mr-2" />
@@ -493,6 +505,14 @@ export default function CustomerManagement() {
           
           <TabsContent value="invoices">
             {customer && customerId && <CustomerInvoicesList customerId={customerId} />}
+          </TabsContent>
+          
+          <TabsContent value="activity">
+            {customer && customerId && <CustomerActivityTimeline customerId={customerId} />}
+          </TabsContent>
+          
+          <TabsContent value="preferences">
+            {customer && customerId && <CustomerPreferences customerId={customerId} />}
           </TabsContent>
           
           <TabsContent value="payments">
