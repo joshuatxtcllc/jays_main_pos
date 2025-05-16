@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +8,7 @@ import { apiRequest } from '@/lib/queryClient';
 import QrCodeGenerator from './QrCodeGenerator';
 import QrCodeScanner from './QrCodeScanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Camera } from 'lucide-react';
+import { Loader2, Camera, Wrench } from 'lucide-react';
 
 interface ArtworkLocationTrackerProps {
   orderId: number;
@@ -34,7 +33,7 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
       try {
         setLoading(true);
         const response = await apiRequest('GET', `/api/orders/${orderId}/location`);
-        
+
         if (response.ok) {
           const data = await response.json();
           setSavedLocationData(data);
@@ -66,12 +65,12 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
       });
 
       streamRef.current = stream;
-      
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
       }
-      
+
       setWebcamActive(true);
     } catch (error) {
       console.error('Error accessing camera:', error);
@@ -89,11 +88,11 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-    
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    
+
     setWebcamActive(false);
   };
 
@@ -104,16 +103,16 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth;
     canvas.height = videoRef.current.videoHeight;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-    
+
     // Convert to data URL
     const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
     setCapturedImage(dataUrl);
-    
+
     // Stop webcam after capture
     stopWebcam();
   };
@@ -134,7 +133,7 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
 
       const formData = new FormData();
       formData.append('location', artworkLocation);
-      
+
       // If we have a captured image, add it to form data
       if (capturedImage) {
         // Convert data URL to blob
@@ -219,7 +218,7 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
                   <h3 className="font-medium">Current Location Information</h3>
                   <p><span className="font-medium">Location:</span> {savedLocationData.location}</p>
                   <p><span className="font-medium">Last Updated:</span> {new Date(savedLocationData.updatedAt).toLocaleString()}</p>
-                  
+
                   {savedLocationData.imagePath && (
                     <div className="mt-2">
                       <h4 className="text-sm font-medium mb-1">Location Image</h4>
