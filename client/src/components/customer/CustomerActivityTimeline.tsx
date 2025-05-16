@@ -19,7 +19,7 @@ import {
   Truck,
   Package,
   Calendar,
-  Tool,
+  Wrench,
   Loader2,
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -52,7 +52,7 @@ function getEventIcon(type: string) {
     case 'appointment_scheduled':
       return <Calendar className="h-5 w-5 text-orange-500" />;
     case 'production_update':
-      return <Tool className="h-5 w-5 text-gray-500" />;
+      return <Wrench className="h-5 w-5 text-gray-500" />;
     default:
       return <Clock className="h-5 w-5 text-gray-500" />;
   }
