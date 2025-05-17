@@ -32,6 +32,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatWidget from "./components/ChatWidget";
 import FrameEducationPage from '@/pages/FrameEducationPage';
 import { AuthProvider } from './hooks/use-auth';
+import { lazy } from 'react';
 
 // Error fallback component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -101,6 +102,10 @@ function App() {
                       <Route path="/orders" component={Orders} />
                       <Route path="/dashboard" component={Dashboard} />
                       <Route path="/production" component={ProductionPage} />
+                      <Route path="/orders/:orderId" component={OrderDetailsPage} />
+                      <Route path="/orders/progress/:orderId" component={OrderProgressPage} />
+                      <Route path="/customer-portal" component={lazy(() => import('./pages/CustomerPortal'))} />
+                      <Route path="/customer-dashboard" component={lazy(() => import('./pages/CustomerDashboardPage'))} />
                       <Route path="/materials" component={MaterialOrdersPage} />
                       <Route path="/materials-pick-list" component={MaterialsPickListPage} />
                       <Route path="/inventory" component={InventoryPage} />
@@ -112,7 +117,6 @@ function App() {
                       <Route path="/checkout/:orderGroupId" component={Checkout} />
                       <Route path="/payment-status" component={PaymentStatus} />
                       <Route path="/order-progress/:orderId" component={OrderProgressPage} />
-                      <Route path="/orders/:orderId" component={OrderDetailsPage} />
                       <Route path="/customers/:id" component={CustomerManagement} />
                       <Route path="/customers" component={CustomerManagement} />
                       <Route path="/payment-links" component={PaymentLinks} />

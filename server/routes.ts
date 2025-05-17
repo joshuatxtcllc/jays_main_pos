@@ -82,6 +82,7 @@ import crossVendorInventoryRoutes from './routes/crossVendorInventoryRoutes';
 import artworkLocationRoutes from './routes/artworkLocationRoutes';
 import customerNotificationRoutes from './routes/customerNotificationRoutes';
 import customerPreferencesRoutes from './routes/customerPreferencesRoutes';
+import customerPortalRoutes from './routes/customerPortalRoutes';
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1677,6 +1678,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Assuming frame cost is included in the profitability breakdown
           breakdown.frameCost += Number(order.frames?.[0]?.frameId ? order.profitability.totalWholesaleCost * 0.5 : 0);
           breakdown.matCost += Number(order.mats?.[0]?.matColorId ? order.profitability.totalWholesaleCost * 0.3 : 0);
+```text
           breakdown.glassCost += Number(order.glassOptionId ? order.profitability.totalWholesaleCost * 0.2 : 0);
         }
         return breakdown;
@@ -1755,6 +1757,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to retrieve profit analytics' });
     }
   });
+
+  // Customer notifications
+  app.use('/api/notifications', customerNotificationRoutes);
+
+  // Order status history
+  app.use('/api/status-history', orderStatusHistoryRoutes);
+
+  // Customer portal
+  app.use('/api/customer-portal', customerPortalRoutes);
 
   const httpServer = createServer(app);
   return httpServer;
