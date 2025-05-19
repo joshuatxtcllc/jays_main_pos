@@ -92,19 +92,6 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
 
   // Helper function for Navigation Menu Link
   const NavMenuLink = ({ href, children, isActive }: { href: string, children: React.ReactNode, isActive?: boolean }) => (
-
-              <DropdownMenuItem asChild>
-                <Link href="/customer-portal">Customer Portal</Link>
-              </DropdownMenuItem>
-            </>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    );
-  };
-
-  // Helper function for Navigation Menu Link
-  const NavMenuLink = ({ href, children, isActive }: { href: string, children: React.ReactNode, isActive?: boolean }) => (
     <Link href={href}>
       <NavigationMenuLink
         className={cn(

@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-zinc-200 dark:border-zinc-700;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
