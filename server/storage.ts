@@ -92,6 +92,8 @@ function determineFrameColor(frame: Frame): string {
 import { PricingResult } from './services/pricingService';
 
 export interface IStorage {
+  // Art Location methods
+  updateOrderArtLocation(id: number, location: string): Promise<Order>;
   // Customer methods
   getCustomer(id: number): Promise<Customer | undefined>;
   getCustomerByEmail(email: string): Promise<Customer | undefined>;
@@ -186,6 +188,30 @@ import { db } from "./db";
 import { eq, desc, sql, asc } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
+  /**
+   * Update the physical artwork location for an order
+   * @param id Order ID
+   * @param location Physical storage location
+   * @returns Updated order
+   */
+  async updateOrderArtLocation(id: number, location: string): Promise<Order> {
+    try {
+      const [updatedOrder] = await db
+        .update(orders)
+        .set({ artworkLocation: location })
+        .where(eq(orders.id, id))
+        .returning();
+        
+      if (!updatedOrder) {
+        throw new Error('Order not found');
+      }
+      
+      return updatedOrder;
+    } catch (error) {
+      console.error('Error updating order artwork location:', error);
+      throw error;
+    }
+  }
   // Order mats methods
   async getOrderMats(orderId: number): Promise<any[]> {
     try {
@@ -2253,6 +2279,8 @@ export class DatabaseStorage implements IStorage {
     }
   }
 }
+
+
 
 export const storage = new DatabaseStorage();
 
