@@ -24,6 +24,7 @@ import VendorSettings from "./pages/VendorSettings";
 import OrderDetailsPage from "./pages/OrderDetailsPage";
 import PaymentLinks from "./pages/PaymentLinks";
 import Payment from "./pages/Payment";
+import MatBorderDemo from "./pages/MatBorderDemo"; // Added for mat border demonstration
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -123,6 +124,7 @@ function App() {
                       <Route path="/payment/:token" component={Payment} />
                       <Route path="/frame-education" component={FrameEducationPage} />
                       <Route path="/webhook-integration" component={WebhookIntegrationPage} />
+                      <Route path="/mat-border-demo" component={MatBorderDemo} />
                       <Route component={NotFound} />
                     </Switch>
                   </main>
