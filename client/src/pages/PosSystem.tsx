@@ -625,6 +625,7 @@ const PosSystem = () => {
         matWidth: primaryMatWidth.toString(),
         artworkDescription,
         artworkType,
+        artworkLocation,
         subtotal: "0", // Will be calculated on the server
         tax: "0", // Will be calculated on the server
         total: "0", // Will be calculated on the server

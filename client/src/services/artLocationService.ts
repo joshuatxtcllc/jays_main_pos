@@ -1,54 +1,69 @@
 import { apiRequest } from "@/lib/queryClient";
-import { notificationService } from "@/lib/notificationService";
+import { toast } from "@/hooks/use-toast";
 
-interface ArtLocationData {
+/**
+ * Type definition for art location data
+ */
+export interface ArtLocationData {
   orderId: number;
-  artworkDescription: string;
+  location: string;
   artworkType: string;
-  artworkLocation: string;
-  artworkImage?: string;
+  artworkDescription: string;
   artworkWidth: number;
   artworkHeight: number;
 }
 
 /**
- * Art Location Service
- * Handles sending artwork location data to the Art Locations app
+ * Service for handling artwork location operations
  */
-export const artLocationService = {
+const artLocationService = {
   /**
    * Sends artwork location data to the Art Locations app
-   * @param data Artwork location data
-   * @returns Promise with the response
+   * @param data Location data to send
+   * @returns Promise with the response data
    */
   async sendArtLocationData(data: ArtLocationData): Promise<any> {
     try {
-      // Send data to our internal API endpoint that communicates with the Art Locations app
       const response = await apiRequest('POST', '/api/art-locations', data);
+      const result = await response.json();
       
-      // Notify about successful sync
-      notificationService.sendNotification({
-        title: 'Art Location Synced',
-        description: `Artwork location for order #${data.orderId} has been synced with Art Locations app`,
-        type: 'success',
-        source: 'POS',
-        sourceId: data.orderId.toString()
+      toast({
+        title: "Location Updated",
+        description: "Artwork location has been successfully recorded.",
+        variant: "default",
       });
       
-      return await response.json();
+      return result;
     } catch (error) {
       console.error('Error sending art location data:', error);
-      
-      // Notify about sync failure
-      notificationService.sendNotification({
-        title: 'Art Location Sync Failed',
-        description: `Failed to sync artwork location for order #${data.orderId} with Art Locations app`,
-        type: 'error',
-        source: 'POS',
-        sourceId: data.orderId.toString()
+      toast({
+        title: "Location Update Failed",
+        description: "Could not update artwork location. Please try again.",
+        variant: "destructive",
       });
-      
+      throw error;
+    }
+  },
+  
+  /**
+   * Gets artwork location data for an order
+   * @param orderId Order ID
+   * @returns Promise with location data
+   */
+  async getArtLocationData(orderId: number): Promise<ArtLocationData> {
+    try {
+      const response = await apiRequest('GET', `/api/art-locations/${orderId}`);
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching art location data:', error);
+      toast({
+        title: "Fetch Failed",
+        description: "Could not retrieve artwork location data.",
+        variant: "destructive",
+      });
       throw error;
     }
   }
 };
+
+export default artLocationService;

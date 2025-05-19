@@ -1,20 +1,19 @@
-import { Request, Response } from 'express';
-import { storage } from '../storage';
-import axios from 'axios';
-import { z } from 'zod';
+import { Request, Response } from "express";
+import { z } from "zod";
+import { storage } from "../storage";
 
-// Validation schema for art location data
+/**
+ * Schema for validating art location data
+ */
 const artLocationSchema = z.object({
   orderId: z.number(),
-  artworkDescription: z.string(),
+  location: z.string(),
   artworkType: z.string(),
-  artworkLocation: z.string(),
-  artworkImage: z.string().optional(),
+  artworkDescription: z.string(),
   artworkWidth: z.number(),
   artworkHeight: z.number()
 });
 
-// Type for art location data
 type ArtLocationData = z.infer<typeof artLocationSchema>;
 
 /**
@@ -28,73 +27,32 @@ export const artLocationController = {
    */
   async sendArtLocationData(req: Request, res: Response) {
     try {
-      // Validate incoming data
-      const validationResult = artLocationSchema.safeParse(req.body);
+      const data = artLocationSchema.parse(req.body);
       
-      if (!validationResult.success) {
-        return res.status(400).json({ 
-          message: 'Invalid art location data', 
-          errors: validationResult.error.errors 
-        });
-      }
-      
-      const artLocationData = validationResult.data;
-      
-      // Update the order with the location information
-      await storage.updateOrderArtLocation(
-        artLocationData.orderId, 
-        artLocationData.artworkLocation
+      // Update order with artwork location
+      const updatedOrder = await storage.updateOrderArtLocation(
+        data.orderId, 
+        data.location
       );
       
-      // If there's an external Art Locations app, send the data there
-      // This would typically use an environment variable for the API URL
-      const artLocationsApiUrl = process.env.ART_LOCATIONS_API_URL;
+      // Here we would also send the data to the Art Locations app via an API call
+      // For now, we're just updating our own database
       
-      if (artLocationsApiUrl) {
-        try {
-          // Send data to external Art Locations app
-          const response = await axios.post(`${artLocationsApiUrl}/api/artwork`, {
-            orderReference: `POS-${artLocationData.orderId}`,
-            description: artLocationData.artworkDescription,
-            type: artLocationData.artworkType,
-            location: artLocationData.artworkLocation,
-            imageUrl: artLocationData.artworkImage,
-            width: artLocationData.artworkWidth,
-            height: artLocationData.artworkHeight,
-            status: 'active',
-            source: 'pos_system'
-          });
-          
-          return res.status(200).json({
-            message: 'Art location data successfully sent to Art Locations app',
-            remoteId: response.data.id
-          });
-        } catch (apiError) {
-          console.error('Error sending data to Art Locations app:', apiError);
-          
-          // Even if external sync fails, we've updated our local database
-          return res.status(207).json({
-            message: 'Updated local database but failed to sync with Art Locations app',
-            error: (apiError as Error).message
-          });
-        }
-      }
-      
-      // If no external API is configured, just return success for the local update
-      return res.status(200).json({
-        message: 'Art location data saved locally',
-        info: 'Art Locations app integration not configured'
+      res.status(200).json({ 
+        success: true, 
+        message: "Art location data recorded successfully",
+        data: updatedOrder
       });
-      
     } catch (error) {
-      console.error('Error handling art location data:', error);
-      return res.status(500).json({ 
-        message: 'Server error processing art location data', 
-        error: (error as Error).message 
+      console.error("Error recording art location data:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to record art location data",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   },
-  
+
   /**
    * Retrieves artwork location data for an order
    * @param req Express request object
@@ -102,34 +60,39 @@ export const artLocationController = {
    */
   async getArtLocationData(req: Request, res: Response) {
     try {
-      const orderId = parseInt(req.params.orderId);
+      const orderId = Number(req.params.orderId);
       
       if (isNaN(orderId)) {
-        return res.status(400).json({ message: 'Invalid order ID' });
+        return res.status(400).json({ 
+          success: false, 
+          message: "Invalid order ID" 
+        });
       }
       
       const order = await storage.getOrder(orderId);
       
       if (!order) {
-        return res.status(404).json({ message: 'Order not found' });
+        return res.status(404).json({ 
+          success: false, 
+          message: "Order not found" 
+        });
       }
       
-      // Return the art location information from the order
-      return res.status(200).json({
+      // Return the relevant art location data
+      res.status(200).json({
         orderId: order.id,
-        artworkDescription: order.artworkDescription || '',
-        artworkType: order.artworkType || '',
-        artworkLocation: order.artworkLocation || '',
-        artworkImage: order.artworkImage || '',
-        artworkWidth: order.artworkWidth,
-        artworkHeight: order.artworkHeight
+        location: order.artworkLocation || "",
+        artworkType: order.artworkType || "",
+        artworkDescription: order.artworkDescription || "",
+        artworkWidth: order.artworkWidth || 0,
+        artworkHeight: order.artworkHeight || 0
       });
-      
     } catch (error) {
-      console.error('Error retrieving art location data:', error);
-      return res.status(500).json({ 
-        message: 'Server error retrieving art location data', 
-        error: (error as Error).message 
+      console.error("Error fetching art location data:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch art location data",
+        error: error instanceof Error ? error.message : "Unknown error"
       });
     }
   }

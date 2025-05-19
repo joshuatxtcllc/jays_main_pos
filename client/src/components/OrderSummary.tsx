@@ -28,6 +28,8 @@ interface OrderSummaryProps {
   glassOption: GlassOption | null;
   artworkWidth: number;
   artworkHeight: number;
+  artworkLocation?: string;
+  orderId?: number;
   primaryMatWidth: number; // Added property for primary mat width
   specialServices: SpecialService[];
   onCreateOrder: () => void;
