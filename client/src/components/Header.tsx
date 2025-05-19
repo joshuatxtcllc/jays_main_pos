@@ -271,6 +271,23 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               </div>
             </div>
           ))}
+           {/* Add Customers and Frame Education links to the mobile menu */}
+          <Link href="/customers">
+            <span className={cn(
+              "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
+              location === "/customers" && "text-primary"
+            )}>
+              Customers
+            </span>
+          </Link>
+          <Link href="/frame-education">
+            <span className={cn(
+              "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
+              location === "/frame-education" && "text-primary"
+            )}>
+              Frame Education
+            </span>
+          </Link>
 
           <div className="py-2 flex items-center">
             <span className="font-medium mr-4">Cart:</span>
