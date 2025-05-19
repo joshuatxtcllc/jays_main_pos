@@ -364,10 +364,31 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
           // Add offset for all mats except the topmost one
           const offsetPx = (i < sortedMats.length - 1 && mat.offset > 0) ? mat.offset * scaleFactor : 0;
           
+          // Store the current position before moving inward (for drawing inner line)
+          const innerX = currentX + matWidthPx + offsetPx;
+          const innerY = currentY + matWidthPx + offsetPx;
+          const innerWidth = currentWidth - (matWidthPx + offsetPx) * 2;
+          const innerHeight = currentHeight - (matWidthPx + offsetPx) * 2;
+          
+          // Move position for next mat
           currentX += matWidthPx + offsetPx;
           currentY += matWidthPx + offsetPx;
           currentWidth -= (matWidthPx + offsetPx) * 2;
           currentHeight -= (matWidthPx + offsetPx) * 2;
+          
+          // Draw a thin contrasting line along the inside edge of the mat
+          // This makes it easier to see where each mat ends
+          const lineWidth = Math.max(1, scaleFactor * 0.05); // Thin line that scales with the display
+          ctx.strokeStyle = mat.matboard.color === '#FFFFFF' || mat.matboard.color === '#FFF' 
+            ? '#888888' // Use gray for white mats
+            : '#FFFFFF'; // Use white for colored mats
+          ctx.lineWidth = lineWidth;
+          ctx.strokeRect(
+            innerX - lineWidth/2, 
+            innerY - lineWidth/2, 
+            innerWidth + lineWidth, 
+            innerHeight + lineWidth
+          );
         }
       } else {
         // Draw only the innermost mat (bottom position, closest to artwork)
@@ -384,11 +405,30 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
             currentHeight
           );
           
+          // Store the current position before moving inward (for drawing inner line)
+          const innerX = currentX + matWidthPx;
+          const innerY = currentY + matWidthPx;
+          const innerWidth = currentWidth - matWidthPx * 2;
+          const innerHeight = currentHeight - matWidthPx * 2;
+          
           // Move inward for the artwork
           currentX += matWidthPx;
           currentY += matWidthPx;
           currentWidth -= matWidthPx * 2;
           currentHeight -= matWidthPx * 2;
+          
+          // Draw a thin contrasting line along the inside edge of the mat
+          const lineWidth = Math.max(1, scaleFactor * 0.05);
+          ctx.strokeStyle = mat.matboard.color === '#FFFFFF' || mat.matboard.color === '#FFF' 
+            ? '#888888' // Use gray for white mats
+            : '#FFFFFF'; // Use white for colored mats
+          ctx.lineWidth = lineWidth;
+          ctx.strokeRect(
+            innerX - lineWidth/2, 
+            innerY - lineWidth/2, 
+            innerWidth + lineWidth, 
+            innerHeight + lineWidth
+          );
         }
       }
       
