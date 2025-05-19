@@ -183,7 +183,7 @@ const MatBorderDemo = () => {
   ]);
   
   // Function to update mat colors
-  const updateMatColor = (position: number, matId: number) => {
+  const updateMatColor = (position: number, matId: string) => {
     const selectedMat = sampleMats.find(mat => mat.id === matId);
     if (selectedMat) {
       const updatedMats = selectedMats.map(mat => {
@@ -361,8 +361,8 @@ const MatBorderDemo = () => {
                     <div className="space-y-2">
                       <Label htmlFor="middle-mat-color">Color</Label>
                       <Select 
-                        value={selectedMats[1].matboard.id.toString()} 
-                        onValueChange={(value) => updateMatColor(2, Number(value))}
+                        value={selectedMats[1].matboard.id} 
+                        onValueChange={(value) => updateMatColor(2, value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a color" />
@@ -403,8 +403,8 @@ const MatBorderDemo = () => {
                     <div className="space-y-2">
                       <Label htmlFor="top-mat-color">Color</Label>
                       <Select 
-                        value={selectedMats[2].matboard.id.toString()} 
-                        onValueChange={(value) => updateMatColor(1, Number(value))}
+                        value={selectedMats[2].matboard.id} 
+                        onValueChange={(value) => updateMatColor(1, value)}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select a color" />
