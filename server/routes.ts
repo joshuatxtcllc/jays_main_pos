@@ -1678,7 +1678,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Assuming frame cost is included in the profitability breakdown
           breakdown.frameCost += Number(order.frames?.[0]?.frameId ? order.profitability.totalWholesaleCost * 0.5 : 0);
           breakdown.matCost += Number(order.mats?.[0]?.matColorId ? order.profitability.totalWholesaleCost * 0.3 : 0);
-```text
           breakdown.glassCost += Number(order.glassOptionId ? order.profitability.totalWholesaleCost * 0.2 : 0);
         }
         return breakdown;
