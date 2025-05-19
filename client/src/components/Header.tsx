@@ -96,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
               <DropdownMenuItem asChild>
                 <Link href="/customer-portal">Customer Portal</Link>
               </DropdownMenuItem>
-            </>
+            </div>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
