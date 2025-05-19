@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProductionKanban } from '@/hooks/use-production';
-import { Loader2, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info, GripVertical, Edit } from 'lucide-react';
+import { Loader2, AlertTriangle, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info, GripVertical, Edit } from 'lucide-react';
 import { Order, ProductionStatus, productionStatuses } from '@shared/schema';
 import { formatCurrency } from '@/lib/utils';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
@@ -119,12 +119,12 @@ function OrderCard({
             }
           </div>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Phone className="h-3 w-3" />
           <span className="text-xs">Contact customer for details</span>
         </div>
-        
+
         <div className="flex items-center space-x-2">
           <Mail className="h-3 w-3" />
           <span className="text-xs">Order #{order.id}</span>
@@ -149,7 +149,7 @@ function OrderCard({
           <ArrowLeftCircle className="h-4 w-4 mr-1" />
           Back
         </Button>
-        
+
         <Button 
           variant="outline" 
           size="sm"
@@ -158,7 +158,7 @@ function OrderCard({
           <Edit className="h-4 w-4 mr-1" />
           Edit
         </Button>
-        
+
         {order.productionStatus === 'order_processed' ? (
           <Dialog open={isScheduleDialogOpen} onOpenChange={setIsScheduleDialogOpen}>
             <DialogTrigger asChild>
@@ -207,7 +207,7 @@ function OrderCard({
             <ArrowRightCircle className="h-4 w-4 ml-1" />
           </Button>
         )}
-        
+
         {/* Order Edit Dialog */}
         <OrderEditDialog 
           isOpen={isEditDialogOpen} 
@@ -239,7 +239,7 @@ function KanbanColumn({
   currentStatus: ProductionStatus;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  
+
   // Set up drop target for the column
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: ItemTypes.ORDER_CARD,
@@ -263,10 +263,10 @@ function KanbanColumn({
       canDrop: monitor.canDrop(),
     }),
   });
-  
+
   // Apply drop ref to the column
   drop(ref);
-  
+
   // Determine the column highlight styling based on drag state
   const getColumnStyle = () => {
     if (isOver && canDrop) {
@@ -402,7 +402,10 @@ export function ProductionKanban() {
     return (
       <div className="p-4 bg-destructive/10 rounded-lg">
         <h2 className="font-semibold text-lg">Error Loading Production Board</h2>
-        <p className="text-muted-foreground">{(error as Error).message}</p>
+        <p className="text-muted-foreground">
+          <AlertTriangle className="inline-block h-4 w-4 mr-1 align-middle" />
+          {(error as Error).message}
+        </p>
       </div>
     );
   }
