@@ -29,7 +29,6 @@ interface OrderSummaryProps {
   artworkWidth: number;
   artworkHeight: number;
   artworkLocation?: string;
-  orderId?: number;
   primaryMatWidth: number; // Added property for primary mat width
   specialServices: SpecialService[];
   onCreateOrder: () => void;
@@ -42,7 +41,7 @@ interface OrderSummaryProps {
   useMultipleFrames?: boolean;
   addToWholesaleOrder?: boolean;
   setAddToWholesaleOrder?: (value: boolean) => void;
-  orderId: number; // Added orderId prop for QR code generation
+  orderId?: number; // Order ID for QR code generation
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -51,6 +50,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   glassOption,
   artworkWidth,
   artworkHeight,
+  artworkLocation,
   primaryMatWidth,
   specialServices,
   onCreateOrder,
@@ -108,13 +108,33 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     specialServicesPrice
   );
 
-  // Generate QR code data
-  const qrCodeData = generateQrCode(orderId); // Assumed generateQrCode function exists
+  // Generate QR code data if orderId is available
+  const qrCodeData = orderId ? generateQrCode(orderId) : null;
 
 
   return (
     <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 header-underline">Order Summary</h2>
+      
+      {/* Artwork Details */}
+      <div className="mb-4 border-b pb-3 border-gray-200">
+        <div className="flex justify-between font-medium">
+          <span>Artwork Details</span>
+        </div>
+        <div className="text-sm mt-1">
+          <div className="flex justify-between text-gray-700">
+            <span>Dimensions:</span>
+            <span>{artworkWidth}" × {artworkHeight}"</span>
+          </div>
+          {artworkLocation && (
+            <div className="flex justify-between text-gray-700 mt-1">
+              <span>Storage Location:</span>
+              <span>{artworkLocation}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      
       <div className="space-y-3">
         {/* Frames */}
         {frames.length > 0 && (
