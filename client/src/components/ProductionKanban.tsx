@@ -404,8 +404,23 @@ export function ProductionKanban() {
         <h2 className="font-semibold text-lg">Error Loading Production Board</h2>
         <p className="text-muted-foreground">
           <AlertTriangle className="inline-block h-4 w-4 mr-1 align-middle" />
-          {(error as Error).message}
+          {(error as Error).message || "Failed to connect to database"}
         </p>
+        <div className="mt-4">
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry Loading
+          </Button>
+        </div>
+        <div className="mt-4">
+          <p className="text-sm text-muted-foreground">
+            This error typically occurs when there are temporary database connection issues.
+            You can try refreshing the page or checking your database connection.
+          </p>
+        </div>
       </div>
     );
   }

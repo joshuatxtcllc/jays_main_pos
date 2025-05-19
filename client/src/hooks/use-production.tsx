@@ -17,12 +17,20 @@ export function useProduction({
   const kanbanQuery = useQuery({
     queryKey: ['/api/production/kanban'],
     queryFn: async () => {
-      const res = await fetch('/api/production/kanban');
-      if (!res.ok) {
-        throw new Error('Failed to fetch Kanban orders');
+      try {
+        const res = await fetch('/api/production/kanban');
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to fetch Kanban orders');
+        }
+        return res.json();
+      } catch (error) {
+        console.error('Kanban board fetch error:', error);
+        throw new Error('Database connection error. Please try again later.');
       }
-      return res.json();
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 
   // Get a specific order
