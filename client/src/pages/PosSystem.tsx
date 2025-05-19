@@ -40,6 +40,7 @@ const PosSystem = () => {
   const [artworkImage, setArtworkImage] = useState<string | null>(null);
   const [artworkDescription, setArtworkDescription] = useState<string>('');
   const [artworkType, setArtworkType] = useState<string>('print');
+  const [artworkLocation, setArtworkLocation] = useState<string>('');
   const [aspectRatio, setAspectRatio] = useState<number>(0.8); // Default 4:5
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState<boolean>(false);
@@ -936,15 +937,27 @@ const PosSystem = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 Description
               </label>
               <input 
                 type="text" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
                 placeholder="Enter artwork description"
                 value={artworkDescription}
                 onChange={(e) => setArtworkDescription(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-800 mb-1">
+                Physical Storage Location
+              </label>
+              <input 
+                type="text" 
+                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+                placeholder="Enter physical storage location at shop"
+                value={artworkLocation}
+                onChange={(e) => setArtworkLocation(e.target.value)}
               />
             </div>
           </div>

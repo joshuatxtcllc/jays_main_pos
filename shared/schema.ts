@@ -137,6 +137,7 @@ export const orders = pgTable("orders", {
   matWidth: numeric("mat_width").notNull(), // in inches
   artworkDescription: text("artwork_description"),
   artworkType: text("artwork_type"),
+  artworkLocation: text("artwork_location"),
   quantity: integer("quantity").notNull().default(1),
   subtotal: numeric("subtotal").notNull(),
   tax: numeric("tax").notNull(),
