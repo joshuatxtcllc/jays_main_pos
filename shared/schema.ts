@@ -697,3 +697,27 @@ export const insertMaterialLocationSchema = createInsertSchema(materialLocations
 });
 export type InsertMaterialLocation = z.infer<typeof insertMaterialLocationSchema>;
 export type MaterialLocation = typeof materialLocations.$inferSelect;
+
+// Notification System
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  source: text("source").notNull(), // The app or system component that generated this notification
+  sourceId: text("source_id"), // ID within the source system (order ID, etc.)
+  type: text("type").$type<'info' | 'success' | 'warning' | 'error'>().notNull().default('info'),
+  createdAt: timestamp("created_at").defaultNow(),
+  read: boolean("read").default(false),
+  actionable: boolean("actionable").default(false),
+  link: text("link"), // Optional link for actionable notifications
+  smsEnabled: boolean("sms_enabled").default(false),
+  smsRecipient: text("sms_recipient"),
+  userId: integer("user_id").references(() => users.id) // Optional user ID if notification is for a specific user
+});
+
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ 
+  id: true, 
+  createdAt: true 
+});
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type Notification = typeof notifications.$inferSelect;

@@ -1,7 +1,9 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import express from "express";
+import { WebSocketServer } from 'ws';
 import { replitAuth, optionalReplitAuth } from './middleware/replitAuth';
+import { notificationController } from './controllers/notificationController';
 import { storage } from "./storage";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
@@ -1767,5 +1769,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api/customer-portal', customerPortalRoutes);
 
   const httpServer = createServer(app);
+  
+  // Create WebSocket server for notifications
+  const wss = new WebSocketServer({ 
+    server: httpServer, 
+    path: '/ws' 
+  });
+  
+  // Handle WebSocket connections
+  wss.on('connection', (socket) => {
+    console.log('[WebSocket] Client connected');
+    
+    // Handle messages from clients
+    socket.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        // Handle client registration
+        if (data.type === 'register' && data.appId) {
+          notificationController.addClient(data.appId, socket);
+        }
+        
+        // Handle new notification events
+        if (data.type === 'event' && data.event === 'new_notification') {
+          notificationController.sendNotification(data.payload);
+        }
+      } catch (error) {
+        console.error('[WebSocket] Error processing message:', error);
+      }
+    });
+    
+    // Handle disconnection
+    socket.on('close', () => {
+      notificationController.removeClient(socket);
+    });
+  });
+  
+  // API endpoint for creating notifications
+  app.post('/api/notifications', async (req, res) => {
+    await notificationController.createNotification(req, res);
+  });
+  
   return httpServer;
 }

@@ -34,6 +34,8 @@ import ChatWidget from "./components/ChatWidget";
 import FrameEducationPage from '@/pages/FrameEducationPage';
 import { AuthProvider } from './hooks/use-auth';
 import { lazy } from 'react';
+// Import the notification service
+import { notificationService } from "./lib/notificationService";
 
 // Error fallback component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -49,6 +51,17 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+
+  // Initialize notification service and handle theme preference
+  useEffect(() => {
+    // Initialize the notification service
+    notificationService.init();
+
+    // Cleanup on unmount
+    return () => {
+      notificationService.cleanup();
+    };
+  }, []);
 
   // Check for saved theme preference or use OS preference
   useEffect(() => {

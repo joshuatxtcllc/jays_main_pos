@@ -129,6 +129,14 @@ export interface IStorage {
   updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup>;
   getOrdersByGroupId(orderGroupId: number): Promise<Order[]>;
   getOrderGroupsByCustomerId(customerId: number): Promise<OrderGroup[]>;
+  
+  // Notification methods
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  getNotification(id: number): Promise<Notification | undefined>;
+  getNotifications(limit?: number): Promise<Notification[]>;
+  getUnreadNotifications(): Promise<Notification[]>;
+  markNotificationAsRead(id: number): Promise<Notification>;
+  getNotificationsByUser(userId: number): Promise<Notification[]>;
 
   // Order methods
   getOrder(id: number): Promise<Order | undefined>;
@@ -2165,6 +2173,83 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting webhook endpoint:', error);
       throw error;
+    }
+  }
+
+  // Notification methods
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    try {
+      const [result] = await db.insert(notifications).values(notification).returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      throw error;
+    }
+  }
+
+  async getNotification(id: number): Promise<Notification | undefined> {
+    try {
+      const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
+      return notification;
+    } catch (error) {
+      console.error('Error fetching notification:', error);
+      return undefined;
+    }
+  }
+
+  async getNotifications(limit: number = 50): Promise<Notification[]> {
+    try {
+      const notificationsList = await db
+        .select()
+        .from(notifications)
+        .orderBy(desc(notifications.createdAt))
+        .limit(limit);
+      return notificationsList;
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return [];
+    }
+  }
+
+  async getUnreadNotifications(): Promise<Notification[]> {
+    try {
+      const notificationsList = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.read, false))
+        .orderBy(desc(notifications.createdAt));
+      return notificationsList;
+    } catch (error) {
+      console.error('Error fetching unread notifications:', error);
+      return [];
+    }
+  }
+
+  async markNotificationAsRead(id: number): Promise<Notification> {
+    try {
+      const [updatedNotification] = await db
+        .update(notifications)
+        .set({ read: true })
+        .where(eq(notifications.id, id))
+        .returning();
+      return updatedNotification;
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      throw error;
+    }
+  }
+
+  async getNotificationsByUser(userId: number): Promise<Notification[]> {
+    try {
+      const notificationsList = await db
+        .select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+      return notificationsList;
+    } catch (error) {
+      console.error('Error fetching notifications by user:', error);
+      return [];
     }
   }
 }
