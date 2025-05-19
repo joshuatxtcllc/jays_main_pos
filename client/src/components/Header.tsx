@@ -138,12 +138,12 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
                       {menuItem.subItems.map((subItem, subIdx) => (
                         <li key={subIdx}>
                           <Link href={subItem.path}>
-                            <span className={cn(
+                            <a className={cn(
                               "block select-none rounded-md p-2 hover:bg-accent hover:text-accent-foreground cursor-pointer",
                               location === subItem.path && "bg-accent/50 text-accent-foreground"
                             )}>
                               {subItem.title}
-                            </span>
+                            </a>
                           </Link>
                         </li>
                       ))}
@@ -151,20 +151,6 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
                   </NavigationMenuContent>
                 </NavigationMenuItem>
               ))}
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "text-foreground dark:text-white font-medium")}>
-                  <Link href="/customers">
-                    Customers
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild className={cn(navigationMenuTriggerStyle(), "text-foreground dark:text-white font-medium")}>
-                  <Link href="/frame-education">
-                    Frame Education
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -250,44 +236,54 @@ const Header: React.FC<HeaderProps> = ({ darkMode, toggleTheme }) => {
 
       {/* Mobile menu */}
       <div className={cn(
-        "md:hidden transition-all duration-300",
-        isMobileMenuOpen ? "max-h-[70vh]" : "max-h-0"
+        "md:hidden transition-all duration-300 overflow-hidden",
+        isMobileMenuOpen ? "max-h-[70vh] opacity-100" : "max-h-0 opacity-0"
       )}>
         <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-dark-bg overflow-y-auto max-h-[70vh]">
           {menuStructure.map((menuItem, idx) => (
             <div key={idx} className="py-1">
-              <div className="font-medium text-lg mb-1 text-foreground dark:text-white">{menuItem.title}</div>
+              <div 
+                className="font-medium text-lg mb-1 text-foreground dark:text-white cursor-pointer" 
+                onClick={() => window.location.href = menuItem.path}
+              >
+                {menuItem.title}
+              </div>
               <div className="pl-4 flex flex-col space-y-2">
                 {menuItem.subItems.map((subItem, subIdx) => (
-                  <Link key={subIdx} href={subItem.path}>
-                    <span className={cn(
+                  <div
+                    key={subIdx}
+                    className={cn(
                       "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
                       location === subItem.path && "text-primary"
-                    )}>
-                      {subItem.title}
-                    </span>
-                  </Link>
+                    )}
+                    onClick={() => window.location.href = subItem.path}
+                  >
+                    {subItem.title}
+                  </div>
                 ))}
               </div>
             </div>
           ))}
-           {/* Add Customers and Frame Education links to the mobile menu */}
-          <Link href="/customers">
-            <span className={cn(
+
+          <div 
+            className={cn(
               "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
               location === "/customers" && "text-primary"
-            )}>
-              Customers
-            </span>
-          </Link>
-          <Link href="/frame-education">
-            <span className={cn(
+            )}
+            onClick={() => window.location.href = "/customers"}
+          >
+            Customers
+          </div>
+          
+          <div 
+            className={cn(
               "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
               location === "/frame-education" && "text-primary"
-            )}>
-              Frame Education
-            </span>
-          </Link>
+            )}
+            onClick={() => window.location.href = "/frame-education"}
+          >
+            Frame Education
+          </div>
 
           <div className="py-2 flex items-center">
             <span className="font-medium mr-4">Cart:</span>
