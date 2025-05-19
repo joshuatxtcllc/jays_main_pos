@@ -893,12 +893,12 @@ const PosSystem = () => {
           <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 Width (inches)
               </label>
               <input 
                 type="number" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
                 step="0.125"
                 min="0.125"
                 value={artworkWidth}
@@ -906,12 +906,12 @@ const PosSystem = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 Height (inches)
               </label>
               <input 
                 type="number" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
                 step="0.125"
                 min="0.125"
                 value={artworkHeight}
@@ -919,11 +919,11 @@ const PosSystem = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
                 Art Type
               </label>
               <select
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800"
                 value={artworkType}
                 onChange={(e) => setArtworkType(e.target.value)}
               >
