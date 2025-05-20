@@ -126,7 +126,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span>Dimensions:</span>
             <span>{artworkWidth}" × {artworkHeight}"</span>
           </div>
-          {artworkLocation && (
+          {artworkLocation && artworkLocation.trim() !== "" && (
             <div className="flex justify-between text-gray-700 mt-1">
               <span>Storage Location:</span>
               <span>{artworkLocation}</span>
