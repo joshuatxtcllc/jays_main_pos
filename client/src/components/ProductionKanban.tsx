@@ -322,12 +322,12 @@ function KanbanColumn({
 
 export function ProductionKanban() {
   const { 
-    orders, 
-    isLoading, 
-    error, 
-    updateOrderStatus: updateStatus,
-    scheduleOrder,
-  } = useProductionKanban();
+    orders = [], 
+    isLoading = false, 
+    error = null, 
+    updateOrderStatus: updateStatus = () => {},
+    scheduleOrder = () => {},
+  } = useProductionKanban() || {};
 
   const handleUpdateStatus = (id: number, status: ProductionStatus) => {
     updateStatus({ id, status });

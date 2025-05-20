@@ -126,7 +126,7 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
         {/* Logo */}
         <Link href="/dashboard">
           <a className="flex items-center space-x-2 cursor-pointer">
-            <span className="font-bold text-xl text-foreground dark:text-white">Jay's Frames</span>
+            <span className="font-bold text-xl text-black dark:text-white">Jay's Frames</span>
           </a>
         </Link>
 
@@ -136,7 +136,7 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
             <NavigationMenuList>
               {menuStructure.map((menuItem, idx) => (
                 <NavigationMenuItem key={idx}>
-                  <NavigationMenuTrigger className="text-foreground dark:text-white font-medium">
+                  <NavigationMenuTrigger className="text-black dark:text-white font-medium">
                     {menuItem.title}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>

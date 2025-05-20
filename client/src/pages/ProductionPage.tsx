@@ -49,7 +49,12 @@ export default function ProductionPage() {
           </div>
         </div>
       ) : (
-        <ProductionKanban />
+        <ProductionKanban
+          orders={orders || []} 
+          isLoading={isLoading}
+          error={error}
+          updateOrderStatus={updateOrderStatus}
+        />
       )}
     </div>
   );
