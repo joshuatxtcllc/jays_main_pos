@@ -203,15 +203,17 @@ export function useProduction({
 export function useProductionKanban() {
   const production = useProduction({});
   
+  // Ensure that even if there's an error, we provide some default values
+  // This prevents the component from breaking when data is missing
   return {
-    orders: production.orders,
-    isLoading: production.isLoadingOrders,
-    error: production.ordersError,
+    orders: production.orders || [],
+    isLoading: production.isLoadingOrders || false,
+    error: production.ordersError || null,
     useOrdersByStatus: production.getOrdersByStatus,
-    updateOrderStatus: production.updateOrderStatus,
-    scheduleOrder: production.scheduleOrder,
-    isUpdating: production.isUpdating,
-    isScheduling: production.isScheduling,
+    updateOrderStatus: production.updateOrderStatus || ((data: any) => console.warn("updateOrderStatus not available")),
+    scheduleOrder: production.scheduleOrder || ((data: any) => console.warn("scheduleOrder not available")),
+    isUpdating: production.isUpdating || false,
+    isScheduling: production.isScheduling || false,
   };
 }
 

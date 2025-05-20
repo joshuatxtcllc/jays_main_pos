@@ -136,7 +136,7 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
             <NavigationMenuList>
               {menuStructure.map((menuItem, idx) => (
                 <NavigationMenuItem key={idx}>
-                  <NavigationMenuTrigger className="text-black dark:text-white font-medium">
+                  <NavigationMenuTrigger className="text-black dark:text-white font-semibold">
                     {menuItem.title}
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>

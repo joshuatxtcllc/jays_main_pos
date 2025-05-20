@@ -7,7 +7,14 @@ import { RefreshCw, AlertTriangle, Database } from "lucide-react";
 import { useProductionKanban } from '@/hooks/use-production';
 
 export default function ProductionPage() {
-  const { orders, isLoading, error, updateOrderStatus } = useProductionKanban();
+  const { 
+    orders, 
+    isLoading, 
+    error, 
+    updateOrderStatus,
+    scheduleOrder 
+  } = useProductionKanban();
+
   const [retryCount, setRetryCount] = useState(0);
 
   const handleRetry = () => {
@@ -49,12 +56,7 @@ export default function ProductionPage() {
           </div>
         </div>
       ) : (
-        <ProductionKanban
-          orders={orders || []} 
-          isLoading={isLoading}
-          error={error}
-          updateOrderStatus={updateOrderStatus}
-        />
+        <ProductionKanban />
       )}
     </div>
   );
