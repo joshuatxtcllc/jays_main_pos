@@ -618,11 +618,6 @@ const PosSystem = () => {
 
       // Prepare order data - using primary frame, mat and width
       const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
-      // Prepare metadata to include frame design image as additional info
-      const orderMetadata = {
-        frameDesignImage: frameDesignImage || null
-      };
-      
       const orderData: InsertOrder = {
         customerId: customerResponse.id,
         frameId: primaryFrame ? primaryFrame.id : '',
@@ -638,7 +633,7 @@ const PosSystem = () => {
         tax: "0", // Will be calculated on the server
         total: "0", // Will be calculated on the server
         artworkImage,
-        metadata: JSON.stringify(orderMetadata) // Store frame design image in metadata
+        frameDesignImage // Store frame design image directly
       };
 
       console.log("Creating order with data:", orderData);
