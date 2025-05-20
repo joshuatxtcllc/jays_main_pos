@@ -465,8 +465,11 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
       // Capture the canvas as an image data URL for saving
       if (onFrameImageCaptured) {
         try {
-          const frameDesignImage = canvas.toDataURL('image/png');
-          onFrameImageCaptured(frameDesignImage);
+          // Use a slight delay to ensure canvas is fully rendered
+          setTimeout(() => {
+            const frameDesignImage = canvas.toDataURL('image/png');
+            onFrameImageCaptured(frameDesignImage);
+          }, 500);
         } catch (error) {
           console.error('Error capturing frame design image:', error);
         }

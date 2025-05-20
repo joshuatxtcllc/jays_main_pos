@@ -632,8 +632,7 @@ const PosSystem = () => {
         subtotal: "0", // Will be calculated on the server
         tax: "0", // Will be calculated on the server
         total: "0", // Will be calculated on the server
-        artworkImage,
-        frameDesignImage // Store frame design image directly
+        artworkImage
       };
 
       console.log("Creating order with data:", orderData);
@@ -641,6 +640,30 @@ const PosSystem = () => {
       // Create the order
       const orderResponse = await createOrderMutation.mutateAsync(orderData);
       console.log("Order created successfully:", orderResponse);
+      
+      // If we have a frame design image, save it separately to avoid TypeScript issues
+      if (frameDesignImage) {
+        try {
+          const response = await fetch('/api/frame-designs', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              orderId: orderResponse.id,
+              imageData: frameDesignImage
+            })
+          });
+          
+          if (response.ok) {
+            console.log("Frame design image saved successfully");
+          } else {
+            console.error("Failed to save frame design image:", await response.text());
+          }
+        } catch (error) {
+          console.error("Error saving frame design image:", error);
+        }
+      }
 
       // Create special service relationships
       if (selectedServices.length > 0) {
