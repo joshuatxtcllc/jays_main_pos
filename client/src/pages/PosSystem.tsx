@@ -106,6 +106,9 @@ const PosSystem = () => {
 
   // Wholesale Order
   const [addToWholesaleOrder, setAddToWholesaleOrder] = useState<boolean>(true);
+  
+  // Frame design image
+  const [frameDesignImage, setFrameDesignImage] = useState<string | null>(null);
 
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
