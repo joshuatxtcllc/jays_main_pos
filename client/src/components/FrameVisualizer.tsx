@@ -508,7 +508,15 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
                     // Create a temporary link element
                     const link = document.createElement('a');
                     link.download = `framed-artwork-${new Date().toISOString().split('T')[0]}.png`;
-                    link.href = canvasRef.current.toDataURL('image/png');
+                    // Get the data URL with reduced quality for better performance
+                    const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.85); 
+                    link.href = dataUrl;
+                    
+                    // If we have a callback, pass the image data to it
+                    if (onFrameImageCaptured) {
+                      onFrameImageCaptured(dataUrl);
+                    }
+                    
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
