@@ -8,14 +8,18 @@ import { useProductionKanban } from '@/hooks/use-production';
 
 export default function ProductionPage() {
   const { 
-    orders, 
-    isLoading, 
-    error, 
-    updateOrderStatus,
-    scheduleOrder 
-  } = useProductionKanban();
+    orders = [], 
+    isLoading = false, 
+    error = null, 
+    updateOrderStatus = () => {},
+    scheduleOrder = () => {} 
+  } = useProductionKanban() || {};
 
   const [retryCount, setRetryCount] = useState(0);
+  
+  useEffect(() => {
+    console.log("ProductionPage loaded with orders:", orders ? orders.length : 0);
+  }, [orders]);
 
   const handleRetry = () => {
     setRetryCount(prev => prev + 1);

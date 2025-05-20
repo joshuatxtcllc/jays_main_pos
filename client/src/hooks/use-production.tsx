@@ -26,10 +26,11 @@ export function useProduction({
         return res.json();
       } catch (error) {
         console.error('Kanban board fetch error:', error);
-        throw new Error('Database connection error. Please try again later.');
+        // Return empty array instead of throwing to prevent breaking the UI
+        return [];
       }
     },
-    retry: 2,
+    retry: 3,
     retryDelay: 1000,
   });
 

@@ -321,13 +321,15 @@ function KanbanColumn({
 }
 
 export function ProductionKanban() {
+  // Ensure we have fallback values for all properties
+  const productionKanban = useProductionKanban();
   const { 
     orders = [], 
     isLoading = false, 
     error = null, 
-    updateOrderStatus: updateStatus = () => {},
-    scheduleOrder = () => {},
-  } = useProductionKanban() || {};
+    updateOrderStatus: updateStatus = (data) => console.log('Update status called with:', data),
+    scheduleOrder = (data) => console.log('Schedule order called with:', data),
+  } = productionKanban || {};
 
   const handleUpdateStatus = (id: number, status: ProductionStatus) => {
     updateStatus({ id, status });
@@ -394,8 +396,19 @@ export function ProductionKanban() {
 
   // Filter orders by their status
   const getOrdersByStatus = (status: ProductionStatus) => {
-    if (!orders) return [];
-    return orders.filter((order: Order) => order.productionStatus === status);
+    if (!orders) {
+      console.log('No orders data available');
+      return [];
+    }
+    
+    if (!Array.isArray(orders)) {
+      console.log('Orders is not an array:', orders);
+      return [];
+    }
+    
+    const filteredOrders = orders.filter((order: Order) => order.productionStatus === status);
+    console.log(`Found ${filteredOrders.length} orders with status ${status}`);
+    return filteredOrders;
   };
 
   if (error) {
@@ -411,7 +424,7 @@ export function ProductionKanban() {
             onClick={() => window.location.reload()} 
             variant="outline"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <Loader2 className="h-4 w-4 mr-2" />
             Retry Loading
           </Button>
         </div>
