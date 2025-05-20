@@ -1,10 +1,8 @@
-import { Router } from 'express';
+import { Express } from 'express';
 import { artLocationController } from '../controllers/artLocationController';
 
-const router = Router();
-
-// Routes for art location functionality
-router.post('/api/art-locations', artLocationController.sendArtLocationData);
-router.get('/api/art-locations/:orderId', artLocationController.getArtLocationData);
-
-export default router;
+export function registerArtLocationRoutes(app: Express) {
+  // Routes for art location functionality
+  app.post('/api/art-locations', artLocationController.sendArtLocationData);
+  app.get('/api/art-locations/:orderId', artLocationController.getArtLocationData);
+}
