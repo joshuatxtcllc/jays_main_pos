@@ -63,8 +63,8 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // Use PORT from environment or fallback to port 5001
-  let port = parseInt(process.env.PORT || "5001");
+  // Use PORT from environment or fallback to port 5000
+  let port = parseInt(process.env.PORT || "5000");
 
   // Function to find an available port
   const startServer = () => {
