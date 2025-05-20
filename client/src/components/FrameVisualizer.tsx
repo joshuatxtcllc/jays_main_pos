@@ -36,6 +36,26 @@ interface FrameVisualizerProps {
   useMultipleFrames: boolean;
 }
 
+interface FrameVisualizerProps {
+  frames: {
+    frame: Frame;
+    position: number;
+    distance: number;
+  }[];
+  mats: {
+    matboard: MatColor;
+    position: number;
+    width: number;
+    offset: number;
+  }[];
+  artworkWidth: number;
+  artworkHeight: number;
+  artworkImage: string | null;
+  useMultipleMats: boolean;
+  useMultipleFrames: boolean;
+  onFrameImageCaptured?: (imageDataUrl: string) => void;
+}
+
 const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
   frames,
   mats,
@@ -43,7 +63,8 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
   artworkHeight,
   artworkImage,
   useMultipleMats,
-  useMultipleFrames
+  useMultipleFrames,
+  onFrameImageCaptured
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -440,8 +461,18 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         currentWidth, 
         currentHeight
       );
+      
+      // Capture the canvas as an image data URL for saving
+      if (onFrameImageCaptured) {
+        try {
+          const frameDesignImage = canvas.toDataURL('image/png');
+          onFrameImageCaptured(frameDesignImage);
+        } catch (error) {
+          console.error('Error capturing frame design image:', error);
+        }
+      }
     });
-  }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleMats, useMultipleFrames]);
+  }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleMats, useMultipleFrames, onFrameImageCaptured]);
 
   return (
     <div className="frame-visualizer-container flex flex-col items-center justify-center p-4 w-full h-full">
@@ -460,11 +491,34 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
       </div>
       <div className="text-center text-sm text-muted-foreground mt-2 w-full">
         {frames.length > 0 && mats.length > 0 ? (
-          <p>
-            {useMultipleFrames ? `${frames.length} frames` : 'Single frame'} | 
-            {useMultipleMats ? `${mats.length} mats` : 'Single mat'} | 
-            Artwork: {artworkWidth}" × {artworkHeight}"
-          </p>
+          <>
+            <p>
+              {useMultipleFrames ? `${frames.length} frames` : 'Single frame'} | 
+              {useMultipleMats ? `${mats.length} mats` : 'Single mat'} | 
+              Artwork: {artworkWidth}" × {artworkHeight}"
+            </p>
+            <button 
+              className="mt-2 text-sm px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+              onClick={() => {
+                if (canvasRef.current) {
+                  try {
+                    // Create a temporary link element
+                    const link = document.createElement('a');
+                    link.download = `framed-artwork-${new Date().toISOString().split('T')[0]}.png`;
+                    link.href = canvasRef.current.toDataURL('image/png');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  } catch (error) {
+                    console.error('Error saving frame design image:', error);
+                    alert('Unable to save the frame design image. Please try again.');
+                  }
+                }
+              }}
+            >
+              Save Design Image
+            </button>
+          </>
         ) : (
           <p>Select frames and mats to visualize your framed artwork</p>
         )}
