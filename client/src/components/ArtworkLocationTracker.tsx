@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+import artLocationService from '@/services/artLocationService';
 import QrCodeGenerator from './QrCodeGenerator';
 import QrCodeScanner from './QrCodeScanner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -117,60 +118,48 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
     stopWebcam();
   };
 
-  // Save artwork location and image
   const saveArtworkLocation = async () => {
-    if (!artworkLocation.trim()) {
-      toast({
-        title: "Location Required",
-        description: "Please enter a physical storage location for the artwork.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     try {
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append('location', artworkLocation);
+      // Prepare location data
+      const locationData = {
+        orderId,
+        location: artworkLocation,
+        artworkType: savedLocationData?.artworkType || '',
+        artworkDescription: savedLocationData?.artworkDescription || '',
+        artworkWidth: savedLocationData?.artworkWidth || 0,
+        artworkHeight: savedLocationData?.artworkHeight || 0
+      };
 
-      // If we have a captured image, add it to form data
+      // Send to server using the service
+      const result = await artLocationService.sendArtLocationData(locationData);
+      setSavedLocationData(result);
+
+      // If we have a capture image, handle it separately with formData
       if (capturedImage) {
-        // Convert data URL to blob
+        // Prepare form data for image
+        const formData = new FormData();
         const response = await fetch(capturedImage);
         const blob = await response.blob();
-        formData.append('image', blob, 'artwork-location.jpg');
+        formData.append('image', blob, 'location.jpg');
+
+        // Send image directly to the endpoint
+        await fetch(`/api/orders/${orderId}/location/image`, {
+          method: 'POST',
+          body: formData
+        });
       }
 
-      // Use fetch directly for form data
-      const response = await fetch(`/api/orders/${orderId}/location`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save artwork location');
-      }
-
-      const data = await response.json();
-      setSavedLocationData(data);
-
-      toast({
-        title: "Location Saved",
-        description: "Artwork location has been saved successfully."
-      });
-
-      if (onSave) {
-        onSave();
-      }
+      // Call onSave callback if provided
+      if (onSave) onSave();
 
     } catch (error) {
       console.error('Error saving artwork location:', error);
       toast({
         title: "Error",
-        description: `Failed to save location: ${error.message}`,
-        variant: "destructive"
+        description: "Could not save artwork location. Please try again.",
+        variant: "destructive",
       });
     } finally {
       setLoading(false);

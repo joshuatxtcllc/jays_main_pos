@@ -24,7 +24,7 @@ const artLocationService = {
    */
   async sendArtLocationData(data: ArtLocationData): Promise<any> {
     try {
-      const response = await apiRequest('POST', '/api/art-locations', data);
+      const response = await apiRequest('POST', `/api/orders/${data.orderId}/location`, data);
       const result = await response.json();
       
       toast({
@@ -52,7 +52,7 @@ const artLocationService = {
    */
   async getArtLocationData(orderId: number): Promise<ArtLocationData> {
     try {
-      const response = await apiRequest('GET', `/api/art-locations/${orderId}`);
+      const response = await apiRequest('GET', `/api/orders/${orderId}/location`);
       return await response.json();
     } catch (error) {
       console.error('Error fetching art location data:', error);
