@@ -632,7 +632,8 @@ const PosSystem = () => {
         subtotal: "0", // Will be calculated on the server
         tax: "0", // Will be calculated on the server
         total: "0", // Will be calculated on the server
-        artworkImage
+        artworkImage,
+        frameDesignImage // Include the frame design image with the order
       };
 
       console.log("Creating order with data:", orderData);
@@ -1466,6 +1467,10 @@ const PosSystem = () => {
               artworkImage={artworkImage}
               useMultipleMats={useMultipleMats}
               useMultipleFrames={useMultipleFrames}
+              onFrameImageCaptured={(imageDataUrl) => {
+                setFrameDesignImage(imageDataUrl);
+                console.log("Frame design image captured successfully");
+              }}
             />
           </div>
 

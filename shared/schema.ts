@@ -148,6 +148,7 @@ export const orders = pgTable("orders", {
   createdAt: timestamp("created_at").defaultNow(),
   dueDate: timestamp("due_date"),
   artworkImage: text("artwork_image"),
+  frameDesignImage: text("frame_design_image"),
   lastNotificationSent: timestamp("last_notification_sent"),
   estimatedCompletionDays: integer("estimated_completion_days"),
   addToWholesaleOrder: boolean("add_to_wholesale_order").default(false),
