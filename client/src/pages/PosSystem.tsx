@@ -1517,6 +1517,7 @@ const PosSystem = () => {
           glassOption={selectedGlassOption}
           artworkWidth={artworkWidth}
           artworkHeight={artworkHeight}
+          artworkLocation={artworkLocation}
           primaryMatWidth={primaryMatWidth}
           specialServices={selectedServices}
           onCreateOrder={handleCreateOrder}
@@ -1526,6 +1527,7 @@ const PosSystem = () => {
           useMultipleFrames={useMultipleFrames}
           addToWholesaleOrder={addToWholesaleOrder}
           setAddToWholesaleOrder={setAddToWholesaleOrder}
+          orderId={1} // Temporary ID for testing - will be replaced with actual order ID after creation
         />
       </div>
     </div>
