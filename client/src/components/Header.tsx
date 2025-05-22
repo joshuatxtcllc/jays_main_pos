@@ -68,6 +68,7 @@ const menuStructure = [
       { title: "Hub", path: "/hub" },
       { title: "Webhook", path: "/webhook-integration" },
       { title: "Vendor Settings", path: "/vendor-settings" },
+      { title: "System Health", path: "/system-health" },
     ]
   }
 ];

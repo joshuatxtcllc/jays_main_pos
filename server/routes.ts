@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { artLocationController } from "./controllers/artLocationController";
 import { frameDesignController } from "./controllers/frameDesignController";
+import { healthController } from "./controllers/healthController";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -12,6 +13,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Frame Design routes
   app.post('/api/frame-designs', frameDesignController.saveFrameDesign);
   app.get('/api/frame-designs/:orderId', frameDesignController.getFrameDesign);
+  
+  // Health Check routes
+  app.get('/api/health', healthController.getSystemHealth);
   
   // Create HTTP server
   const httpServer = createServer(app);
