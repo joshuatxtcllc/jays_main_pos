@@ -1033,19 +1033,15 @@ const PosSystem = () => {
 
               {/* Preview Container - Made larger */}
               <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center min-h-[600px]">
-                <FrameVisualizer
-                  frames={selectedFrames}
-                  mats={selectedMatboards}
-                  artworkWidth={artworkWidth}
-                  artworkHeight={artworkHeight}
-                  artworkImage={artworkImage}
-                  useMultipleMats={useMultipleMats}
-                  useMultipleFrames={useMultipleFrames}
-                  onFrameImageCaptured={(imageDataUrl) => {
-                    setFrameDesignImage(imageDataUrl);
-                    console.log("Frame design image captured successfully");
-                  }}
-                />
+                <div className="text-center text-gray-600">
+                  <div className="text-lg font-medium">Frame Preview</div>
+                  <div className="text-sm mt-2">Preview temporarily disabled for performance</div>
+                  <div className="text-xs mt-1">{artworkWidth}" × {artworkHeight}"</div>
+                  <div className="mt-3 text-xs">
+                    {selectedFrames.length > 0 && `${selectedFrames.length} frame(s) selected`}
+                    {selectedMatboards.length > 0 && ` • ${selectedMatboards.length} mat(s) selected`}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
