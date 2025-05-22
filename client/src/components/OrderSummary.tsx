@@ -209,6 +209,18 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </div>
         )}
 
+        {/* Size Surcharge */}
+        {sizeSurcharge > 0 && (
+          <div className="flex justify-between">
+            <span className="text-light-textSecondary dark:text-dark-textSecondary">
+              Size Surcharge ({artworkWidth > 40 || artworkHeight > 60 ? 'Extra Large' : 'Large'})
+            </span>
+            <span className="text-light-textSecondary dark:text-dark-textSecondary">
+              ${sizeSurcharge.toFixed(2)}
+            </span>
+          </div>
+        )}
+
         <div className="border-t border-light-border dark:border-dark-border pt-2">
           <div className="flex justify-between font-medium">
             <span>Subtotal</span>
