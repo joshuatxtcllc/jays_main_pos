@@ -453,20 +453,36 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         }
       }
       
-      // Draw artwork in center
-      ctx.drawImage(
-        artworkImg, 
-        currentX, 
-        currentY, 
-        currentWidth, 
-        currentHeight
-      );
-      
-      // Draw artwork background
-      if (artworkImage) {
-        const img = new Image();
-        img.onload = () => {
-          ctx.drawImage(img, startX, startY, currentWidth, currentHeight);
+    }
+
+    // Set larger canvas size as requested  
+    canvas.width = 600;
+    canvas.height = 600;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Calculate dimensions for preview with larger max size
+    const maxSize = 500;
+    const aspectRatio = artworkWidth / artworkHeight;
+    
+    let currentWidth, currentHeight;
+    if (aspectRatio > 1) {
+      currentWidth = Math.min(maxSize, artworkWidth * 10);
+      currentHeight = currentWidth / aspectRatio;
+    } else {
+      currentHeight = Math.min(maxSize, artworkHeight * 10);
+      currentWidth = currentHeight * aspectRatio;
+    }
+
+    const startX = (canvas.width - currentWidth) / 2;
+    const startY = (canvas.height - currentHeight) / 2;
+
+    // Draw artwork background
+    if (artworkImage) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, startX, startY, currentWidth, currentHeight);
           
           // Draw frames and mats on top
           drawFramesAndMats(
