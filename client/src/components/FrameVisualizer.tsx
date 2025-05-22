@@ -236,7 +236,7 @@ export default function FrameVisualizer({
         }, 200);
       }
     }
-  }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleMats, useMultipleFrames, onFrameImageCaptured]);
+  }, []); // Temporarily disable re-rendering to fix performance issues
 
   return (
     <div className="frame-visualizer-container flex flex-col items-center justify-center p-4 w-full h-full">
