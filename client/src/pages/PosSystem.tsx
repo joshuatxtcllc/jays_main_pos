@@ -1026,25 +1026,28 @@ const PosSystem = () => {
             </div>
           </div>
 
-          {/* Artwork Size Detector Component */}
+          {/* Frame Preview - Now positioned earlier */}
           <div className="mb-4">
-            <ArtworkSizeDetector 
-              defaultWidth={artworkWidth}
-              defaultHeight={artworkHeight}
-              onDimensionsDetected={(dimensions, imageDataUrl) => {
-                // Update dimensions in the parent component
-                setArtworkWidth(dimensions.width);
-                setArtworkHeight(dimensions.height);
-                setAspectRatio(dimensions.width / dimensions.height);
-                setArtworkImage(imageDataUrl);
+            <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-4 header-underline">Frame Preview</h2>
 
-                console.log('Dimensions detected:', dimensions);
-                toast({
-                  title: "Artwork Dimensions Detected",
-                  description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
-                });
-              }}
-            />
+              {/* Preview Container - Made larger */}
+              <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center min-h-[600px]">
+                <FrameVisualizer
+                  frames={selectedFrames}
+                  mats={selectedMatboards}
+                  artworkWidth={artworkWidth}
+                  artworkHeight={artworkHeight}
+                  artworkImage={artworkImage}
+                  useMultipleMats={useMultipleMats}
+                  useMultipleFrames={useMultipleFrames}
+                  onFrameImageCaptured={(imageDataUrl) => {
+                    setFrameDesignImage(imageDataUrl);
+                    console.log("Frame design image captured successfully");
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1512,23 +1515,24 @@ const PosSystem = () => {
 
       {/* Right Column - Preview & Order Summary */}
       <div className="space-y-6">
-        {/* Frame Preview */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 header-underline">Frame Preview</h2>
+        {/* Artwork Size Detector - Now positioned later and smaller */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4">
+          <div className="max-w-md">
+            <ArtworkSizeDetector 
+              defaultWidth={artworkWidth}
+              defaultHeight={artworkHeight}
+              onDimensionsDetected={(dimensions, imageDataUrl) => {
+                // Update dimensions in the parent component
+                setArtworkWidth(dimensions.width);
+                setArtworkHeight(dimensions.height);
+                setAspectRatio(dimensions.width / dimensions.height);
+                setArtworkImage(imageDataUrl);
 
-          {/* Preview Container */}
-          <div className="border border-light-border dark:border-dark-border rounded-lg p-4 bg-gray-100 dark:bg-dark-bg/50 flex items-center justify-center">
-            <FrameVisualizer
-              frames={selectedFrames}
-              mats={selectedMatboards}
-              artworkWidth={artworkWidth}
-              artworkHeight={artworkHeight}
-              artworkImage={artworkImage}
-              useMultipleMats={useMultipleMats}
-              useMultipleFrames={useMultipleFrames}
-              onFrameImageCaptured={(imageDataUrl) => {
-                setFrameDesignImage(imageDataUrl);
-                console.log("Frame design image captured successfully");
+                console.log('Dimensions detected:', dimensions);
+                toast({
+                  title: "Artwork Dimensions Detected",
+                  description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
+                });
               }}
             />
           </div>
