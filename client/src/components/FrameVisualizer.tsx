@@ -462,20 +462,10 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         currentHeight
       );
       
-      // Capture the canvas as an image data URL for saving
-      if (onFrameImageCaptured) {
-        try {
-          // Use a shorter delay to reduce blocking
-          setTimeout(() => {
-            const frameDesignImage = canvas.toDataURL('image/jpeg', 0.8);
-            onFrameImageCaptured(frameDesignImage);
-          }, 100);
-        } catch (error) {
-          console.error('Error capturing frame design image:', error);
-        }
-      }
+      // Only capture image when specifically requested, not on every render
+      // This prevents the constant image processing that was blocking the UI
     });
-  }, [frames, mats, artworkImage, useMultipleMats, useMultipleFrames]); // Removed artworkWidth and artworkHeight to prevent constant re-renders while typing
+  }, []); // Disable automatic re-rendering to fix performance issues
 
   return (
     <div className="frame-visualizer-container flex flex-col items-center justify-center p-4 w-full h-full">
