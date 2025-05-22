@@ -103,6 +103,16 @@ const PosSystem = () => {
 
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
+  
+  // Size surcharge calculation
+  const getSizeSurcharge = () => {
+    if (artworkWidth > 40 || artworkHeight > 60) {
+      return 75; // $75 surcharge for extra large (over 40"×60")
+    } else if (artworkWidth > 32 || artworkHeight > 40) {
+      return 35; // $35 surcharge for large (over 32"×40")
+    }
+    return 0;
+  };
 
   // Wholesale Order
   const [addToWholesaleOrder, setAddToWholesaleOrder] = useState<boolean>(true);
@@ -927,15 +937,20 @@ const PosSystem = () => {
                 ? 'bg-red-50 border-red-400 text-red-800' 
                 : 'bg-yellow-50 border-yellow-400 text-yellow-800'
             }`}>
-              <div className="flex items-center">
-                <span className="font-semibold mr-2">
-                  {artworkWidth > 40 || artworkHeight > 60 ? '⚠️ Large Size Alert:' : '⚠️ Size Notice:'}
-                </span>
-                <span>
-                  {artworkWidth > 40 || artworkHeight > 60 
-                    ? 'Artwork over 40"×60" requires special handling and extended processing time.'
-                    : 'Artwork over 32"×40" may have additional costs and longer processing time.'}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="font-semibold mr-2">
+                    {artworkWidth > 40 || artworkHeight > 60 ? '⚠️ Large Size Alert:' : '⚠️ Size Notice:'}
+                  </span>
+                  <span>
+                    {artworkWidth > 40 || artworkHeight > 60 
+                      ? 'Artwork over 40"×60" requires special handling and extended processing time.'
+                      : 'Artwork over 32"×40" may have additional costs and longer processing time.'}
+                  </span>
+                </div>
+                <div className="font-bold text-lg">
+                  +${getSizeSurcharge()}
+                </div>
               </div>
             </div>
           ) : null}

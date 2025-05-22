@@ -42,6 +42,7 @@ interface OrderSummaryProps {
   addToWholesaleOrder?: boolean;
   setAddToWholesaleOrder?: (value: boolean) => void;
   orderId?: number; // Order ID for QR code generation
+  sizeSurcharge?: number; // Size surcharge for oversized artwork
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -63,7 +64,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   useMultipleFrames = false,
   addToWholesaleOrder = false,
   setAddToWholesaleOrder,
-  orderId
+  orderId,
+  sizeSurcharge = 0
 }) => {
   // Local state for wholesale order checkbox if not provided through props
   const [localAddToWholesaleOrder, setLocalAddToWholesaleOrder] = useState(false);
