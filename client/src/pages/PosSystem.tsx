@@ -919,6 +919,27 @@ const PosSystem = () => {
         {/* Artwork Details Section */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
+          
+          {/* Size Warnings */}
+          {artworkWidth > 32 || artworkHeight > 40 ? (
+            <div className={`mb-4 p-3 rounded-lg border-l-4 ${
+              artworkWidth > 40 || artworkHeight > 60 
+                ? 'bg-red-50 border-red-400 text-red-800' 
+                : 'bg-yellow-50 border-yellow-400 text-yellow-800'
+            }`}>
+              <div className="flex items-center">
+                <span className="font-semibold mr-2">
+                  {artworkWidth > 40 || artworkHeight > 60 ? '⚠️ Large Size Alert:' : '⚠️ Size Notice:'}
+                </span>
+                <span>
+                  {artworkWidth > 40 || artworkHeight > 60 
+                    ? 'Artwork over 40"×60" requires special handling and extended processing time.'
+                    : 'Artwork over 32"×40" may have additional costs and longer processing time.'}
+                </span>
+              </div>
+            </div>
+          ) : null}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">
