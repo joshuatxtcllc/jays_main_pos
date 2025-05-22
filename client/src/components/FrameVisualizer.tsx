@@ -470,17 +470,13 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
   return (
     <div className="frame-visualizer-container flex flex-col items-center justify-center p-4 w-full h-full">
       <div className="flex-1 w-full flex items-center justify-center">
-        <canvas
-          ref={canvasRef}
-          className="border border-border shadow-md object-contain"
-          style={{ 
-            maxWidth: '100%', 
-            maxHeight: '100%', 
-            aspectRatio: artworkWidth && artworkHeight ? `${artworkWidth}/${artworkHeight}` : '1/1',
-            width: 'auto', 
-            height: 'auto' 
-          }}
-        />
+        <div className="border border-border shadow-md bg-gray-100 w-96 h-96 flex items-center justify-center rounded-lg">
+          <div className="text-center text-gray-600">
+            <p className="text-lg font-medium">Frame Preview</p>
+            <p className="text-sm mt-2">Visualization temporarily disabled</p>
+            <p className="text-xs mt-1">{artworkWidth}" × {artworkHeight}"</p>
+          </div>
+        </div>
       </div>
       <div className="text-center text-sm text-muted-foreground mt-2 w-full">
         {frames.length > 0 && mats.length > 0 ? (
