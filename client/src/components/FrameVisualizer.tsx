@@ -462,21 +462,93 @@ const FrameVisualizer: React.FC<FrameVisualizerProps> = ({
         currentHeight
       );
       
-      // Only capture image when specifically requested, not on every render
-      // This prevents the constant image processing that was blocking the UI
+      // Draw artwork background
+      if (artworkImage) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, startX, startY, currentWidth, currentHeight);
+          
+          // Draw frames and mats on top
+          drawFramesAndMats(
+            ctx, 
+            startX, 
+            startY, 
+            frames, 
+            mats, 
+            useMultipleMats, 
+            useMultipleFrames, 
+            currentWidth, 
+            currentHeight
+          );
+          
+          // Capture frame design image with debouncing for better performance
+          if (onFrameImageCaptured) {
+            setTimeout(() => {
+              try {
+                const frameDesignImage = canvas.toDataURL('image/jpeg', 0.8);
+                onFrameImageCaptured(frameDesignImage);
+              } catch (error) {
+                console.error('Error capturing frame design image:', error);
+              }
+            }, 200);
+          }
+        };
+        img.src = artworkImage;
+      } else {
+        // Draw placeholder artwork
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(startX, startY, currentWidth, currentHeight);
+        ctx.strokeStyle = '#dee2e6';
+        ctx.strokeRect(startX, startY, currentWidth, currentHeight);
+        
+        // Add placeholder text
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '18px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Upload Artwork', startX + currentWidth / 2, startY + currentHeight / 2);
+        
+        // Draw frames and mats
+        drawFramesAndMats(
+          ctx, 
+          startX, 
+          startY, 
+          frames, 
+          mats, 
+          useMultipleMats, 
+          useMultipleFrames, 
+          currentWidth, 
+          currentHeight
+        );
+        
+        // Capture frame design image
+        if (onFrameImageCaptured) {
+          setTimeout(() => {
+            try {
+              const frameDesignImage = canvas.toDataURL('image/jpeg', 0.8);
+              onFrameImageCaptured(frameDesignImage);
+            } catch (error) {
+              console.error('Error capturing frame design image:', error);
+            }
+          }, 200);
+        }
+      }
     });
-  }, []); // Disable automatic re-rendering to fix performance issues
+  }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleMats, useMultipleFrames]);
 
   return (
     <div className="frame-visualizer-container flex flex-col items-center justify-center p-4 w-full h-full">
       <div className="flex-1 w-full flex items-center justify-center">
-        <div className="border border-border shadow-md bg-gray-100 w-96 h-96 flex items-center justify-center rounded-lg">
-          <div className="text-center text-gray-600">
-            <p className="text-lg font-medium">Frame Preview</p>
-            <p className="text-sm mt-2">Visualization temporarily disabled</p>
-            <p className="text-xs mt-1">{artworkWidth}" × {artworkHeight}"</p>
-          </div>
-        </div>
+        <canvas 
+          ref={canvasRef}
+          className="border border-border shadow-lg rounded-lg bg-white"
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '100%', 
+            aspectRatio: artworkWidth && artworkHeight ? `${artworkWidth}/${artworkHeight}` : '1/1',
+            width: '600px', 
+            height: '600px' 
+          }}
+        />
       </div>
       <div className="text-center text-sm text-muted-foreground mt-2 w-full">
         {frames.length > 0 && mats.length > 0 ? (
