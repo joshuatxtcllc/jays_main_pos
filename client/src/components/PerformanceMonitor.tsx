@@ -107,14 +107,7 @@ export function PerformanceMonitor({ isMinimized = false, onToggle }: Performanc
     }, 0);
 
     // Frame Rate Calculation (approximate)
-    let frameRate = 60; // Default assumption
-    if ('requestIdleCallback' in window) {
-      const frameStart = performance.now();
-      requestAnimationFrame(() => {
-        const frameDuration = performance.now() - frameStart;
-        frameRate = Math.round(1000 / frameDuration);
-      });
-    }
+    const frameRate = 60; // Default assumption for now
 
     return {
       largestContentfulPaint: lcpEntries.length > 0 ? (lcpEntries[lcpEntries.length - 1] as any).startTime : 0,
