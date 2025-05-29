@@ -1,6 +1,4 @@
-The code modification enforces artwork validation during order creation and includes artwork image path in the database insertion.
-```
-```replit_final_file
+// Storage interface and implementation
 import { 
   customers, type Customer, type InsertCustomer,
   frames, type Frame, type InsertFrame,
@@ -8,6 +6,7 @@ import {
   glassOptions, type GlassOption, type InsertGlassOption,
   specialServices, type SpecialService, type InsertSpecialService,
   orderGroups, type OrderGroup, type InsertOrderGroup,
+  notifications, type Notification, type InsertNotification,
   orders, type Order, type InsertOrder, type ProductionStatus,
   orderSpecialServices, type OrderSpecialService, type InsertOrderSpecialService,
   orderMats, type OrderMat, type InsertOrderMat,
@@ -876,7 +875,7 @@ export class DatabaseStorage implements IStorage {
   async createOrder(order: InsertOrder): Promise<Order> {
     try {
       // CRITICAL: Validate artwork image is provided
-      if (!order.artworkImage && !order.artworkImagePath) {
+      if (!order.artworkImage) {
         throw new Error('CRITICAL VALIDATION ERROR: Every order must have an artwork image. This is mandatory for business operations.');
       }
 
@@ -886,11 +885,23 @@ export class DatabaseStorage implements IStorage {
         .values({
           ...order,
           status: 'pending',
-          createdAt: new Date(),
-          artworkImagePath: order.artworkImagePath || null
+          createdAt: new Date()
         })
         .returning();
       console.log('DatabaseStorage.createOrder - Order created successfully:', newOrder);
+      
+      // Send order notification email if customer has email
+      if (newOrder.customerId) {
+        const customer = await this.getCustomer(newOrder.customerId);
+        if (customer?.email) {
+          try {
+            await emailService.sendOrderStatusUpdate(newOrder.id, 'pending');
+          } catch (emailError) {
+            console.error('Failed to send order notification email:', emailError);
+          }
+        }
+      }
+      
       return newOrder;
     } catch (error) {
       console.error('DatabaseStorage.createOrder - Error creating order:', error);
@@ -1838,3 +1849,14 @@ export class DatabaseStorage implements IStorage {
 
   // Materials pick list methods
   async getMaterialsPickList(): Promise<any[]> {
+    try {
+      // Return empty array for now - would be implemented with actual data
+      return [];
+    } catch (error) {
+      console.error('Error in getMaterialsPickList:', error);
+      throw error;
+    }
+  }
+}
+
+export const storage = new DatabaseStorage();
