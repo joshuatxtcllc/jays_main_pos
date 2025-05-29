@@ -5,6 +5,11 @@ import { artLocationController } from "./controllers/artLocationController";
 import { frameDesignController } from "./controllers/frameDesignController";
 import { healthController } from "./controllers/healthController";
 // import { storage } from "./storage_simple";
+import { vendorCatalogController } from './controllers/vendorCatalogController';
+import { hubIntegrationRoutes } from './routes/hubIntegrationRoutes';
+import { crossVendorInventoryRoutes } from './routes/crossVendorInventoryRoutes';
+import { webhookRoutes } from './routes/webhookRoutes';
+import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -15,8 +20,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/frame-designs', frameDesignController.saveFrameDesign);
   app.get('/api/frame-designs/:orderId', frameDesignController.getFrameDesign);
 
-  // Health Check routes
-  app.get('/api/health', healthController.getSystemHealth);
+  // Webhook routes
+  app.use('/api/webhooks', webhookRoutes);
+
+  // Pricing monitor routes
+  app.use('/api/pricing-monitor', pricingMonitorRoutes);
+
+  // Health check endpoint
+  app.get('/api/health', healthController.getHealth);
 
   // Create HTTP server
   const httpServer = createServer(app);
