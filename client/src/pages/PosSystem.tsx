@@ -1541,8 +1541,23 @@ const PosSystem = () => {
           />
         </div>
 
-          {/* Frame Details */}
-          {selectedFrames.length > 0 && (
+        {/* Frame Preview - Larger and positioned at top */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <FrameVisualizer
+            frames={selectedFrames}
+            mats={selectedMatboards}
+            artworkWidth={artworkWidth}
+            artworkHeight={artworkHeight}
+            artworkImage={artworkImage}
+            useMultipleFrames={useMultipleFrames}
+            useMultipleMats={useMultipleMats}
+            onFrameImageCaptured={setFrameDesignImage}
+          />
+        </div>
+
+        {/* Frame Details */}
+        {selectedFrames.length > 0 && (
+          <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
             <div className="mt-4">
               <h3 className="text-lg font-medium mb-2">Selected Frame Details</h3>
               {selectedFrames.map((frameItem, index) => (
@@ -1582,10 +1597,10 @@ const PosSystem = () => {
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Price Summary */}
+        {/* Order Summary */}
         <OrderSummary
           frames={selectedFrames}
           mats={selectedMatboards}
