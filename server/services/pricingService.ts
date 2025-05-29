@@ -84,12 +84,11 @@ export function calculateGlassPrice(
   // Convert area from square inches to square feet for more reasonable pricing
   const areaInSqFt = area / 144;
   
-  // Apply a drastically reduced markup factor to fix the $2,200 overpricing issue
-  // This uses a fixed base price plus a small per-square-foot increase
-  // formula: base price + (area in sq ft * wholesale price * modest markup)
-  const basePrice = unitedInches <= 40 ? 35 : 45; // Base price depends on size
+  // Apply industry-standard glass pricing for museum quality positioning
+  // Base pricing aligned with $126-350 range for museum glass per industry benchmarks
+  const basePrice = unitedInches <= 40 ? 65 : 85; // Increased base price for quality positioning
   
-  return basePrice + (areaInSqFt * wholesalePrice * markup * 0.05 * typeMultiplier);
+  return basePrice + (areaInSqFt * wholesalePrice * markup * 0.18 * typeMultiplier);
 }
 
 // Types
@@ -140,13 +139,13 @@ export interface PricingResult {
   };
 }
 
-// Houston-specific markup values
-const FRAME_MARKUP_FACTOR = 0.22; // Adjust frame price to be more accurate for Houston market (22%)
-const GLASS_MARKUP_FACTOR = 2.5; // Increase glass price by 2.5x for accurate pricing
-const MAT_BASE_PRICE = 6.5; // Base price per square inch for matting in Houston market
-const BACKING_MARKUP_FACTOR = 1.2; // Slightly increase backing price by 20%
-const HOUSTON_REGIONAL_FACTOR = 1.25; // Houston Heights area regional labor rate factor
-const BASE_LABOR_RATE = 35; // Base hourly labor rate
+// Houston-specific markup values aligned with industry benchmarks
+const FRAME_MARKUP_FACTOR = 0.35; // Increased to align with industry standards (35%)
+const GLASS_MARKUP_FACTOR = 3.5; // Increased for museum glass premium positioning
+const MAT_BASE_PRICE = 8.5; // Increased base price per square inch for Houston market
+const BACKING_MARKUP_FACTOR = 1.4; // Increased backing price by 40%
+const HOUSTON_REGIONAL_FACTOR = 1.35; // Increased Houston Heights regional factor
+const BASE_LABOR_RATE = 65; // Increased to industry standard hourly rate
 
 // Business overhead and profitability settings
 const OVERHEAD_PERCENTAGE = 0.30; // 30% overhead allocation for utilities, rent, etc.
@@ -283,8 +282,8 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     const frameWholesalePrice = parseFloat(frame.price);
     const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
 
-    // Apply a significantly reduced markup factor to lower frame prices by ~$1200
-    const adjustedMarkupFactor = 0.15; // Dramatically reduced to lower pricing
+    // Apply industry-standard markup factor for competitive Houston pricing
+    const adjustedMarkupFactor = 0.28; // Aligned with industry benchmarks
 
     // Get pricing method from params
     const pricingMethod = params.framePricingMethod || 'chop';
