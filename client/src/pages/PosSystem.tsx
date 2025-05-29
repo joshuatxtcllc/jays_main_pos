@@ -103,7 +103,7 @@ const PosSystem = () => {
 
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
-  
+
   // Size surcharge calculation
   const getSizeSurcharge = () => {
     if (artworkWidth > 40 || artworkHeight > 60) {
@@ -116,7 +116,7 @@ const PosSystem = () => {
 
   // Wholesale Order
   const [addToWholesaleOrder, setAddToWholesaleOrder] = useState<boolean>(true);
-  
+
   // Frame design image
   const [frameDesignImage, setFrameDesignImage] = useState<string | null>(null);
 
@@ -650,7 +650,7 @@ const PosSystem = () => {
       // Create the order
       const orderResponse = await createOrderMutation.mutateAsync(orderData);
       console.log("Order created successfully:", orderResponse);
-      
+
       // If we have a frame design image, save it separately to avoid TypeScript issues
       if (frameDesignImage) {
         try {
@@ -664,7 +664,7 @@ const PosSystem = () => {
               imageData: frameDesignImage
             })
           });
-          
+
           if (response.ok) {
             console.log("Frame design image saved successfully");
           } else {
@@ -869,9 +869,9 @@ const PosSystem = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Left Column - Frame Selection & Customization */}
-      <div className="lg:col-span-2 space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Left side - Frame selection, Mat selection, Glass options */}
+      <div className="space-y-6">
         {/* Order Information Section */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Order Information</h2>
@@ -929,9 +929,9 @@ const PosSystem = () => {
         {/* Artwork Details Section */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
-          
+
           {/* Size Warnings */}
-          {artworkWidth > 32 || artworkHeight > 40 ? (
+{artworkWidth > 32 || artworkHeight > 40 ? (
             <div className={`mb-4 p-3 rounded-lg border-l-4 ${
               artworkWidth > 40 || artworkHeight > 60 
                 ? 'bg-red-50 border-red-400 text-red-800' 
@@ -954,7 +954,7 @@ const PosSystem = () => {
               </div>
             </div>
           ) : null}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">
@@ -1509,7 +1509,7 @@ const PosSystem = () => {
         />
       </div>
 
-      {/* Right Column - Preview & Order Summary */}
+      {/* Right side - Visualizer and Order Summary */}
       <div className="space-y-6">
         {/* Artwork Size Detector - Now positioned later and smaller */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4">
