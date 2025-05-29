@@ -869,9 +869,9 @@ const PosSystem = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
       {/* Left side - Frame selection, Mat selection, Glass options */}
-      <div className="space-y-6">
+      <div className="lg:col-span-2 space-y-6">
         {/* Order Information Section */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Order Information</h2>
@@ -1510,7 +1510,7 @@ const PosSystem = () => {
       </div>
 
       {/* Right side - Visualizer and Order Summary */}
-      <div className="space-y-6">
+      <div className="lg:col-span-3 space-y-6">
         {/* Artwork Size Detector - Now positioned later and smaller */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4">
           <div className="max-w-md">
