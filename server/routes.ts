@@ -9,27 +9,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
   app.post('/api/art-locations', artLocationController.sendArtLocationData);
   app.get('/api/art-locations/:orderId', artLocationController.getArtLocationData);
-  
+
   // Frame Design routes
   app.post('/api/frame-designs', frameDesignController.saveFrameDesign);
   app.get('/api/frame-designs/:orderId', frameDesignController.getFrameDesign);
-  
+
   // Health Check routes
   app.get('/api/health', healthController.getSystemHealth);
-  
+
   // Create HTTP server
   const httpServer = createServer(app);
-  
+
   // Setup WebSocket for notifications
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
+
   wss.on('connection', (ws) => {
     console.log('WebSocket client connected');
-    
+
     ws.on('message', (message) => {
       try {
         console.log('Received message:', message.toString());
-        
+
         // Broadcast to all clients
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error('WebSocket message error:', error);
       }
     });
-    
+
     // Send initial connection confirmation
     ws.send(JSON.stringify({
       type: 'connection',
