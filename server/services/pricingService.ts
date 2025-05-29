@@ -86,9 +86,9 @@ export function calculateGlassPrice(
   
   // Apply industry-standard glass pricing for museum quality positioning
   // Base pricing aligned with $126-350 range for museum glass per industry benchmarks
-  const basePrice = unitedInches <= 40 ? 65 : 85; // Increased base price for quality positioning
+  const basePrice = unitedInches <= 40 ? 85 : 125; // Increased base price for industry positioning
   
-  return basePrice + (areaInSqFt * wholesalePrice * markup * 0.18 * typeMultiplier);
+  return basePrice + (areaInSqFt * wholesalePrice * markup * 0.35 * typeMultiplier);
 }
 
 // Types
@@ -140,12 +140,12 @@ export interface PricingResult {
 }
 
 // Houston-specific markup values aligned with industry benchmarks
-const FRAME_MARKUP_FACTOR = 0.35; // Increased to align with industry standards (35%)
-const GLASS_MARKUP_FACTOR = 3.5; // Increased for museum glass premium positioning
-const MAT_BASE_PRICE = 8.5; // Increased base price per square inch for Houston market
-const BACKING_MARKUP_FACTOR = 1.4; // Increased backing price by 40%
-const HOUSTON_REGIONAL_FACTOR = 1.35; // Increased Houston Heights regional factor
-const BASE_LABOR_RATE = 65; // Increased to industry standard hourly rate
+const FRAME_MARKUP_FACTOR = 0.45; // Further increased to match industry standards (45%)
+const GLASS_MARKUP_FACTOR = 4.2; // Increased for premium museum glass positioning
+const MAT_BASE_PRICE = 12.0; // Increased to industry-standard mat pricing
+const BACKING_MARKUP_FACTOR = 1.6; // Increased backing price by 60%
+const HOUSTON_REGIONAL_FACTOR = 1.45; // Increased Houston Heights premium regional factor
+const BASE_LABOR_RATE = 75; // Increased to upper industry standard hourly rate
 
 // Business overhead and profitability settings
 const OVERHEAD_PERCENTAGE = 0.30; // 30% overhead allocation for utilities, rent, etc.
@@ -154,38 +154,38 @@ const MIN_PROFIT_MARGIN = 0.25; // 25% minimum acceptable profit margin
 
 /**
  * Calculate sliding scale markup for frame pricing
- * Based on united inches
+ * Based on united inches - aligned with industry standards
  */
 function calculateFrameMarkup(unitedInches: number): number {
-  if (unitedInches <= 20) return 2.0;
-  if (unitedInches <= 40) return 2.5;
-  if (unitedInches <= 60) return 3.0;
-  if (unitedInches <= 80) return 3.5;
-  return 4.0;
+  if (unitedInches <= 20) return 2.8;
+  if (unitedInches <= 40) return 3.5;
+  if (unitedInches <= 60) return 4.2;
+  if (unitedInches <= 80) return 4.8;
+  return 5.5;
 }
 
 /**
  * Calculate sliding scale markup for glass pricing
- * Based on united inches
+ * Based on united inches - aligned with industry standards
  */
 function calculateGlassMarkup(unitedInches: number): number {
-  if (unitedInches <= 20) return 2.0;
-  if (unitedInches <= 40) return 2.3;
-  if (unitedInches <= 60) return 2.6;
-  if (unitedInches <= 80) return 2.9;
-  return 3.2;
+  if (unitedInches <= 20) return 2.8;
+  if (unitedInches <= 40) return 3.2;
+  if (unitedInches <= 60) return 3.6;
+  if (unitedInches <= 80) return 4.0;
+  return 4.5;
 }
 
 /**
  * Calculate sliding scale markup for mat pricing
- * Based on united inches
+ * Based on united inches - aligned with industry standards
  */
 function calculateMatMarkup(unitedInches: number): number {
-  if (unitedInches <= 20) return 2.0;
-  if (unitedInches <= 40) return 2.2;
-  if (unitedInches <= 60) return 2.4;
-  if (unitedInches <= 80) return 2.6;
-  return 2.8;
+  if (unitedInches <= 20) return 2.5;
+  if (unitedInches <= 40) return 2.8;
+  if (unitedInches <= 60) return 3.1;
+  if (unitedInches <= 80) return 3.4;
+  return 3.8;
 }
 
 /**
@@ -283,7 +283,7 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
 
     // Apply industry-standard markup factor for competitive Houston pricing
-    const adjustedMarkupFactor = 0.28; // Aligned with industry benchmarks
+    const adjustedMarkupFactor = 0.42; // Increased to align with industry benchmarks
 
     // Get pricing method from params
     const pricingMethod = params.framePricingMethod || 'chop';
@@ -301,22 +301,21 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     }
   }
 
-  // Calculate mat price to target ~$34
+  // Calculate mat price aligned with industry standards ($45-65 range)
   let matPrice = 0;
   if (matColor) {
-    // For a typical mat around 16x20 with 2" borders (united inches around 40-60)
-    // We want to set a fixed base that gets us close to $34
-    const matBaseRate = 0.18; // Base rate per square inch
+    // Industry-standard mat pricing for premium positioning
+    const matBaseRate = 0.25; // Increased base rate per square inch
 
-    // Calculate with fixed target price approach
+    // Calculate with industry-standard pricing approach
     if (finishedUnitedInches <= 40) {
-      matPrice = 28 + (finishedUnitedInches * 0.15); // Small mats
+      matPrice = 42 + (finishedUnitedInches * 0.25); // Small mats
     } else if (finishedUnitedInches <= 60) {
-      matPrice = 32 + (finishedUnitedInches * 0.05); // Medium mats (target ~$34)
+      matPrice = 48 + (finishedUnitedInches * 0.15); // Medium mats (target ~$55)
     } else if (finishedUnitedInches <= 80) {
-      matPrice = 34 + (finishedUnitedInches * 0.08); // Large mats
+      matPrice = 52 + (finishedUnitedInches * 0.18); // Large mats
     } else {
-      matPrice = 38 + (finishedUnitedInches * 0.1); // Extra large mats
+      matPrice = 58 + (finishedUnitedInches * 0.22); // Extra large mats
     }
 
     // Update wholesale price for mat if requested
