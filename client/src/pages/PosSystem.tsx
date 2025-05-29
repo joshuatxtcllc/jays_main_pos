@@ -1511,27 +1511,26 @@ const PosSystem = () => {
 
       {/* Right side - Visualizer and Order Summary */}
       <div className="lg:col-span-3 space-y-6">
-        {/* Artwork Size Detector - Now positioned later and smaller */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4">
-          <div className="max-w-md">
-            <ArtworkSizeDetector 
-              defaultWidth={artworkWidth}
-              defaultHeight={artworkHeight}
-              onDimensionsDetected={(dimensions, imageDataUrl) => {
-                // Update dimensions in the parent component
-                setArtworkWidth(dimensions.width);
-                setArtworkHeight(dimensions.height);
-                setAspectRatio(dimensions.width / dimensions.height);
-                setArtworkImage(imageDataUrl);
+        {/* Artwork Size Detector - Full width utilization */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <ArtworkSizeDetector 
+            defaultWidth={artworkWidth}
+            defaultHeight={artworkHeight}
+            onDimensionsDetected={(dimensions, imageDataUrl) => {
+              // Update dimensions in the parent component
+              setArtworkWidth(dimensions.width);
+              setArtworkHeight(dimensions.height);
+              setAspectRatio(dimensions.width / dimensions.height);
+              setArtworkImage(imageDataUrl);
 
-                console.log('Dimensions detected:', dimensions);
-                toast({
-                  title: "Artwork Dimensions Detected",
-                  description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
-                });
-              }}
-            />
-          </div>
+              console.log('Dimensions detected:', dimensions);
+              toast({
+                title: "Artwork Dimensions Detected",
+                description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
+              });
+            }}
+          />
+        </div>
 
           {/* Frame Details */}
           {selectedFrames.length > 0 && (
