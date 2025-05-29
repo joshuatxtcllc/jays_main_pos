@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { artLocationController } from "./controllers/artLocationController";
 import { frameDesignController } from "./controllers/frameDesignController";
 import { healthController } from "./controllers/healthController";
+// import { storage } from "./storage_simple";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
