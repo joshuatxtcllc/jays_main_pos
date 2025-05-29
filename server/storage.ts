@@ -1,3 +1,6 @@
+The code modification enforces artwork validation during order creation and includes artwork image path in the database insertion.
+```
+```replit_final_file
 import { 
   customers, type Customer, type InsertCustomer,
   frames, type Frame, type InsertFrame,
@@ -131,7 +134,7 @@ export interface IStorage {
   updateOrderGroup(id: number, data: Partial<OrderGroup>): Promise<OrderGroup>;
   getOrdersByGroupId(orderGroupId: number): Promise<Order[]>;
   getOrderGroupsByCustomerId(customerId: number): Promise<OrderGroup[]>;
-  
+
   // Notification methods
   createNotification(notification: InsertNotification): Promise<Notification>;
   getNotification(id: number): Promise<Notification | undefined>;
@@ -201,11 +204,11 @@ export class DatabaseStorage implements IStorage {
         .set({ artworkLocation: location })
         .where(eq(orders.id, id))
         .returning();
-        
+
       if (!updatedOrder) {
         throw new Error('Order not found');
       }
-      
+
       return updatedOrder;
     } catch (error) {
       console.error('Error updating order artwork location:', error);
@@ -769,7 +772,7 @@ export class DatabaseStorage implements IStorage {
     const [specialService] = await db.select().from(specialServices).where(eq(specialServices.id, id));
 
     // If not found in database, check catalog
-    if (!specialService) {
+    if (!specialService){
       const catalogSpecialService = specialServicesCatalog.find(s => s.id === id);
       if (catalogSpecialService) {
         // Insert into database
@@ -872,13 +875,19 @@ export class DatabaseStorage implements IStorage {
 
   async createOrder(order: InsertOrder): Promise<Order> {
     try {
+      // CRITICAL: Validate artwork image is provided
+      if (!order.artworkImage && !order.artworkImagePath) {
+        throw new Error('CRITICAL VALIDATION ERROR: Every order must have an artwork image. This is mandatory for business operations.');
+      }
+
       console.log('DatabaseStorage.createOrder - Inserting order with data:', order);
       const [newOrder] = await db
         .insert(orders)
         .values({
           ...order,
           status: 'pending',
-          createdAt: new Date()
+          createdAt: new Date(),
+          artworkImagePath: order.artworkImagePath || null
         })
         .returning();
       console.log('DatabaseStorage.createOrder - Order created successfully:', newOrder);
@@ -1829,470 +1838,3 @@ export class DatabaseStorage implements IStorage {
 
   // Materials pick list methods
   async getMaterialsPickList(): Promise<any[]> {
-    try {
-      // Format material orders into a format suitable for the pick list UI
-      const materials = await db.select().from(materialOrders);
-
-      // Transform MaterialOrder objects into MaterialItem objects for the UI
-      return materials.map(material => ({
-        id: material.id.toString(),
-        orderIds: material.sourceOrderId ? [material.sourceOrderId] : [],
-        name: material.materialName,
-        sku: material.materialId,
-        supplier: material.supplierName || 'Unknown',
-        type: material.materialType,
-        quantity: Number(material.quantity),
-        status: material.status,
-        orderDate: material.orderDate?.toISOString() || undefined,
-        receiveDate: material.actualArrival?.toISOString() || undefined,
-        priority: material.priority === 'high' ? 'high' : 
-                 material.priority === 'low' ? 'low' : 'medium',
-        notes: material.notes
-      }));
-    } catch (error) {
-      console.error("Error getting materials pick list:", error);
-      return [];
-    }
-  }
-
-  async getMaterialsForOrder(orderId: number): Promise<any[]> {
-    try {
-      // Get materials for a specific order
-      const materials = await db.select()
-        .from(materialOrders)
-        .where(eq(materialOrders.sourceOrderId, orderId));
-
-      // Transform MaterialOrder objects into MaterialItem objects for the UI
-      return materials.map(material => ({
-        id: material.id.toString(),
-                orderIds: [orderId],
-
-  name: material.materialName,
-        sku: material.materialId,
-        supplier: material.supplierName || 'Unknown',
-        type: material.materialType,
-        quantity: Number(material.quantity),
-        status: material.status,
-        orderDate: material.orderDate?.toISOString() || undefined,
-        receiveDate: material.actualArrival?.toISOString() || undefined,
-        priority: material.priority === 'high' ? 'high' : 
-                 material.priority === 'low' ? 'low' : 'medium',
-        notes: material.notes
-      }));
-    } catch (error) {
-      console.error(`Error getting materials for order ${orderId}:`, error);
-      return [];
-    }
-  }
-
-  // Update order with artwork image path
-  async updateOrderArtwork(orderId: string, artworkData: {
-    artworkImagePath: string,
-    fileType: string,
-    fileName: string,
-    uploadDate: Date
-  }) {
-    try {
-      // Check if order exists
-      const order = await this.getOrder(Number(orderId));
-      if (!order) {
-        throw new Error(`Order with ID ${orderId} not found`);
-      }
-
-      // Update order with artwork image data
-      const [updatedOrder] = await db
-        .update(orders)
-        .set({
-          artworkImagePath: artworkData.artworkImagePath,
-          artworkFileType: artworkData.fileType,
-          artworkFileName: artworkData.fileName,
-          artworkUploadDate: artworkData.uploadDate
-        })
-        .where(eq(orders.id, Number(orderId)))
-        .returning();
-
-      return updatedOrder;
-    } catch (error) {
-      console.error('Error updating order artwork:', error);
-      throw error;
-    }
-  }
-
-  // Add a file to an order
-  async addOrderFile(orderId: string, fileData: {
-    path: string,
-    type: string,
-    name: string,
-    mimeType: string,
-    size: number,
-    uploadDate: Date
-  }) {
-    try {
-      // Check if order exists
-      const order = await this.getOrder(Number(orderId));
-      if (!order) {
-        throw new Error(`Order with ID ${orderId} not found`);
-      }
-
-      // Insert file record - this would normally use a proper ORM insert
-      // For demonstration, returning a mock file ID
-      return { id: `file-${Date.now()}`, ...fileData, orderId };
-    } catch (error) {
-      console.error('Error adding order file:', error);
-      throw error;
-    }
-  }
-
-  // Get all files for an order
-  async getOrderFiles(orderId: string) {
-    try {
-      // This would normally query the database
-      // For demonstration, returning an empty array
-      return [];
-    } catch (error) {
-      console.error('Error retrieving order files:', error);
-      throw error;
-    }
-  }
-
-  // Get a file by ID
-  async getOrderFileById(fileId: string) {
-    try {
-      // This would normally query the database
-      // For demonstration, returning null
-      return null;
-    } catch (error) {
-      console.error('Error retrieving file by ID:', error);
-      throw error;
-    }
-  }
-
-  // Delete a file
-  async deleteOrderFile(fileId: string) {
-    try {
-      // This would normally delete from the database
-      // For demonstration, returning true
-      return true;
-    } catch (error) {
-      console.error('Error deleting file:', error);
-      throw error;
-    }
-  }
-
-  async updateMaterialOrder(id: string | number, data: any): Promise<any> {
-    try {
-      const materialId = typeof id === 'string' ? parseInt(id, 10) : id;
-
-      // Update the material order in the database
-      const [updatedMaterial] = await db
-        .update(materialOrders)
-        .set({
-          status: data.status,
-          notes: data.notes,
-          orderDate: data.orderDate ? new Date(data.orderDate) : undefined,
-          actualArrival: data.receiveDate ? new Date(data.receiveDate) : undefined
-        })
-        .where(eq(materialOrders.id, materialId))
-        .returning();
-
-      if (!updatedMaterial) {
-        throw new Error(`Material order with ID ${id} not found`);
-      }
-
-      // Return the updated material in UI format
-      return {
-        id: updatedMaterial.id.toString(),
-        orderIds: updatedMaterial.sourceOrderId ? [updatedMaterial.sourceOrderId] : [],
-        name: updatedMaterial.materialName,
-        sku: updatedMaterial.materialId,
-        supplier: updatedMaterial.supplierName || 'Unknown',
-        type: updatedMaterial.materialType,
-        quantity: Number(updatedMaterial.quantity),
-        status: updatedMaterial.status,
-        orderDate: updatedMaterial.orderDate?.toISOString() || undefined,
-        receiveDate: updatedMaterial.actualArrival?.toISOString() || undefined,
-        priority: updatedMaterial.priority === 'high' ? 'high' : 
-                 updatedMaterial.priority === 'low' ? 'low' : 'medium',
-        notes: updatedMaterial.notes
-      };
-    } catch (error) {
-      console.error(`Error updating material order ${id}:`, error);
-      throw error;
-    }
-  }
-
-  async createPurchaseOrder(materialIds: string[]): Promise<any> {
-    try {
-      // Convert string IDs to numbers
-      const numericIds = materialIds.map(id => parseInt(id, 10));
-
-      // Get the material orders to include in the purchase order
-      const materialsToOrder = await db.select()
-        .from(materialOrders)
-        .where(sql`${materialOrders.id} IN (${numericIds.join(', ')})`);
-
-      if (materialsToOrder.length === 0) {
-        throw new Error('No material orders found with the provided IDs');
-      }
-
-      // Group materials by supplier
-      const supplierGroups: Record<string, MaterialOrder[]> = {};
-      for (const material of materialsToOrder) {
-        const supplier = material.supplierName || 'Unknown';
-        if (!supplierGroups[supplier]) {
-          supplierGroups[supplier] = [];
-        }
-        supplierGroups[supplier].push(material);
-      }
-
-      // Create purchase orders for each supplier
-      const purchaseOrders = [];
-
-      for (const supplier in supplierGroups) {
-        // Create a new purchase order
-        const [purchaseOrder] = await db.insert(purchaseOrders)
-          .values({
-            supplier: supplier,
-            status: 'pending',
-            totalAmount: supplierGroups[supplier].reduce(
-              (sum, material) => sum + Number(material.totalCost || 0), 
-              0
-            ),
-            notes: `Auto-generated purchase order for ${supplierGroups[supplier].length} items`
-          })
-          .returning();
-
-        // Create purchase order lines for each material
-        for (const material of supplierGroups[supplier]) {
-          // Find the inventory item corresponding to the material
-          const [inventoryItem] = await db.select()
-            .from(inventoryItems)
-            .where(sql`${inventoryItems.sku} = ${material.materialId}`);
-
-          const itemId = inventoryItem?.id || null;
-
-          // Create a purchase order line
-          await db.insert(purchaseOrderLines)
-            .values({
-              purchaseOrderId: purchaseOrder.id,
-              itemId: itemId,
-              quantity: material.quantity,
-              unitCost: material.costPerUnit || 0,
-              lineTotal: material.totalCost || 0,
-              notes: material.notes
-            });
-
-          // Update the material order status to 'ordered'
-          await db.update(materialOrders)
-            .set({
-              status: 'ordered',
-              orderDate: new Date()
-            })
-            .where(eq(materialOrders.id, material.id));
-        }
-
-        purchaseOrders.push(purchaseOrder);
-      }
-
-      return {
-        success: true,
-        message: `Created ${purchaseOrders.length} purchase orders`,
-        purchaseOrders
-      };
-    } catch (error) {
-      console.error('Error creating purchase order:', error);
-      throw error;
-    }
-  }
-
-  // Webhook endpoints
-  async getWebhookEndpoints() {
-    try {
-      // @ts-ignore
-      const result = await db.select().from(webhook_endpoints).orderBy(desc(webhook_endpoints.createdAt));
-      return result || [];
-    } catch (error) {
-      console.error('Error getting webhook endpoints:', error);
-      throw error;
-    }
-  }
-
-  async getWebhookEndpoint(id: number) {
-    try {
-      // @ts-ignore
-      const [result] = await db.select().from(webhook_endpoints).where(eq(webhook_endpoints.id, id));
-      return result;
-    } catch (error) {
-      console.error('Error getting webhook endpoint:', error);
-      throw error;
-    }
-  }
-
-  async getWebhookEndpointsByEvent(event: string) {
-    try {
-      // This assumes events are stored as JSON array in the database
-      // In a production environment, you might want a separate table for webhook_events
-      // @ts-ignore
-      const result = await db.select().from(webhook_endpoints).where(sql`json_extract(events, '$') LIKE '%${event}%' AND active = 1`);
-      return result || [];
-    } catch (error) {
-      console.error('Error getting webhook endpoints by event:', error);
-      throw error;
-    }
-  }
-
-  async createWebhookEndpoint(webhook: any) {
-    try {
-      const { name, url, events, active } = webhook;
-      // @ts-ignore
-      const [result] = await db.insert(webhook_endpoints).values({ name, url, events: JSON.stringify(events), active: active ? 1 : 0, createdAt: new Date() }).returning();
-
-      return {
-        id: result.id,
-        name,
-        url,
-        events,
-        active,
-        createdAt: result.createdAt
-      };
-    } catch (error) {
-      console.error('Error creating webhook endpoint:', error);
-      throw error;
-    }
-  }
-
-  async updateWebhookEndpoint(id: number, updates: any) {
-    try {
-      const webhook = await this.getWebhookEndpoint(id);
-
-      if (!webhook) {
-        throw new Error('Webhook endpoint not found');
-      }
-
-      const updateFields: any = {};
-
-      for (const [key, value] of Object.entries(updates)) {
-        if (key === 'events' && Array.isArray(value)) {
-          updateFields[key] = JSON.stringify(value);
-        } else if (key === 'active') {
-          updateFields[key] = value ? 1 : 0;
-        } else if (key !== 'id' && key !== 'createdAt') {
-          updateFields[key] = value;
-        }
-      }
-
-      // @ts-ignore
-      const [updatedWebhook] = await db.update(webhook_endpoints).set(updateFields).where(eq(webhook_endpoints.id, id)).returning();
-
-      return { ...webhook, ...updatedWebhook };
-    } catch (error) {
-      console.error('Error updating webhook endpoint:', error);
-      throw error;
-    }
-  }
-
-  async deleteWebhookEndpoint(id: number) {
-    try {
-      // @ts-ignore
-      await db.delete(webhook_endpoints).where(eq(webhook_endpoints.id, id));
-      return true;
-    } catch (error) {
-      console.error('Error deleting webhook endpoint:', error);
-      throw error;
-    }
-  }
-
-  // Notification methods
-  async createNotification(notification: InsertNotification): Promise<Notification> {
-    try {
-      const [result] = await db.insert(notifications).values(notification).returning();
-      return result;
-    } catch (error) {
-      console.error('Error creating notification:', error);
-      throw error;
-    }
-  }
-
-  async getNotification(id: number): Promise<Notification | undefined> {
-    try {
-      const [notification] = await db.select().from(notifications).where(eq(notifications.id, id));
-      return notification;
-    } catch (error) {
-      console.error('Error fetching notification:', error);
-      return undefined;
-    }
-  }
-
-  async getNotifications(limit: number = 50): Promise<Notification[]> {
-    try {
-      const notificationsList = await db
-        .select()
-        .from(notifications)
-        .orderBy(desc(notifications.createdAt))
-        .limit(limit);
-      return notificationsList;
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      return [];
-    }
-  }
-
-  async getUnreadNotifications(): Promise<Notification[]> {
-    try {
-      const notificationsList = await db
-        .select()
-        .from(notifications)
-        .where(eq(notifications.read, false))
-        .orderBy(desc(notifications.createdAt));
-      return notificationsList;
-    } catch (error) {
-      console.error('Error fetching unread notifications:', error);
-      return [];
-    }
-  }
-
-  async markNotificationAsRead(id: number): Promise<Notification> {
-    try {
-      const [updatedNotification] = await db
-        .update(notifications)
-        .set({ read: true })
-        .where(eq(notifications.id, id))
-        .returning();
-      return updatedNotification;
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-      throw error;
-    }
-  }
-
-  async getNotificationsByUser(userId: number): Promise<Notification[]> {
-    try {
-      const notificationsList = await db
-        .select()
-        .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .orderBy(desc(notifications.createdAt));
-      return notificationsList;
-    } catch (error) {
-      console.error('Error fetching notifications by user:', error);
-      return [];
-    }
-  }
-}
-
-
-
-export const storage = new DatabaseStorage();
-
-// Define webhook_endpoints schema here to avoid import issues, and use db.run to create the table
-// @ts-ignore
-export const webhook_endpoints = sql`
-  CREATE TABLE IF NOT EXISTS webhook_endpoints (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    url TEXT NOT NULL,
-    events TEXT NOT NULL,
-    active INTEGER NOT NULL DEFAULT 1,
-    createdAt DATETIME NOT NULL
-  )
-`;

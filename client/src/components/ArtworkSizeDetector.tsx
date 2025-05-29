@@ -471,11 +471,11 @@ export function ArtworkSizeDetector({
   };
 
   return (
-    <Card className="w-full">
+    <Card className="w-full border-2 border-red-200">
       <CardHeader>
-        <CardTitle>Artwork Size Detection</CardTitle>
+        <CardTitle className="text-red-700">Artwork Size Detection (Required)</CardTitle>
         <CardDescription>
-          Upload an image of your artwork with a reference marker to automatically determine its size.
+          <strong className="text-red-600">REQUIRED:</strong> Upload an image of your artwork with a reference marker to automatically determine its size. Orders cannot proceed without artwork images.
         </CardDescription>
       </CardHeader>
       <CardContent>

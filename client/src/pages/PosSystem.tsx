@@ -610,6 +610,15 @@ const PosSystem = () => {
       return;
     }
 
+    if (!artworkImage) {
+      toast({
+        title: "Artwork Image Required",
+        description: "CRITICAL: Every order must have an artwork image. Please upload or capture artwork before proceeding.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     console.log("Customer data:", customer);
 
     try {
