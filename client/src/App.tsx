@@ -53,7 +53,6 @@ function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetError
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
-  const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false);
 
   // Initialize notification service and handle theme preference
   useEffect(() => {
