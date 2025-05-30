@@ -95,20 +95,17 @@ app.use((req, res, next) => {
     return serverInstance;
   };
 
-    // Create uploads directory if it doesn't exist
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    
-    const uploadsDir = path.join(__dirname, '../uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+  // Create uploads directory if it doesn't exist
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+  
+  const uploadsDir = path.join(__dirname, '../uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
 
-    // Apply middleware
-    //app.use(cors()); // Assuming cors is handled by Vite
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
-    app.use('/uploads', express.static(uploadsDir));
+  // Static file serving for uploads
+  app.use('/uploads', express.static(uploadsDir));
 
   startServer();
 })();

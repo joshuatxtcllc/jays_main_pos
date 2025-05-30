@@ -34,7 +34,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import ChatWidget from "./components/ChatWidget";
 import FrameEducationPage from '@/pages/FrameEducationPage';
 import { AuthProvider } from './hooks/use-auth';
-import { PerformanceMonitor } from './components/PerformanceMonitor';
+// import { PerformanceMonitor } from './components/PerformanceMonitor';
 import { lazy } from 'react';
 // Import the notification service
 import { notificationService } from "./lib/notificationService";
@@ -146,11 +146,11 @@ function App() {
                     </Switch>
                   </main>
                   <ChatWidget />
-                  {/* Performance Monitor Overlay */}
-                  <PerformanceMonitor 
+                  {/* Performance Monitor temporarily disabled to prevent freezing */}
+                  {/* <PerformanceMonitor 
                     isMinimized={!showPerformanceMonitor} 
                     onToggle={() => setShowPerformanceMonitor(!showPerformanceMonitor)} 
-                  />
+                  /> */}
                 </div>
                 <Toaster />
               </TooltipProvider>
