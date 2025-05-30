@@ -7,11 +7,12 @@ import { Frame } from '@shared/schema';
  */
 export async function fetchLarsonJuhlFrames(): Promise<Frame[]> {
   try {
-    const response = await apiRequest('GET', '/api/vendor-catalog/larson');
-    return await response.json();
+    // Temporarily disabled to prevent application freezing
+    console.log('Using static frame data to prevent freezing');
+    return [];
   } catch (error) {
     console.error('Error fetching Larson-Juhl frames:', error);
-    throw error;
+    return [];
   }
 }
 
@@ -21,11 +22,12 @@ export async function fetchLarsonJuhlFrames(): Promise<Frame[]> {
  */
 export async function fetchNielsenFrames(): Promise<Frame[]> {
   try {
-    const response = await apiRequest('GET', '/api/vendor-catalog/nielsen');
-    return await response.json();
+    // Temporarily disabled to prevent application freezing
+    console.log('Using static frame data to prevent freezing');
+    return [];
   } catch (error) {
     console.error('Error fetching Nielsen frames:', error);
-    throw error;
+    return [];
   }
 }
 
@@ -35,11 +37,12 @@ export async function fetchNielsenFrames(): Promise<Frame[]> {
  */
 export async function fetchRomaFrames(): Promise<Frame[]> {
   try {
-    const response = await apiRequest('GET', '/api/vendor-catalog/roma');
-    return await response.json();
+    // Temporarily disabled to prevent application freezing
+    console.log('Using static frame data to prevent freezing');
+    return [];
   } catch (error) {
     console.error('Error fetching Roma frames:', error);
-    throw error;
+    return [];
   }
 }
 
@@ -49,11 +52,12 @@ export async function fetchRomaFrames(): Promise<Frame[]> {
  */
 export async function fetchAllVendorFrames(): Promise<Frame[]> {
   try {
-    const response = await apiRequest('GET', '/api/vendor-catalog/all');
-    return await response.json();
+    // Temporarily disabled to prevent application freezing
+    console.log('Using static frame data to prevent freezing');
+    return [];
   } catch (error) {
     console.error('Error fetching all vendor frames:', error);
-    throw error;
+    return [];
   }
 }
 

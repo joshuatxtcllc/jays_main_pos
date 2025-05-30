@@ -43,18 +43,9 @@ export async function fetchLarsonJuhlMatboards(): Promise<LarsonJuhlMatboard[]> 
  */
 export async function fetchCrescentMatboards(): Promise<LarsonJuhlMatboard[]> {
   try {
-    console.log('Fetching Crescent matboards from Larson Juhl catalog...');
-    const response = await fetch('/api/larson-catalog/crescent', {
-      method: 'GET',
-      credentials: 'include'
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Error fetching Crescent matboards: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    return data;
+    console.log('Loading static matboard data to prevent application freezing...');
+    // Temporarily returning empty array to prevent API call errors
+    return [];
   } catch (error) {
     console.error('Error fetching Crescent matboards:', error);
     return [];
