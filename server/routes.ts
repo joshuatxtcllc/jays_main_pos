@@ -29,6 +29,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health check endpoint
   app.get('/api/health', healthController.getSystemHealth);
 
+  // Vendor catalog routes (basic endpoints to prevent errors)
+  app.get('/api/vendor-catalog/all', (req, res) => {
+    res.json([]);
+  });
+
+  app.get('/api/vendor-catalog/larson', (req, res) => {
+    res.json([]);
+  });
+
+  app.get('/api/vendor-catalog/roma', (req, res) => {
+    res.json([]);
+  });
+
+  app.get('/api/vendor-catalog/nielsen', (req, res) => {
+    res.json([]);
+  });
+
+  // Larson catalog routes
+  app.get('/api/larson-catalog/crescent', (req, res) => {
+    res.json([]);
+  });
+
+  // Frames catalog route
+  app.get('/api/frames', (req, res) => {
+    res.json([]);
+  });
+
+  // Auth status route
+  app.get('/api/auth/status', (req, res) => {
+    res.json({ authenticated: false, user: null });
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 
