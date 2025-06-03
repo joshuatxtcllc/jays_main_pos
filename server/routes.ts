@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { artLocationController } from "./controllers/artLocationController";
 import { frameDesignController } from "./controllers/frameDesignController";
 import { healthController } from "./controllers/healthController";
+import { validateApiKey, KANBAN_API_KEY } from "./middleware/apiAuth";
 // import { storage } from "./storage_simple";
 // import { vendorCatalogController } from './controllers/vendorCatalogController';
 // import { hubIntegrationRoutes } from './routes/hubIntegrationRoutes';
@@ -62,7 +63,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Kanban Integration API endpoints for production connection
-  app.get('/api/kanban/orders', (req, res) => {
+  app.get('/api/kanban/orders', validateApiKey, (req, res) => {
     // Returns all orders with production status for Kanban board
     res.json({
       success: true,
@@ -72,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.post('/api/kanban/orders/:orderId/status', (req, res) => {
+  app.post('/api/kanban/orders/:orderId/status', validateApiKey, (req, res) => {
     const { orderId } = req.params;
     const { status, stage, notes } = req.body;
     
@@ -89,7 +90,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/kanban/status', (req, res) => {
-    // Health check for Kanban integration
+    // Health check for Kanban integration (no auth required)
     res.json({
       status: 'active',
       service: 'Jays Frames POS System',
@@ -101,6 +102,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       },
       authentication: 'API Key required in Authorization header',
       timestamp: new Date().toISOString()
+    });
+  });
+
+  // API Key management endpoint
+  app.get('/api/kanban/api-key', (req, res) => {
+    // Returns the API key for Kanban integration setup
+    res.json({
+      apiKey: KANBAN_API_KEY,
+      usage: 'Add this to your Kanban app Authorization header as: Bearer ' + KANBAN_API_KEY,
+      endpoints: {
+        orders: '/api/kanban/orders',
+        updateStatus: '/api/kanban/orders/:orderId/status'
+      },
+      note: 'Keep this API key secure - it provides access to your order data'
     });
   });
 
