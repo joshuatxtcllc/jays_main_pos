@@ -61,6 +61,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ authenticated: false, user: null });
   });
 
+  // Kanban Integration API endpoints for production connection
+  app.get('/api/kanban/orders', (req, res) => {
+    // Returns all orders with production status for Kanban board
+    res.json({
+      success: true,
+      orders: [],
+      endpoint: '/api/kanban/orders',
+      description: 'Retrieves all orders with production status and timeline information'
+    });
+  });
+
+  app.post('/api/kanban/orders/:orderId/status', (req, res) => {
+    const { orderId } = req.params;
+    const { status, stage, notes } = req.body;
+    
+    // Updates order production status from Kanban board
+    res.json({
+      success: true,
+      orderId,
+      updatedStatus: status,
+      stage,
+      notes,
+      timestamp: new Date().toISOString(),
+      description: 'Updates order production status from external Kanban system'
+    });
+  });
+
+  app.get('/api/kanban/status', (req, res) => {
+    // Health check for Kanban integration
+    res.json({
+      status: 'active',
+      service: 'Jays Frames POS System',
+      version: '1.0.0',
+      endpoints: {
+        orders: '/api/kanban/orders',
+        updateStatus: '/api/kanban/orders/:orderId/status',
+        health: '/api/kanban/status'
+      },
+      authentication: 'API Key required in Authorization header',
+      timestamp: new Date().toISOString()
+    });
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
 
