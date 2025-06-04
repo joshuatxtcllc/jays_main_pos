@@ -129,27 +129,47 @@ export default function FrameVisualizer({
       currentHeight -= frameWidth * 2;
     }
 
-    // Sort mats by position (outermost first)
+    // Sort mats by position (innermost first - highest position number first)
     const sortedMats = [...mats].sort((a, b) => b.position - a.position);
     
     // Draw mats
-    if (useMultipleMats) {
-      sortedMats.forEach(matItem => {
-        const matWidth = matItem.width * 20;
-        
-        // Draw mat
-        ctx.fillStyle = matItem.matboard.color || '#FFFFFF';
+    if (useMultipleMats && sortedMats.length > 0) {
+      // Find the top mat (position 1 - outermost)
+      const topMat = sortedMats.find(mat => mat.position === 1);
+      if (topMat) {
+        // Draw the main top mat area
+        const topMatWidth = topMat.width * 20;
+        ctx.fillStyle = topMat.matboard.color || '#FFFFFF';
         ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
         
-        // Move inward
-        currentX += matWidth;
-        currentY += matWidth;
-        currentWidth -= matWidth * 2;
-        currentHeight -= matWidth * 2;
-      });
+        // Move inward by top mat width
+        currentX += topMatWidth;
+        currentY += topMatWidth;
+        currentWidth -= topMatWidth * 2;
+        currentHeight -= topMatWidth * 2;
+        
+        // Draw thin lines for middle and bottom mats inside the top mat
+        sortedMats.forEach(matItem => {
+          if (matItem.position > 1) { // Middle (2) and bottom (3) mats
+            const lineWidth = Math.max(2, matItem.width * 5); // Thin line representation
+            
+            // Draw thin border line
+            ctx.strokeStyle = matItem.matboard.color || '#FFFFFF';
+            ctx.lineWidth = lineWidth;
+            ctx.strokeRect(currentX, currentY, currentWidth, currentHeight);
+            
+            // Move slightly inward for next mat line
+            const inset = lineWidth + 2;
+            currentX += inset;
+            currentY += inset;
+            currentWidth -= inset * 2;
+            currentHeight -= inset * 2;
+          }
+        });
+      }
     } else if (mats.length > 0) {
-      // Draw single mat (innermost)
-      const mat = sortedMats[sortedMats.length - 1];
+      // Draw single mat (use the first available mat)
+      const mat = sortedMats[0];
       const matWidth = mat.width * 20;
       
       ctx.fillStyle = mat.matboard.color || '#FFFFFF';
