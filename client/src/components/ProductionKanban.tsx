@@ -525,15 +525,15 @@ export function ProductionKanban() {
 
   // Wrap the entire Kanban board in the DndProvider with HTML5Backend
   return (
-    
+    <DndProvider backend={HTML5Backend}>
       <KanbanBoard />
-       {selectedOrderForWorkOrder && (
-        
-          
-            
-              Work Order
-            
-             order={{
+      {selectedOrderForWorkOrder && (
+        <Dialog open={true} onOpenChange={() => setSelectedOrderForWorkOrder(null)}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Work Order</DialogTitle>
+            </DialogHeader>
+            <WorkOrder order={{
               id: selectedOrderForWorkOrder.id,
               orderNumber: selectedOrderForWorkOrder.orderNumber,
               customerName: selectedOrderForWorkOrder.customerName,
@@ -551,17 +551,17 @@ export function ProductionKanban() {
               createdAt: selectedOrderForWorkOrder.createdAt,
               artworkImage: selectedOrderForWorkOrder.artworkImage
             }} />
-          
-        
+          </DialogContent>
+        </Dialog>
       )}
 
       {selectedOrderForPayment && (
-        
-          
-            
-              Send Payment Link
-            
-             order={{
+        <Dialog open={true} onOpenChange={() => setSelectedOrderForPayment(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Send Payment Link</DialogTitle>
+            </DialogHeader>
+            <SendPaymentLink order={{
                 id: selectedOrderForPayment.id,
                 customerName: selectedOrderForPayment.customerName,
                 total: selectedOrderForPayment.total,
@@ -569,9 +569,9 @@ export function ProductionKanban() {
               }}
               onSuccess={() => setSelectedOrderForPayment(null)}
             />
-          
-        
+          </DialogContent>
+        </Dialog>
       )}
-    
+    </DndProvider>
   );
 }
