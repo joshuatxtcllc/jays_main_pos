@@ -11,6 +11,13 @@ import {
 } from '@/lib/utils'; // Assumed generateQrCode function exists
 import { Checkbox } from '@/components/ui/checkbox';
 import QRCode from 'react-qr-code'; // Added import for QRCode
+import { formatCurrency } from '@/lib/utils';
+import { ShoppingCart, CreditCard, DollarSign, FileText, Send } from 'lucide-react';
+import { CheckoutPayment } from './CheckoutPayment';
+import { Invoice } from './Invoice';
+import { WorkOrder } from './WorkOrder';
+import { SendPaymentLink } from './SendPaymentLink';
+import { useAuth } from '@/hooks/use-auth';
 
 
 interface OrderSummaryProps {
@@ -124,6 +131,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   // Generate QR code data if orderId is available
   const qrCodeData = orderId ? generateQrCode(orderId) : null;
+
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [showWorkOrder, setShowWorkOrder] = useState(false);
+  const [showPaymentLink, setShowPaymentLink] = useState(false);
 
 
   return (

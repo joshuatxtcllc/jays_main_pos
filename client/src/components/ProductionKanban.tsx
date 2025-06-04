@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,9 @@ import { formatCurrency } from '@/lib/utils';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { OrderEditDialog } from '@/components/OrderEditDialog';
+import { FileText, Send } from 'lucide-react';
+import { WorkOrder } from './WorkOrder';
+import { SendPaymentLink } from './SendPaymentLink';
 
 // Define item types for drag and drop
 const ItemTypes = {
@@ -321,15 +324,16 @@ function KanbanColumn({
 }
 
 export function ProductionKanban() {
-  // Ensure we have fallback values for all properties
-  const productionKanban = useProductionKanban();
   const { 
     orders = [], 
     isLoading = false, 
     error = null, 
     updateOrderStatus: updateStatus = (data) => console.log('Update status called with:', data),
     scheduleOrder = (data) => console.log('Schedule order called with:', data),
-  } = productionKanban || {};
+  } = orders || {};
+
+  const [selectedOrderForWorkOrder, setSelectedOrderForWorkOrder] = useState<any>(null);
+  const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any>(null);
 
   const handleUpdateStatus = (id: number, status: ProductionStatus) => {
     updateStatus({ id, status });
@@ -400,12 +404,12 @@ export function ProductionKanban() {
       console.log('No orders data available');
       return [];
     }
-    
+
     if (!Array.isArray(orders)) {
       console.log('Orders is not an array:', orders);
       return [];
     }
-    
+
     const filteredOrders = orders.filter((order: Order) => order.productionStatus === status);
     console.log(`Found ${filteredOrders.length} orders with status ${status}`);
     return filteredOrders;
@@ -439,93 +443,138 @@ export function ProductionKanban() {
   }
 
   const KanbanBoard = () => (
-    <div className="container mx-auto py-4">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Production Kanban Board</h1>
-          <p className="text-muted-foreground">
-            Manage and track framing orders through each production stage
-          </p>
-        </div>
-        <div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Info className="h-4 w-4 mr-2" />
-                How to Use
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Using the Production Kanban Board</DialogTitle>
-                <DialogDescription>
-                  A guide to managing your framing production workflow
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div>
-                  <h3 className="font-medium">Moving Orders</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Use drag and drop to move cards between production stages, or use the 'Back' and 'Next' buttons.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Scheduling</h3>
-                  <p className="text-sm text-muted-foreground">
-                    New orders must be scheduled before they can enter production. Click 'Schedule' 
-                    on orders in the first column to set an estimated completion date.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Customer Notifications</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Automatic notifications are sent to customers when orders change status. 
-                    You can disable notifications for specific orders in the order details.
-                  </p>
-                </div>
-                <div>
-                  <h3 className="font-medium">Daily Capacity</h3>
-                  <p className="text-sm text-muted-foreground">
-                    The system limits new production to 5 orders per day to ensure quality 
-                    and predictable completion times.
-                  </p>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="ml-2">Loading production board...</span>
-        </div>
-      ) : (
-        <div className="overflow-x-auto pb-4">
-          <div className="flex space-x-4 pb-4">
-            {columns.map((column) => (
-              <KanbanColumn
-                key={column.status}
-                title={column.title}
-                orders={getOrdersByStatus(column.status as ProductionStatus)}
-                previousStatus={column.previousStatus as ProductionStatus}
-                nextStatus={column.nextStatus as ProductionStatus}
-                updateOrderStatus={handleUpdateStatus}
-                scheduleOrder={handleScheduleOrder}
-                currentStatus={column.status as ProductionStatus}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    
+      
+        
+          
+            <h1 className="text-2xl font-bold">Production Kanban Board</h1>
+            <p className="text-muted-foreground">
+              Manage and track framing orders through each production stage
+            </p>
+          
+          
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Info className="h-4 w-4 mr-2" />
+                  How to Use
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Using the Production Kanban Board</DialogTitle>
+                  <DialogDescription>
+                    A guide to managing your framing production workflow
+                  </DialogDescription>
+                </DialogHeader>
+                
+                  
+                    <h3 className="font-medium">Moving Orders</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Use drag and drop to move cards between production stages, or use the 'Back' and 'Next' buttons.
+                    </p>
+                  
+                  
+                    <h3 className="font-medium">Scheduling</h3>
+                    <p className="text-sm text-muted-foreground">
+                      New orders must be scheduled before they can enter production. Click 'Schedule' 
+                      on orders in the first column to set an estimated completion date.
+                    </p>
+                  
+                  
+                    <h3 className="font-medium">Customer Notifications</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Automatic notifications are sent to customers when orders change status. 
+                      You can disable notifications for specific orders in the order details.
+                    </p>
+                  
+                  
+                    <h3 className="font-medium">Daily Capacity</h3>
+                    <p className="text-sm text-muted-foreground">
+                      The system limits new production to 5 orders per day to ensure quality 
+                      and predictable completion times.
+                    </p>
+                  
+                
+              </DialogContent>
+            </Dialog>
+          
+        
+        {isLoading ? (
+          
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2">Loading production board...</span>
+          
+        ) : (
+          
+            
+              {columns.map((column) => (
+                
+                  {column.title}
+                  {getOrdersByStatus(column.status as ProductionStatus)}
+                  {column.previousStatus as ProductionStatus}
+                  {column.nextStatus as ProductionStatus}
+                  {handleUpdateStatus}
+                  {handleScheduleOrder}
+                  {column.status as ProductionStatus}
+                
+              ))}
+            
+          
+        )}
+      
+    
   );
 
   // Wrap the entire Kanban board in the DndProvider with HTML5Backend
   return (
-    <DndProvider backend={HTML5Backend}>
+    
       <KanbanBoard />
-    </DndProvider>
+       {selectedOrderForWorkOrder && (
+        
+          
+            
+              Work Order
+            
+             order={{
+              id: selectedOrderForWorkOrder.id,
+              orderNumber: selectedOrderForWorkOrder.orderNumber,
+              customerName: selectedOrderForWorkOrder.customerName,
+              artworkWidth: selectedOrderForWorkOrder.artworkWidth,
+              artworkHeight: selectedOrderForWorkOrder.artworkHeight,
+              artworkDescription: selectedOrderForWorkOrder.artworkDescription,
+              artworkType: selectedOrderForWorkOrder.artworkType,
+              frameName: selectedOrderForWorkOrder.frameName,
+              matDescription: selectedOrderForWorkOrder.matDescription,
+              glassType: selectedOrderForWorkOrder.glassType,
+              specialServices: selectedOrderForWorkOrder.specialServices,
+              dueDate: selectedOrderForWorkOrder.dueDate,
+              status: selectedOrderForWorkOrder.status,
+              total: selectedOrderForWorkOrder.total,
+              createdAt: selectedOrderForWorkOrder.createdAt,
+              artworkImage: selectedOrderForWorkOrder.artworkImage
+            }} />
+          
+        
+      )}
+
+      {selectedOrderForPayment && (
+        
+          
+            
+              Send Payment Link
+            
+             order={{
+                id: selectedOrderForPayment.id,
+                customerName: selectedOrderForPayment.customerName,
+                total: selectedOrderForPayment.total,
+                orderNumber: selectedOrderForPayment.orderNumber
+              }}
+              onSuccess={() => setSelectedOrderForPayment(null)}
+            />
+          
+        
+      )}
+    
   );
 }
