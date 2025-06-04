@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Moon, Sun, Menu, X, ShoppingCart } from "lucide-react";
@@ -246,7 +245,7 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
           >
             Customers
           </div>
-          
+
           <div 
             className={cn(
               "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
