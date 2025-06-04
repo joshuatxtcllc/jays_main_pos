@@ -1,0 +1,73 @@
+> rest-express@1.0.0 dev
+Server: Successfully initialized Supabase client
+9:08:44 PM [express] serving on port 5000
+9:08:54 PM [vite] Pre-transform error: /home/runner/workspace/client/src/hooks/use-frames.tsx: Identifier 'frames' has already been declared. (15:16)
+
+  13 |
+  14 |   // Use TanStack Query to fetch frames
+> 15 |   const { data: frames, isLoading: loading, error } = useQuery({
+     |                 ^
+  16 |     queryKey: ['/api/frames'],
+  17 |     queryFn: async () => {
+  18 |       try {
+Vite server error: Pre-transform error: /home/runner/workspace/client/src/hooks/use-frames.tsx: Identifier 'frames' has already been declared. (15:16)
+
+  13 |
+  14 |   // Use TanStack Query to fetch frames
+> 15 |   const { data: frames, isLoading: loading, error } = useQuery({
+     |                 ^
+  16 |     queryKey: ['/api/frames'],
+  17 |     queryFn: async () => {
+  18 |       try {
+9:08:56 PM [vite] Internal server error: /home/runner/workspace/client/src/hooks/use-frames.tsx: Identifier 'frames' has already been declared. (15:16)
+
+  13 |
+  14 |   // Use TanStack Query to fetch frames
+> 15 |   const { data: frames, isLoading: loading, error } = useQuery({
+     |                 ^
+  16 |     queryKey: ['/api/frames'],
+  17 |     queryFn: async () => {
+  18 |       try {
+  Plugin: vite:react-babel
+  File: /home/runner/workspace/client/src/hooks/use-frames.tsx:15:16
+  13 |  
+  14 |    // Use TanStack Query to fetch frames
+  15 |    const { data: frames, isLoading: loading, error } = useQuery({
+     |                  ^
+  16 |      queryKey: ['/api/frames'],
+  17 |      queryFn: async () => {
+      at toParseError (/home/runner/workspace/node_modules/@babel/parser/src/parse-error.ts:95:45)
+      at raise (/home/runner/workspace/node_modules/@babel/parser/src/tokenizer/index.ts:1497:19)
+      at checkRedeclarationInScope (/home/runner/workspace/node_modules/@babel/parser/src/util/scope.ts:155:19)
+      at declareName (/home/runner/workspace/node_modules/@babel/parser/src/util/scope.ts:109:12)
+      at declareName (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/scope.ts:89:11)
+      at declareNameFromIdentifier (/home/runner/workspace/node_modules/@babel/parser/src/parser/lval.ts:739:16)
+      at checkIdentifier (/home/runner/workspace/node_modules/@babel/parser/src/parser/lval.ts:734:12)
+      at checkLVal (/home/runner/workspace/node_modules/@babel/parser/src/parser/lval.ts:636:12)
+      at checkLVal (/home/runner/workspace/node_modules/@babel/parser/src/parser/lval.ts:698:12)
+      at checkLVal (/home/runner/workspace/node_modules/@babel/parser/src/parser/lval.ts:687:16)
+      at parseVarId (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1605:10)
+      at parseVarId (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/index.ts:3543:13)
+      at parseVar (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1558:12)
+      at parseVarStatement (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1227:10)
+      at parseVarStatement (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/index.ts:3007:33)
+      at parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:566:21)
+      at parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/index.ts:3056:20)
+      at parseStatementLike (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:437:17)
+      at parseStatementListItem (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:386:17)
+      at parseBlockOrModuleBlockBody (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1420:16)
+      at parseBlockBody (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1393:10)
+      at parseBlock (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1361:10)
+      at parseFunctionBody (/home/runner/workspace/node_modules/@babel/parser/src/parser/expression.ts:2557:24)
+      at parseFunctionBodyAndFinish (/home/runner/workspace/node_modules/@babel/parser/src/parser/expression.ts:2526:10)
+      at parseFunctionBodyAndFinish (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/index.ts:2538:20)
+      at callback (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1667:12)
+      at withSmartMixTopicForbiddingContext (/home/runner/workspace/node_modules/@babel/parser/src/parser/expression.ts:3091:14)
+      at parseFunction (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1665:10)
+      at parseFunctionStatement (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:1053:17)
+      at parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:480:21)
+      at parseStatementContent (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/index.ts:3056:20)
+      at parseStatementLike (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:437:17)
+      at parseStatementListItem (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:386:17)
+      at parseExportDeclaration (/home/runner/workspace/node_modules/@babel/parser/src/parser/statement.ts:2595:17)
+      at parseExportDeclaration (/home/runner/workspace/node_modules/@babel/parser/src/plugins/typescript/index.ts:3306:15)
