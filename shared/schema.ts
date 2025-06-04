@@ -156,7 +156,14 @@ export const orders = pgTable("orders", {
   notificationsEnabled: boolean("notifications_enabled").default(true),
   // New fields for multiple mat/frame support
   useMultipleMats: boolean("use_multiple_mats").default(false),
-  useMultipleFrames: boolean("use_multiple_frames").default(false)
+  useMultipleFrames: boolean("use_multiple_frames").default(false),
+  // Manual frame entry fields
+  useManualFrame: boolean("use_manual_frame").default(false),
+  manualFrameName: text("manual_frame_name"),
+  manualFrameCost: numeric("manual_frame_cost"),
+  // Miscellaneous charges
+  miscChargeDescription: text("misc_charge_description"),
+  miscChargeAmount: numeric("misc_charge_amount")
 });
 
 export const insertOrderSchema = createInsertSchema(orders).omit({ id: true, createdAt: true });

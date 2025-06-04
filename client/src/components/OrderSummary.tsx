@@ -43,6 +43,14 @@ interface OrderSummaryProps {
   setAddToWholesaleOrder?: (value: boolean) => void;
   orderId?: number; // Order ID for QR code generation
   sizeSurcharge?: number; // Size surcharge for oversized artwork
+  useManualFrame?: boolean;
+  manualFrameName?: string;
+  manualFrameCost?: number;
+  miscCharges?: Array<{
+    id: string;
+    description: string;
+    amount: number;
+  }>;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -65,7 +73,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   addToWholesaleOrder = false,
   setAddToWholesaleOrder,
   orderId,
-  sizeSurcharge = 0
+  sizeSurcharge = 0,
+  useManualFrame = false,
+  manualFrameName = '',
+  manualFrameCost = 0,
+  miscCharges = []
 }) => {
   // Local state for wholesale order checkbox if not provided through props
   const [localAddToWholesaleOrder, setLocalAddToWholesaleOrder] = useState(false);
@@ -117,7 +129,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   return (
     <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
       <h2 className="text-xl font-semibold mb-4 header-underline">Order Summary</h2>
-      
+
       {/* Artwork Details */}
       <div className="mb-4 border-b pb-3 border-gray-200">
         <div className="flex justify-between font-medium">
@@ -136,7 +148,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           )}
         </div>
       </div>
-      
+
       <div className="space-y-3">
         {/* Frames */}
         {frames.length > 0 && (

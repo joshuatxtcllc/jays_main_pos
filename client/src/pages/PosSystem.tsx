@@ -18,6 +18,8 @@ import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
 import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
 import VendorFrameSearch from '@/components/VendorFrameSearch';
+import ManualFrameEntry from '@/components/ManualFrameEntry';
+import MiscellaneousCharges from '@/components/MiscellaneousCharges';
 import { useMatboards } from '@/hooks/use-matboards';
 import { useFrames } from '@/hooks/use-frames';
 import { ArtworkSizeDetector } from '@/components/ArtworkSizeDetector';
@@ -119,6 +121,18 @@ const PosSystem = () => {
 
   // Frame design image
   const [frameDesignImage, setFrameDesignImage] = useState<string | null>(null);
+
+  // Manual frame entry
+  const [useManualFrame, setUseManualFrame] = useState<boolean>(false);
+  const [manualFrameName, setManualFrameName] = useState<string>('');
+  const [manualFrameCost, setManualFrameCost] = useState<number>(0);
+
+  // Miscellaneous charges
+  const [miscCharges, setMiscCharges] = useState<Array<{
+    id: string;
+    description: string;
+    amount: number;
+  }>>([]);
 
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
@@ -643,9 +657,14 @@ const PosSystem = () => {
 
       // Prepare order data - using primary frame, mat and width
       const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
+      const totalMiscCharges = miscCharges.reduce((sum, charge) => sum + charge.amount, 0);
+      const miscChargeDescription = miscCharges.length > 0 
+        ? miscCharges.map(charge => `${charge.description}: $${charge.amount.toFixed(2)}`).join('; ')
+        : '';
+
       const orderData: InsertOrder = {
         customerId: customerResponse.id,
-        frameId: primaryFrame ? primaryFrame.id : '',
+        frameId: useManualFrame ? 'manual' : (primaryFrame ? primaryFrame.id : ''),
         matColorId: primaryMat ? primaryMat.id : '',
         glassOptionId: selectedGlassOption.id,
         artworkWidth: artworkWidth.toString(),
@@ -657,7 +676,12 @@ const PosSystem = () => {
         subtotal: "0", // Will be calculated on the server
         tax: "0", // Will be calculated on the server
         total: "0", // Will be calculated on the server
-        artworkImage
+        artworkImage,
+        useManualFrame,
+        manualFrameName: useManualFrame ? manualFrameName : undefined,
+        manualFrameCost: useManualFrame ? manualFrameCost.toString() : undefined,
+        miscChargeDescription: miscChargeDescription || undefined,
+        miscChargeAmount: totalMiscCharges > 0 ? totalMiscCharges.toString() : undefined
       };
 
       console.log("Creating order with data:", orderData);
@@ -851,6 +875,12 @@ const PosSystem = () => {
     // Reset multi-options flags
     setUseMultipleFrames(false);
     setUseMultipleMats(false);
+
+    // Reset manual frame and misc charges
+    setUseManualFrame(false);
+    setManualFrameName('');
+    setManualFrameCost(0);
+    setMiscCharges([]);
 
     // Reset frame search
     setFrameSearch('');
@@ -1517,10 +1547,26 @@ const PosSystem = () => {
           </div>
         </div>
 
+        {/* Manual Frame Entry Section */}
+        <ManualFrameEntry
+          useManualFrame={useManualFrame}
+          onToggleManualFrame={setUseManualFrame}
+          frameName={manualFrameName}
+          onFrameNameChange={setManualFrameName}
+          frameCost={manualFrameCost}
+          onFrameCostChange={setManualFrameCost}
+        />
+
         {/* Special Services Section */}
         <SpecialServices 
           selectedServices={selectedServices}
           onChange={setSelectedServices}
+        />
+
+        {/* Miscellaneous Charges Section */}
+        <MiscellaneousCharges
+          charges={miscCharges}
+          onChange={setMiscCharges}
         />
       </div>
 
@@ -1625,6 +1671,10 @@ const PosSystem = () => {
           setAddToWholesaleOrder={setAddToWholesaleOrder}
           orderId={1} // Temporary ID for testing - will be replaced with actual order ID after creation
           sizeSurcharge={getSizeSurcharge()}
+          useManualFrame={useManualFrame}
+          manualFrameName={manualFrameName}
+          manualFrameCost={manualFrameCost}
+          miscCharges={miscCharges}
         />
       </div>
     </div>
