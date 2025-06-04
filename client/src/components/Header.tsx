@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobile } from "@/hooks/use-mobile";
+import { ChatWidget } from "@/components/chat-widget";
+import { PerformanceMonitor } from "@/components/performance-monitor";
 
 interface HeaderProps {
   darkMode: boolean;
@@ -263,6 +265,16 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
             </span>
           </div>
         </nav>
+      </div>
+
+      {/* Fixed position widgets */}
+      <div className="fixed bottom-4 right-4 z-50">
+        <ChatWidget />
+      </div>
+
+      {/* Performance monitor on left side */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <PerformanceMonitor />
       </div>
     </header>
   );

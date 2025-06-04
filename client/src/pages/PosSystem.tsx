@@ -99,7 +99,7 @@ const PosSystem = () => {
   const [matManufacturerFilter, setMatManufacturerFilter] = useState<string>('all');
 
   // Glass Options - Set Museum glass as default (index 1)
-  const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[1]);
+  const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[0]); // Now defaults to 'No Glass'
 
   // Special Services
   const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);

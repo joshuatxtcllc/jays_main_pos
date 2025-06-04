@@ -2,6 +2,12 @@ import { GlassOption, SpecialService } from '@shared/schema';
 
 export const glassOptionCatalog: GlassOption[] = [
   {
+    id: 'none',
+    name: 'No Glass',
+    description: 'No glass protection',
+    price: '0.00' // no cost
+  },
+  {
     id: 'regular',
     name: 'Regular Glass',
     description: 'Standard protection',
