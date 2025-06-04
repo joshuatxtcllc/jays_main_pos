@@ -165,28 +165,28 @@ export function IntuitivePerformanceMonitor({
 
   if (compact && !isExpanded) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-20 right-4 z-40">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setIsExpanded(true)}
-          className="bg-white/90 backdrop-blur-sm border-gray-200 shadow-lg hover:shadow-xl transition-all duration-200"
+          className="bg-white/95 backdrop-blur-sm border-gray-300 shadow-lg hover:shadow-xl transition-all duration-200 text-gray-800"
         >
-          <Activity className="h-4 w-4 mr-2" />
-          <span className="text-xs">Performance</span>
+          <Activity className="h-4 w-4 mr-2 text-blue-600" />
+          <span className="text-xs font-medium text-gray-800">Performance</span>
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
-      <Card className="w-80 bg-white/95 backdrop-blur-sm border-gray-200 shadow-xl">
+    <div className="fixed bottom-20 right-4 z-40">
+      <Card className="w-80 bg-white/95 backdrop-blur-sm border-gray-300 shadow-xl">
         <CardContent className="p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-blue-600" />
-              <h3 className="font-semibold text-sm">Performance Monitor</h3>
+              <h3 className="font-semibold text-sm text-gray-800">Performance Monitor</h3>
             </div>
             <Button
               variant="ghost"
@@ -204,8 +204,8 @@ export function IntuitivePerformanceMonitor({
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1">
-                    <Cpu className="h-3 w-3" />
-                    <span>Memory</span>
+                    <Cpu className="h-3 w-3 text-gray-700" />
+                    <span className="text-gray-800 font-medium">Memory</span>
                   </div>
                   <Badge variant={getMemoryStatus().color === 'success' ? 'default' : 'destructive'} className="text-xs">
                     {getMemoryStatus().label}
@@ -215,7 +215,7 @@ export function IntuitivePerformanceMonitor({
                   value={(metrics.memoryUsage / metrics.memoryLimit) * 100} 
                   className="h-2"
                 />
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-700 font-medium">
                   {metrics.memoryUsage}MB / {metrics.memoryLimit}MB
                 </div>
               </div>
@@ -224,14 +224,14 @@ export function IntuitivePerformanceMonitor({
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1">
-                    <Database className="h-3 w-3" />
-                    <span>API Response</span>
+                    <Database className="h-3 w-3 text-gray-700" />
+                    <span className="text-gray-800 font-medium">API Response</span>
                   </div>
                   <Badge variant={getApiStatus().color === 'success' ? 'default' : 'destructive'} className="text-xs">
                     {getApiStatus().label}
                   </Badge>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-700 font-medium">
                   {metrics.apiResponseTime}ms {metrics.databaseConnected ? '✓' : '✗'}
                 </div>
               </div>
@@ -240,14 +240,14 @@ export function IntuitivePerformanceMonitor({
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1">
-                    <Globe className="h-3 w-3" />
-                    <span>Network</span>
+                    <Globe className="h-3 w-3 text-gray-700" />
+                    <span className="text-gray-800 font-medium">Network</span>
                   </div>
                   <Badge variant={getNetworkStatus().color === 'success' ? 'default' : 'destructive'} className="text-xs">
                     {getNetworkStatus().label}
                   </Badge>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-700 font-medium">
                   Latency: {metrics.networkLatency}ms
                 </div>
               </div>
@@ -256,23 +256,23 @@ export function IntuitivePerformanceMonitor({
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1">
-                    <Monitor className="h-3 w-3" />
-                    <span>Frame Rate</span>
+                    <Monitor className="h-3 w-3 text-gray-700" />
+                    <span className="text-gray-800 font-medium">Frame Rate</span>
                   </div>
                   <Badge variant={metrics.frameRate >= 45 ? 'default' : 'destructive'} className="text-xs">
                     {metrics.frameRate >= 45 ? 'Smooth' : 'Choppy'}
                   </Badge>
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-gray-700 font-medium">
                   {metrics.frameRate} FPS
                 </div>
               </div>
 
               {/* Last Updated */}
-              <div className="flex items-center justify-between text-xs text-gray-400 pt-2 border-t">
+              <div className="flex items-center justify-between text-xs text-gray-600 pt-2 border-t border-gray-200">
                 <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>Updated: {metrics.lastUpdated}</span>
+                  <Clock className="h-3 w-3 text-gray-600" />
+                  <span className="font-medium">Updated: {metrics.lastUpdated}</span>
                 </div>
                 {isLoading && (
                   <div className="flex items-center gap-1">

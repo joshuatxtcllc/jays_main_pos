@@ -35,6 +35,7 @@ import ChatWidget from "./components/ChatWidget";
 import FrameEducationPage from '@/pages/FrameEducationPage';
 import { AuthProvider } from './hooks/use-auth';
 import { IntuitivePerformanceMonitor } from './components/IntuitivePerformanceMonitor';
+import { MobileNavMenu } from './components/MobileNavMenu';
 import { lazy } from 'react';
 // Import the notification service
 import { notificationService } from "./lib/notificationService";
@@ -111,6 +112,7 @@ function App() {
             <AuthProvider>
               <TooltipProvider>
                 <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
+                  <MobileNavMenu />
                   <Header darkMode={darkMode} toggleTheme={toggleTheme} />
                   <main className="container pt-24 pb-10">
                     <Switch>
