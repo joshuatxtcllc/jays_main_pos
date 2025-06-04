@@ -12,7 +12,7 @@ export function useFrames() {
   const [frames, setFrames] = useState<Frame[] | null>(null);
 
   // Use TanStack Query to fetch frames
-  const { data: frames, isLoading: loading, error } = useQuery({
+  const { data: apiFrames, isLoading: loading, error } = useQuery({
     queryKey: ['/api/frames'],
     queryFn: async () => {
       try {
@@ -64,14 +64,14 @@ export function useFrames() {
 
   // Set frames from API or use static data as fallback
   useEffect(() => {
-    if (frames && frames.length > 0) {
-      setFrames(frames);
-    } else if (!loading && (!frames || frames.length === 0)) {
+    if (apiFrames && apiFrames.length > 0) {
+      setFrames(apiFrames);
+    } else if (!loading && (!apiFrames || apiFrames.length === 0)) {
       // If API returned no frames or had an error, use static data
       console.log('No frames from API, using static frame catalog data');
       setFrames(frameCatalog);
     }
-  }, [frames, loading]);
+  }, [apiFrames, loading]);
 
   /**
    * Gets a frame by its ID
