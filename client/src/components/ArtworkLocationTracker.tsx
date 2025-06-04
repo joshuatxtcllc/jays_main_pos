@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 
 interface ArtworkLocationTrackerProps {
@@ -20,29 +20,29 @@ export function ArtworkLocationTracker({ orderId, onSave, className }: ArtworkLo
   const { toast } = useToast();
 
   // Fetch existing location data
-  useEffect(() => {
-    const fetchLocationData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/orders/${orderId}/location`);
+  const fetchLocationData = useCallback(async () => {
+    if (!orderId) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/orders/${orderId}/location`);
 
-        if (response.ok) {
-          const data = await response.json();
-          setArtworkLocation(data.location || '');
-          setSavedLocation(data.location || '');
-          setUpdateDate(data.updatedAt ? new Date(data.updatedAt).toLocaleString() : null);
-        }
-      } catch (error) {
-        console.error('Error fetching location data:', error);
-      } finally {
-        setLoading(false);
+      if (response.ok) {
+        const data = await response.json();
+        setArtworkLocation(data.location || '');
+        setSavedLocation(data.location || '');
+        setUpdateDate(data.updatedAt ? new Date(data.updatedAt).toLocaleString() : null);
       }
-    };
-
-    if (orderId) {
-      fetchLocationData();
+    } catch (error) {
+      console.error('Error fetching location data:', error);
+    } finally {
+      setLoading(false);
     }
   }, [orderId]);
+
+  useEffect(() => {
+    fetchLocationData();
+  }, [fetchLocationData]);
 
   // Save artwork location
   const saveArtworkLocation = async () => {
