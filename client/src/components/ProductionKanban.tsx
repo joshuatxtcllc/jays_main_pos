@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -443,87 +443,84 @@ export function ProductionKanban() {
   }
 
   const KanbanBoard = () => (
-    
-      
-        
-          
-            <h1 className="text-2xl font-bold">Production Kanban Board</h1>
-            <p className="text-muted-foreground">
-              Manage and track framing orders through each production stage
-            </p>
-          
-          
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Info className="h-4 w-4 mr-2" />
-                  How to Use
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Using the Production Kanban Board</DialogTitle>
-                  <DialogDescription>
-                    A guide to managing your framing production workflow
-                  </DialogDescription>
-                </DialogHeader>
-                
-                  
-                    <h3 className="font-medium">Moving Orders</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Use drag and drop to move cards between production stages, or use the 'Back' and 'Next' buttons.
-                    </p>
-                  
-                  
-                    <h3 className="font-medium">Scheduling</h3>
-                    <p className="text-sm text-muted-foreground">
-                      New orders must be scheduled before they can enter production. Click 'Schedule' 
-                      on orders in the first column to set an estimated completion date.
-                    </p>
-                  
-                  
-                    <h3 className="font-medium">Customer Notifications</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Automatic notifications are sent to customers when orders change status. 
-                      You can disable notifications for specific orders in the order details.
-                    </p>
-                  
-                  
-                    <h3 className="font-medium">Daily Capacity</h3>
-                    <p className="text-sm text-muted-foreground">
-                      The system limits new production to 5 orders per day to ensure quality 
-                      and predictable completion times.
-                    </p>
-                  
-                
-              </DialogContent>
-            </Dialog>
-          
-        
-        {isLoading ? (
-          
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="ml-2">Loading production board...</span>
-          
-        ) : (
-          
-            
-              {columns.map((column) => (
-                
-                  {column.title}
-                  {getOrdersByStatus(column.status as ProductionStatus)}
-                  {column.previousStatus as ProductionStatus}
-                  {column.nextStatus as ProductionStatus}
-                  {handleUpdateStatus}
-                  {handleScheduleOrder}
-                  {column.status as ProductionStatus}
-                
-              ))}
-            
-          
-        )}
-      
-    
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold">Production Kanban Board</h1>
+          <p className="text-muted-foreground">
+            Manage and track framing orders through each production stage
+          </p>
+        </div>
+        <div>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Info className="h-4 w-4 mr-2" />
+                How to Use
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Using the Production Kanban Board</DialogTitle>
+                <DialogDescription>
+                  A guide to managing your framing production workflow
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium">Moving Orders</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Use drag and drop to move cards between production stages, or use the 'Back' and 'Next' buttons.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium">Scheduling</h3>
+                  <p className="text-sm text-muted-foreground">
+                    New orders must be scheduled before they can enter production. Click 'Schedule' 
+                    on orders in the first column to set an estimated completion date.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium">Customer Notifications</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Automatic notifications are sent to customers when orders change status. 
+                    You can disable notifications for specific orders in the order details.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-medium">Daily Capacity</h3>
+                  <p className="text-sm text-muted-foreground">
+                    The system limits new production to 5 orders per day to ensure quality 
+                    and predictable completion times.
+                  </p>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Loading production board...</span>
+        </div>
+      ) : (
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {columns.map((column) => (
+            <KanbanColumn
+              key={column.status}
+              title={column.title}
+              orders={getOrdersByStatus(column.status as ProductionStatus)}
+              previousStatus={column.previousStatus as ProductionStatus}
+              nextStatus={column.nextStatus as ProductionStatus}
+              updateOrderStatus={handleUpdateStatus}
+              scheduleOrder={handleScheduleOrder}
+              currentStatus={column.status as ProductionStatus}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 
   // Wrap the entire Kanban board in the DndProvider with HTML5Backend
