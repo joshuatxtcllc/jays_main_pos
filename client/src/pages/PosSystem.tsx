@@ -238,33 +238,61 @@ const PosSystem = () => {
 
       console.log('Processing image upload:', file.name, file.type, file.size);
 
-      // Convert file to data URL
-      const dataUrl = await fileToDataUrl(file);
-      console.log('File converted to data URL, length:', dataUrl.length);
+      // Convert file to data URL with better error handling
+      let dataUrl: string;
+      try {
+        dataUrl = await fileToDataUrl(file);
+        console.log('File converted to data URL, length:', dataUrl.length);
+      } catch (conversionError) {
+        console.error('Error converting file to data URL:', conversionError);
+        throw new Error('Failed to process image file');
+      }
 
-      // Resize image if it's too large
-      const resizedImage = await resizeImage(dataUrl, 1200, 1200);
-      console.log('Image resized, new data URL length:', resizedImage.length);
+      // Resize image if it's too large with error handling
+      let resizedImage: string;
+      try {
+        resizedImage = await resizeImage(dataUrl, 1200, 1200);
+        console.log('Image resized, new data URL length:', resizedImage.length);
+      } catch (resizeError) {
+        console.error('Error resizing image:', resizeError);
+        // If resize fails, use original data URL
+        resizedImage = dataUrl;
+      }
+
+      // Validate the data URL format
+      if (!resizedImage.startsWith('data:image/')) {
+        throw new Error('Invalid image data format');
+      }
+
+      // Set the artwork image state first
+      setArtworkImage(resizedImage);
+      console.log('Setting artwork image in state');
 
       // Create an image element to get dimensions
       const img = new Image();
       img.onload = () => {
-        console.log('Image loaded with dimensions:', img.width, 'x', img.height);
-        const imgAspectRatio = img.width / img.height;
-        setAspectRatio(imgAspectRatio);
+        try {
+          console.log('Image loaded with dimensions:', img.width, 'x', img.height);
+          if (img.width > 0 && img.height > 0) {
+            const imgAspectRatio = img.width / img.height;
+            setAspectRatio(imgAspectRatio);
 
-        // Update width based on the height and aspect ratio
-        const newWidth = parseFloat((artworkHeight * imgAspectRatio).toFixed(2));
-        console.log('Setting artwork width to:', newWidth);
-        setArtworkWidth(newWidth);
+            // Update width based on the height and aspect ratio
+            const newWidth = parseFloat((artworkHeight * imgAspectRatio).toFixed(2));
+            console.log('Setting artwork width to:', newWidth);
+            setArtworkWidth(newWidth);
+          }
+        } catch (dimensionError) {
+          console.error('Error calculating dimensions:', dimensionError);
+        }
+      };
+      
+      img.onerror = (imgError) => {
+        console.error('Error loading image for dimension calculation:', imgError);
+        // Don't throw error here, just log it
       };
 
-      // IMPORTANT: We need to set the artworkImage state before setting the img.src
-      // This ensures the state is updated immediately
-      setArtworkImage(resizedImage);
-      console.log('Setting artwork image in state');
-
-      // Now set the image source for dimension calculation
+      // Set the image source for dimension calculation
       img.src = resizedImage;
 
       toast({
@@ -273,9 +301,10 @@ const PosSystem = () => {
       });
     } catch (error) {
       console.error('Error processing image:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Error processing image",
-        description: "There was a problem processing your image. Please try again.",
+        description: `There was a problem processing your image: ${errorMessage}. Please try again.`,
         variant: "destructive"
       });
     }
