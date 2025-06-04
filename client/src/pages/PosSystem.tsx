@@ -514,10 +514,16 @@ const PosSystem = () => {
 
     if (dimension === 'width') {
       setArtworkWidth(value);
-      setArtworkHeight(parseFloat((value / aspectRatio).toFixed(2)));
+      // Prevent infinite loop by checking if aspectRatio is valid
+      if (aspectRatio > 0 && aspectRatio !== Infinity) {
+        setArtworkHeight(parseFloat((value / aspectRatio).toFixed(2)));
+      }
     } else {
       setArtworkHeight(value);
-      setArtworkWidth(parseFloat((value * aspectRatio).toFixed(2)));
+      // Prevent infinite loop by checking if aspectRatio is valid
+      if (aspectRatio > 0 && aspectRatio !== Infinity) {
+        setArtworkWidth(parseFloat((value * aspectRatio).toFixed(2)));
+      }
     }
   };
 

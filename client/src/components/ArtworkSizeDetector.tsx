@@ -42,13 +42,9 @@ export function ArtworkSizeDetector({
         const newDetector = new Detector();
         await newDetector.initialize();
         setDetector(newDetector);
+        console.log('Artwork size detector initialized successfully');
       } catch (error) {
         console.error('Failed to initialize artwork detector:', error);
-        toast({
-          title: 'Initialization Error',
-          description: 'Failed to initialize artwork size detection. Manual entry will be used instead.',
-          variant: 'destructive'
-        });
         setManualEntry(true);
       }
     };
@@ -61,7 +57,7 @@ export function ArtworkSizeDetector({
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [toast]);
+  }, []); // Removed toast dependency to prevent re-renders
 
   // Handle file selection
   const handleFileUpload = async (file: File) => {
