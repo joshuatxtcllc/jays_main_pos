@@ -885,9 +885,9 @@ export class DatabaseStorage implements IStorage {
         .values(order)
         .returning();
       console.log('DatabaseStorage.createOrder - Order created successfully:', newOrder);
-      
+
       // Email notification would be sent here if email service is configured
-      
+
       return newOrder;
     } catch (error) {
       console.error('DatabaseStorage.createOrder - Error creating order:', error);

@@ -5,9 +5,10 @@ import { storage } from "../storage";
 export const getMaterialsPickList = async (req: Request, res: Response) => {
   try {
     const materialsList = await storage.getMaterialsPickList();
-    res.json(materialsList);
+    res.json(materialsList || []);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getMaterialsPickList:', error);
+    res.status(500).json({ message: error.message, materials: [] });
   }
 };
 
@@ -17,7 +18,7 @@ export const getMaterialsBySupplier = async (req: Request, res: Response) => {
     const materialsList = await storage.getMaterialsPickList();
 
     // Group materials by supplier
-    const bySupplier = materialsList.reduce((acc, material) => {
+    const bySupplier = (materialsList || []).reduce((acc, material) => {
       if (!acc[material.supplier]) {
         acc[material.supplier] = [];
       }
@@ -27,7 +28,8 @@ export const getMaterialsBySupplier = async (req: Request, res: Response) => {
 
     res.json(bySupplier);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getMaterialsBySupplier:', error);
+    res.status(500).json({ message: error.message, suppliers: {} });
   }
 };
 
@@ -36,13 +38,14 @@ export const getMaterialsForOrder = async (req: Request, res: Response) => {
   try {
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
-      return res.status(400).json({ message: "Invalid order ID" });
+      return res.status(400).json({ message: "Invalid order ID", materials: [] });
     }
 
     const materials = await storage.getMaterialsForOrder(orderId);
-    res.json(materials);
+    res.json(materials || []);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getMaterialsForOrder:', error);
+    res.status(500).json({ message: error.message, materials: [] });
   }
 };
 
@@ -107,10 +110,11 @@ export const createPurchaseOrder = async (req: Request, res: Response) => {
 export const getMaterialTypes = async (req: Request, res: Response) => {
   try {
     const materials = await storage.getMaterialsPickList();
-    const types = Array.from(new Set(materials.map(m => m.type)));
+    const types = Array.from(new Set((materials || []).map(m => m.type)));
     res.json(types);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getMaterialTypes:', error);
+    res.status(500).json({ message: error.message, types: [] });
   }
 };
 
@@ -118,9 +122,10 @@ export const getMaterialTypes = async (req: Request, res: Response) => {
 export const getMaterialSuppliers = async (req: Request, res: Response) => {
   try {
     const materials = await storage.getMaterialsPickList();
-    const suppliers = Array.from(new Set(materials.map(m => m.supplier)));
+    const suppliers = Array.from(new Set((materials || []).map(m => m.supplier)));
     res.json(suppliers);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error('Error in getMaterialSuppliers:', error);
+    res.status(500).json({ message: error.message, suppliers: [] });
   }
 };

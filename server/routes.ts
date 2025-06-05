@@ -12,6 +12,10 @@ import { validateApiKey, KANBAN_API_KEY } from "./middleware/apiAuth";
 // import webhookRoutes from './routes/webhookRoutes';
 // import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
 import threeDDesignerRoutes from './routes/threeDDesignerRoutes';
+import vendorApiRoutes from './routes/vendorApiRoutes';
+import vendorSettingsRoutes from './routes/vendorSettingsRoutes';
+import webhookRoutes from './routes/webhookRoutes';
+import materialsRoutes from './routes/materialsRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -122,6 +126,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       note: 'Keep this API key secure - it provides access to your order data'
     });
   });
+
+  app.use('/api/vendor-api', vendorApiRoutes);
+  app.use('/api/vendor-settings', vendorSettingsRoutes);
+  app.use('/api/webhooks', webhookRoutes);
+  app.use('/api/materials', materialsRoutes);
+  app.use('/api/material-orders', materialsRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);
