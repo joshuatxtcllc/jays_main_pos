@@ -5,7 +5,7 @@ import { storage } from "../storage";
 export const getMaterialsPickList = async (req: Request, res: Response) => {
   try {
     let materialsList = await storage.getMaterialsPickList();
-    
+
     // If no materials found, return sample data for demonstration
     if (!materialsList || materialsList.length === 0) {
       materialsList = [
@@ -53,7 +53,7 @@ export const getMaterialsPickList = async (req: Request, res: Response) => {
         }
       ];
     }
-    
+
     res.json(materialsList);
   } catch (error: any) {
     console.error('Error in getMaterialsPickList:', error);
@@ -178,4 +178,24 @@ export const getMaterialSuppliers = async (req: Request, res: Response) => {
     console.error('Error in getMaterialSuppliers:', error);
     res.status(500).json({ message: error.message, suppliers: ['Larson-Juhl', 'Roma', 'Bella'] });
   }
+};
+
+export const materialsController = {
+  async getAllMaterials(req: Request, res: Response) {
+    try {
+      const materials = await storage.getMaterials();
+      res.status(200).json({ 
+        success: true, 
+        data: materials || [], 
+        message: materials?.length ? 'Materials loaded successfully' : 'No materials found' 
+      });
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      res.status(500).json({ 
+        success: false, 
+        error: 'Failed to fetch materials', 
+        data: [] 
+      });
+    }
+  },
 };
