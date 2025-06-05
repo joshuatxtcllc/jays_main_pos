@@ -604,7 +604,7 @@ export function ArtworkSizeDetector({
                         <div className="space-y-2">
                           <h4 className="font-medium">Instructions for Accurate Measurement</h4>
                           <p className="text-muted-foreground">
-                            Download and print this marker at exactly 5cm × 5cm size.
+                            Download and print this marker at exactly 1" × 1" size.
                             Place it next to your artwork on the same plane before taking a photo.
                           </p>
                         </div>
@@ -736,11 +736,11 @@ export function ArtworkSizeDetector({
               <div className="bg-muted p-2 rounded-md text-xs text-muted-foreground">
                 <p className="flex items-center">
                   <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-2"></span>
-                  Place marker on the same plane as artwork.
+                  Print marker at exactly 1" × 1" size.
                 </p>
                 <p className="mt-1 flex items-center">
                   <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-2"></span>
-                  Use rear camera for best quality.
+                  Place marker on same plane as artwork.
                 </p>
               </div>
             </div>
@@ -750,7 +750,7 @@ export function ArtworkSizeDetector({
       <CardFooter className="text-xs text-muted-foreground">
         <div className="flex items-center space-x-2">
           <ImageIcon className="h-4 w-4" />
-          <span>Print marker at 5cm × 5cm and place next to artwork</span>
+          <span>Print marker at exactly 1" × 1" and place next to artwork</span>
         </div>
       </CardFooter>
     </Card>

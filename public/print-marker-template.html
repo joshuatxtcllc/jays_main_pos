@@ -1,0 +1,258 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jay's Frames - Reference Marker Template</title>
+    <style>
+        @media print {
+            body { margin: 0; padding: 0; }
+            .no-print { display: none; }
+            .page { page-break-after: always; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .marker-template {
+            background: white;
+            width: 8.5in;
+            height: 11in;
+            padding: 1in;
+            margin: 0 auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .marker-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1in);
+            grid-template-rows: repeat(8, 1in);
+            gap: 0.25in;
+            margin-top: 0.5in;
+        }
+        
+        .marker {
+            width: 1in;
+            height: 1in;
+            border: 8px solid black;
+            background: white;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .marker-pattern {
+            width: calc(100% - 16px);
+            height: calc(100% - 16px);
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+        }
+        
+        .pattern-cell {
+            background: black;
+        }
+        
+        .pattern-cell.white {
+            background: white;
+        }
+        
+        .marker-corners {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: red;
+        }
+        
+        .corner-tl { top: 0; left: 0; clip-path: polygon(0 0, 100% 0, 0 100%); }
+        .corner-tr { top: 0; right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+        .corner-bl { bottom: 0; left: 0; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+        .corner-br { bottom: 0; right: 0; clip-path: polygon(100% 0, 0 100%, 100% 100%); }
+        
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+        }
+        
+        .crosshair::before,
+        .crosshair::after {
+            content: '';
+            position: absolute;
+            background: red;
+        }
+        
+        .crosshair::before {
+            width: 10px;
+            height: 2px;
+            top: 4px;
+            left: 0;
+        }
+        
+        .crosshair::after {
+            width: 2px;
+            height: 10px;
+            top: 0;
+            left: 4px;
+        }
+        
+        .marker-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            font-weight: bold;
+            text-align: center;
+            background: white;
+            padding: 2px 4px;
+            border: 1px solid #ccc;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 0.5in;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .ruler {
+            position: absolute;
+            background: #333;
+            color: white;
+            font-size: 8px;
+            text-align: center;
+            line-height: 1;
+        }
+        
+        .ruler-h {
+            width: 1in;
+            height: 12px;
+            top: -20px;
+            padding-top: 2px;
+        }
+        
+        .ruler-v {
+            width: 12px;
+            height: 1in;
+            left: -20px;
+            writing-mode: vertical-lr;
+            text-orientation: mixed;
+            padding-left: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions no-print">
+        <h1>Jay's Frames - Reference Marker Printing Instructions</h1>
+        <div style="background: #e7f3ff; padding: 15px; border-left: 4px solid #2196F3; margin: 15px 0;">
+            <h3 style="margin-top: 0; color: #1976D2;">⚠️ CRITICAL PRINTING REQUIREMENTS</h3>
+            <ul style="margin: 10px 0; padding-left: 20px;">
+                <li><strong>Print at 100% scale</strong> - DO NOT scale to fit page</li>
+                <li><strong>Use actual size printing</strong> - Check "Actual Size" in print dialog</li>
+                <li><strong>Measure after printing</strong> - Each marker must be exactly 1" × 1"</li>
+                <li><strong>Use high-quality paper</strong> - White cardstock or photo paper recommended</li>
+            </ul>
+        </div>
+        
+        <h3>How to Use:</h3>
+        <ol>
+            <li>Cut out one marker carefully along the outer edges</li>
+            <li>Place the marker flat against your artwork (same plane)</li>
+            <li>Ensure the entire marker is visible in your photo</li>
+            <li>Take photo with good lighting, avoiding glare</li>
+            <li>Upload to Jay's Frames for automatic size detection</li>
+        </ol>
+        
+        <p><strong>Troubleshooting:</strong> If size detection isn't working, ensure your marker is exactly 1" × 1" and fully visible in the photo.</p>
+        
+        <button onclick="window.print()" style="background: #2196F3; color: white; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 20px;">
+            Print This Template
+        </button>
+    </div>
+    
+    <div class="marker-template page">
+        <div class="title">JAY'S FRAMES - REFERENCE MARKERS</div>
+        <div style="text-align: center; margin-bottom: 20px; font-size: 12px; color: #666;">
+            Print at 100% scale - Each marker should measure exactly 1" × 1"
+        </div>
+        
+        <div class="marker-grid">
+            <!-- Generate 48 markers (6×8 grid) -->
+            <div class="marker" style="position: relative;">
+                <div class="ruler ruler-h">1"</div>
+                <div class="ruler ruler-v">1"</div>
+                <div class="marker-corners corner-tl"></div>
+                <div class="marker-corners corner-tr"></div>
+                <div class="marker-corners corner-bl"></div>
+                <div class="marker-corners corner-br"></div>
+                <div class="marker-pattern">
+                    <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                    <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+                </div>
+                <div class="crosshair"></div>
+                <div class="marker-label">1" × 1"</div>
+            </div>
+            
+            <!-- Repeat marker pattern for remaining 47 markers -->
+            <script>
+                // Generate remaining markers
+                const grid = document.querySelector('.marker-grid');
+                const template = grid.innerHTML;
+                
+                for (let i = 1; i < 48; i++) {
+                    const markerDiv = document.createElement('div');
+                    markerDiv.className = 'marker';
+                    markerDiv.style.position = 'relative';
+                    markerDiv.innerHTML = `
+                        <div class="marker-corners corner-tl"></div>
+                        <div class="marker-corners corner-tr"></div>
+                        <div class="marker-corners corner-bl"></div>
+                        <div class="marker-corners corner-br"></div>
+                        <div class="marker-pattern">
+                            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell white"></div><div class="pattern-cell"></div>
+                            <div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div><div class="pattern-cell"></div>
+                        </div>
+                        <div class="crosshair"></div>
+                        <div class="marker-label">1" × 1"</div>
+                    `;
+                    grid.appendChild(markerDiv);
+                }
+            </script>
+        </div>
+        
+        <div style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); text-align: center; font-size: 10px; color: #666;">
+            Cut out markers carefully • Place flat against artwork • Ensure full visibility in photo
+        </div>
+    </div>
+</body>
+</html>

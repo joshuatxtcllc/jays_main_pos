@@ -29,7 +29,7 @@ export class ArtworkSizeDetector {
 
   constructor(options: ArtworkDetectorOptions = {}) {
     this.options = {
-      markerSizeCm: options.markerSizeCm || 5,
+      markerSizeCm: options.markerSizeCm || 2.54, // 1 inch = 2.54 cm
       minContourArea: options.minContourArea || 1000,
       edgeDetectionThreshold: options.edgeDetectionThreshold || 100,
       allowManualOverride: options.allowManualOverride !== undefined ? options.allowManualOverride : true
@@ -148,8 +148,9 @@ export class ArtworkSizeDetector {
     ctx.font = `bold ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     
-    const markerSizeCm = this.options.markerSizeCm || 5;
-    ctx.fillText(`${markerSizeCm} CM × ${markerSizeCm} CM`, markerSize/2, markerSize - markerFooterHeight/2);
+    const markerSizeCm = this.options.markerSizeCm || 2.54;
+    const markerSizeInches = markerSizeCm / 2.54;
+    ctx.fillText(`${markerSizeInches}" × ${markerSizeInches}"`, markerSize/2, markerSize - markerFooterHeight/2);
     
     // Add decorative corners to help with size detection
     const cornerSize = Math.floor(markerSize * 0.15);
@@ -233,7 +234,7 @@ export class ArtworkSizeDetector {
         console.log('Reference marker detected:', markerDetectionResult);
         
         // Calculate dimensions based on the marker size
-        const markerSizeCm = this.options.markerSizeCm || 5; // 5cm default marker size
+        const markerSizeCm = this.options.markerSizeCm || 2.54; // 1 inch default marker size
         const markerSizeInches = markerSizeCm / 2.54; // Convert cm to inches
         
         // Calculate scaling factor based on marker's detected vs actual size
