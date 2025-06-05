@@ -11,6 +11,7 @@ import { validateApiKey, KANBAN_API_KEY } from "./middleware/apiAuth";
 // import { crossVendorInventoryRoutes } from './routes/crossVendorInventoryRoutes';
 // import webhookRoutes from './routes/webhookRoutes';
 // import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
+import threeDDesignerRoutes from './routes/threeDDesignerRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -23,6 +24,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Webhook routes (commented out temporarily)
   // app.use('/api/webhooks', webhookRoutes);
+
+  // 3D Designer integration routes
+  app.use('/api/3d-designer', threeDDesignerRoutes);
 
   // Pricing monitor routes (commented out temporarily)
   // app.use('/api/pricing-monitor', pricingMonitorRoutes);
@@ -76,7 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/kanban/orders/:orderId/status', validateApiKey, (req, res) => {
     const { orderId } = req.params;
     const { status, stage, notes } = req.body;
-    
+
     // Updates order production status from Kanban board
     res.json({
       success: true,

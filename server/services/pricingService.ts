@@ -66,10 +66,10 @@ export function calculateGlassPrice(
 ): number {
   // Use provided dimensions or calculate from area
   const unitedInches = (width && height) ? width + height : Math.sqrt(area) * 2;
-  
+
   // Get markup based on united inches
   const markup = calculateGlassMarkup(unitedInches);
-  
+
   // Apply type-specific additional factors
   let typeMultiplier = 1.0;
   switch (glassType) {
@@ -80,14 +80,14 @@ export function calculateGlassPrice(
       typeMultiplier = 2.0; // Museum glass costs more but not 3x (reduced from 3.0)
       break;
   }
-  
+
   // Convert area from square inches to square feet for more reasonable pricing
   const areaInSqFt = area / 144;
-  
+
   // Apply industry-standard glass pricing for museum quality positioning
   // Base pricing aligned with $126-350 range for museum glass per industry benchmarks
   const basePrice = unitedInches <= 40 ? 85 : 125; // Increased base price for industry positioning
-  
+
   return basePrice + (areaInSqFt * wholesalePrice * markup * 0.35 * typeMultiplier);
 }
 
@@ -238,6 +238,16 @@ function calculateLaborCost(
 
   return totalHours * baseRate * regionalFactor;
 }
+
+const SPECIAL_SERVICES = {
+  float_mounting: { price: 25.00, description: 'Float mounting' },
+  shadowbox_mounting: { price: 35.00, description: 'Shadow box mounting' },
+  conservation_mounting: { price: 45.00, description: 'Conservation mounting' },
+  dry_mounting: { price: 15.00, description: 'Dry mounting' },
+  rush_service: { price: 50.00, description: 'Rush order (3-day completion)' },
+  '3d_design_service': { price: 75.00, description: '3D design consultation and setup' },
+  shadowbox_service: { price: 100.00, description: 'Shadow box construction' }
+};
 
 /**
  * Main pricing calculation function for custom frames
