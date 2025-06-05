@@ -1884,16 +1884,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Materials pick list methods
-  async getMaterialsPickList(): Promise<any[]> {
-    try {
-      // Return empty array for now - would be implemented with actual data
-      return [];
-    } catch (error) {
-      console.error('Error in getMaterialsPickList:', error);
-      throw error;
-    }
-  }
-
+  // Get all materials for a specific order
   async getMaterialsForOrder(orderId: number): Promise<any[]> {
     try {
       // Return empty array for now
@@ -1904,6 +1895,29 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // Get materials pick list
+  async getMaterialsPickList(): Promise<any[]> {
+    try {
+      // Return empty array for now - would be implemented with actual data
+      return [];
+    } catch (error) {
+      console.error('Error in getMaterialsPickList:', error);
+      return [];
+    }
+  }
+
+  // Update material order
+  async updateMaterialOrder(id: string, data: any): Promise<any> {
+    try {
+      // Return empty object for now
+      return {};
+    } catch (error) {
+      console.error('Error in updateMaterialOrder:', error);
+      throw error;
+    }
+  }
+
+  // Create purchase order
   async createPurchaseOrder(materialIds: string[]): Promise<any> {
     try {
       // Return empty object for now

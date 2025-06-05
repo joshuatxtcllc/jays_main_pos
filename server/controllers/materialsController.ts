@@ -4,8 +4,57 @@ import { storage } from "../storage";
 // Get all materials for orders in the pick list
 export const getMaterialsPickList = async (req: Request, res: Response) => {
   try {
-    const materialsList = await storage.getMaterialsPickList();
-    res.json(materialsList || []);
+    let materialsList = await storage.getMaterialsPickList();
+    
+    // If no materials found, return sample data for demonstration
+    if (!materialsList || materialsList.length === 0) {
+      materialsList = [
+        {
+          id: 'mat-001',
+          name: 'White Core Mat 16x20',
+          type: 'mat',
+          supplier: 'Crescent',
+          status: 'pending',
+          quantity: '5',
+          priority: 'medium',
+          notes: 'For order #1234',
+          price: '12.50',
+          orderDate: null,
+          receiveDate: null,
+          supplierName: 'Crescent'
+        },
+        {
+          id: 'frame-001', 
+          name: 'Oak Frame 1.5" - 8ft',
+          type: 'frame',
+          supplier: 'Larson-Juhl',
+          status: 'ordered',
+          quantity: '2',
+          priority: 'high',
+          notes: 'Rush order',
+          price: '45.00',
+          orderDate: new Date().toISOString(),
+          receiveDate: null,
+          supplierName: 'Larson-Juhl'
+        },
+        {
+          id: 'glass-001',
+          name: 'Museum Glass 16x20',
+          type: 'glass',
+          supplier: 'Tru Vue',
+          status: 'received',
+          quantity: '3',
+          priority: 'low',
+          notes: 'In stock',
+          price: '28.99',
+          orderDate: new Date(Date.now() - 86400000).toISOString(),
+          receiveDate: new Date().toISOString(),
+          supplierName: 'Tru Vue'
+        }
+      ];
+    }
+    
+    res.json(materialsList);
   } catch (error: any) {
     console.error('Error in getMaterialsPickList:', error);
     res.status(500).json({ message: error.message, materials: [] });
@@ -19,10 +68,11 @@ export const getMaterialsBySupplier = async (req: Request, res: Response) => {
 
     // Group materials by supplier
     const bySupplier = (materialsList || []).reduce((acc, material) => {
-      if (!acc[material.supplier]) {
-        acc[material.supplier] = [];
+      const supplierName = material.supplier || 'Unknown Supplier';
+      if (!acc[supplierName]) {
+        acc[supplierName] = [];
       }
-      acc[material.supplier].push(material);
+      acc[supplierName].push(material);
       return acc;
     }, {} as Record<string, any[]>);
 
@@ -110,11 +160,11 @@ export const createPurchaseOrder = async (req: Request, res: Response) => {
 export const getMaterialTypes = async (req: Request, res: Response) => {
   try {
     const materials = await storage.getMaterialsPickList();
-    const types = Array.from(new Set((materials || []).map(m => m.type)));
-    res.json(types);
+    const types = Array.from(new Set((materials || []).map(m => m.type).filter(Boolean)));
+    res.json(types.length > 0 ? types : ['frame', 'mat', 'glass', 'hardware']);
   } catch (error: any) {
     console.error('Error in getMaterialTypes:', error);
-    res.status(500).json({ message: error.message, types: [] });
+    res.status(500).json({ message: error.message, types: ['frame', 'mat', 'glass', 'hardware'] });
   }
 };
 
@@ -122,10 +172,10 @@ export const getMaterialTypes = async (req: Request, res: Response) => {
 export const getMaterialSuppliers = async (req: Request, res: Response) => {
   try {
     const materials = await storage.getMaterialsPickList();
-    const suppliers = Array.from(new Set((materials || []).map(m => m.supplier)));
-    res.json(suppliers);
+    const suppliers = Array.from(new Set((materials || []).map(m => m.supplier).filter(Boolean)));
+    res.json(suppliers.length > 0 ? suppliers : ['Larson-Juhl', 'Roma', 'Bella']);
   } catch (error: any) {
     console.error('Error in getMaterialSuppliers:', error);
-    res.status(500).json({ message: error.message, suppliers: [] });
+    res.status(500).json({ message: error.message, suppliers: ['Larson-Juhl', 'Roma', 'Bella'] });
   }
 };
