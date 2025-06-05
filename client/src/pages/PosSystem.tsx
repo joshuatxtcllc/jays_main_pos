@@ -1583,11 +1583,15 @@ const PosSystem = () => {
 
       {/* Right side - Visualizer and Order Summary */}
       <div className="lg:col-span-3 space-y-6">
-        {/* Artwork Size Detector - Full width utilization */}
+        {/* Unified Artwork Detection and Frame Preview */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <ArtworkSizeDetector 
             defaultWidth={artworkWidth}
             defaultHeight={artworkHeight}
+            frames={selectedFrames}
+            mats={selectedMatboards}
+            useMultipleFrames={useMultipleFrames}
+            useMultipleMats={useMultipleMats}
             onDimensionsDetected={(dimensions, imageDataUrl) => {
               // Update dimensions in the parent component
               setArtworkWidth(dimensions.width);
@@ -1601,19 +1605,6 @@ const PosSystem = () => {
                 description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
               });
             }}
-          />
-        </div>
-
-        {/* Frame Preview - Larger and positioned at top */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <FrameVisualizer
-            frames={selectedFrames}
-            mats={selectedMatboards}
-            artworkWidth={artworkWidth}
-            artworkHeight={artworkHeight}
-            artworkImage={artworkImage}
-            useMultipleFrames={useMultipleFrames}
-            useMultipleMats={useMultipleMats}
             onFrameImageCaptured={setFrameDesignImage}
           />
         </div>

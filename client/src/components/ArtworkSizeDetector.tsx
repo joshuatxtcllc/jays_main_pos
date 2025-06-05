@@ -8,17 +8,29 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Loader2, Upload, Camera, Ruler, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ArtworkSizeDetector as Detector, ArtworkDimensions, createImageFromFile } from '@/lib/artworkSizeDetector';
+import { Frame, MatColor } from '@shared/schema';
+import FrameVisualizer from '@/components/FrameVisualizer';
 
 interface ArtworkSizeDetectorProps {
   onDimensionsDetected: (dimensions: ArtworkDimensions, imageDataUrl: string) => void;
   defaultWidth?: number;
   defaultHeight?: number;
+  frames?: { frame: Frame; position: number; distance: number; pricingMethod: string; }[];
+  mats?: { matboard: MatColor; position: number; width: number; offset: number; }[];
+  useMultipleFrames?: boolean;
+  useMultipleMats?: boolean;
+  onFrameImageCaptured?: (imageData: string) => void;
 }
 
 export function ArtworkSizeDetector({
   onDimensionsDetected,
   defaultWidth = 8,
-  defaultHeight = 10
+  defaultHeight = 10,
+  frames = [],
+  mats = [],
+  useMultipleFrames = false,
+  useMultipleMats = false,
+  onFrameImageCaptured
 }: ArtworkSizeDetectorProps) {
   const { toast } = useToast();
   const [detector, setDetector] = useState<Detector | null>(null);
@@ -469,9 +481,9 @@ export function ArtworkSizeDetector({
   return (
     <Card className="w-full border-2 border-red-200">
       <CardHeader>
-        <CardTitle className="text-red-700">Artwork Size Detection (Required)</CardTitle>
+        <CardTitle className="text-red-700">Artwork Upload & Frame Preview</CardTitle>
         <CardDescription>
-          <strong className="text-red-600">REQUIRED:</strong> Upload an image of your artwork with a reference marker to automatically determine its size. Orders cannot proceed without artwork images.
+          <strong className="text-red-600">REQUIRED:</strong> Upload an image of your artwork with a reference marker to automatically determine its size and see your framing preview. Orders cannot proceed without artwork images.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -484,12 +496,17 @@ export function ArtworkSizeDetector({
               
               {imagePreview ? (
                 <div className="border rounded-md p-4 bg-muted/10 flex flex-col items-center">
-                  <div className="rounded-md overflow-hidden border mb-4 max-w-full">
-                    <img 
-                      src={imagePreview} 
-                      alt="Artwork preview" 
-                      className="max-w-full h-auto object-contain"
-                      style={{ maxHeight: '400px' }}
+                  {/* Frame Visualizer with artwork image */}
+                  <div className="w-full mb-4">
+                    <FrameVisualizer
+                      frames={frames}
+                      mats={mats}
+                      artworkWidth={dimensions.width}
+                      artworkHeight={dimensions.height}
+                      artworkImage={imagePreview}
+                      useMultipleFrames={useMultipleFrames}
+                      useMultipleMats={useMultipleMats}
+                      onFrameImageCaptured={onFrameImageCaptured}
                     />
                   </div>
                   
@@ -541,6 +558,15 @@ export function ArtworkSizeDetector({
                         <span className="font-medium">
                           {dimensions.width}" × {dimensions.height}"
                         </span>
+                        {frames.length > 0 && mats.length > 0 && (
+                          <>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-sm text-muted-foreground">
+                              {useMultipleFrames ? `${frames.length} frames` : 'Single frame'} | 
+                              {useMultipleMats ? `${mats.length} mats` : 'Single mat'}
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
