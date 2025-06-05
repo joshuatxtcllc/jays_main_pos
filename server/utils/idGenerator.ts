@@ -14,22 +14,20 @@ export function generateId(): string {
 }
 
 /**
- * Generate a unique order number with a specified prefix
- * @param prefix The prefix to use (e.g., 'PO' for purchase orders, 'SO' for sales orders)
- * @returns A formatted order number string (e.g., PO-2023-001)
+ * Generate a unique order number with optional prefix
+ * @param prefix Optional prefix to use (e.g., 'PO' for purchase orders, 'SO' for sales orders)
+ * @returns A formatted order number string
  */
-export function generateOrderNumber(prefix: string): string {
-  const year = new Date().getFullYear();
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${prefix}-${year}-${random}`;
-}
-/**
- * Generate a unique order number
- */
-export function generateOrderNumber(): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `ORD-${timestamp}-${random}`;
+export function generateOrderNumber(prefix?: string): string {
+  if (prefix) {
+    const year = new Date().getFullYear();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `${prefix}-${year}-${random}`;
+  } else {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `ORD-${timestamp}-${random}`;
+  }
 }
 
 /**
