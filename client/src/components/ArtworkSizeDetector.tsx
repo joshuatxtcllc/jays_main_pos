@@ -549,7 +549,7 @@ export function ArtworkSizeDetector({
                 <div className="border rounded-md p-8 bg-muted/10 flex flex-col items-center justify-center text-center min-h-[400px]">
                   <ImageIcon className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="text-lg font-medium mb-2">No Image Selected</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">
+                  <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
                     Upload or capture an image of your artwork with the reference marker to see a preview and detect dimensions.
                   </p>
                 </div>
