@@ -206,64 +206,81 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
       </div>
 
       {/* Mobile menu */}
-      <div className={cn(
-        "md:hidden transition-all duration-300 overflow-hidden",
-        isMobileMenuOpen ? "max-h-[70vh] opacity-100" : "max-h-0 opacity-0"
-      )}>
-        <nav className="container px-4 py-4 flex flex-col space-y-3 bg-white dark:bg-gray-900 overflow-y-auto max-h-[70vh]">
-          {menuStructure.map((menuItem, idx) => (
-            <div key={idx} className="py-1">
-              <div 
-                className="font-medium text-lg mb-1 text-foreground dark:text-white cursor-pointer" 
-                onClick={() => window.location.href = menuItem.path}
-              >
-                {menuItem.title}
-              </div>
-              <div className="pl-4 flex flex-col space-y-2">
-                {menuItem.subItems.map((subItem, subIdx) => (
-                  <div
-                    key={subIdx}
-                    className={cn(
-                      "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
-                      location === subItem.path && "text-primary"
-                    )}
-                    onClick={() => window.location.href = subItem.path}
-                  >
-                    {subItem.title}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 shadow-lg z-40">
+          <nav className="container mx-auto px-4 py-4 max-h-[calc(100vh-4rem)] overflow-y-auto">
+            {menuStructure.map((menuItem, idx) => (
+              <div key={idx} className="mb-4">
+                <Link href={menuItem.path}>
+                  <div className="font-semibold text-lg mb-2 text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer py-2 border-b border-gray-100 dark:border-gray-700">
+                    {menuItem.title}
                   </div>
-                ))}
+                </Link>
+                <div className="pl-4 space-y-1">
+                  {menuItem.subItems.map((subItem, subIdx) => (
+                    <Link key={subIdx} href={subItem.path}>
+                      <div
+                        className={cn(
+                          "py-2 text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer rounded-md px-2 hover:bg-gray-50 dark:hover:bg-gray-800",
+                          location === subItem.path 
+                            ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20" 
+                            : "text-gray-700 dark:text-gray-300"
+                        )}
+                      >
+                        {subItem.title}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
+            ))}
+
+            {/* Additional menu items */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
+              <Link href="/customers">
+                <div 
+                  className={cn(
+                    "py-2 px-2 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer rounded-md hover:bg-gray-50 dark:hover:bg-gray-800",
+                    location === "/customers" 
+                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20" 
+                      : "text-gray-700 dark:text-gray-300"
+                  )}
+                >
+                  Customers
+                </div>
+              </Link>
+
+              <Link href="/frame-education">
+                <div 
+                  className={cn(
+                    "py-2 px-2 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer rounded-md hover:bg-gray-50 dark:hover:bg-gray-800",
+                    location === "/frame-education" 
+                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20" 
+                      : "text-gray-700 dark:text-gray-300"
+                  )}
+                >
+                  Frame Education
+                </div>
+              </Link>
+
+              <div className="py-3 px-2 flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-md">
+                <span className="font-medium text-gray-700 dark:text-gray-300">Cart Items:</span>
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-sm font-semibold">
+                  {cartItems}
+                </span>
+              </div>
+
+              {authenticated && user && (
+                <div className="py-3 px-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Welcome, {user.name || user.username || 'User'}
+                  </span>
+                </div>
+              )}
             </div>
-          ))}
-
-          <div 
-            className={cn(
-              "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
-              location === "/customers" && "text-primary"
-            )}
-            onClick={() => window.location.href = "/customers"}
-          >
-            Customers
-          </div>
-
-          <div 
-            className={cn(
-              "py-1 font-medium text-foreground dark:text-white hover:text-primary transition-colors cursor-pointer",
-              location === "/frame-education" && "text-primary"
-            )}
-            onClick={() => window.location.href = "/frame-education"}
-          >
-            Frame Education
-          </div>
-
-          <div className="py-2 flex items-center">
-            <span className="font-medium mr-4">Cart:</span>
-            <span className="px-2 py-1 bg-primary/10 text-primary rounded-md">
-              {cartItems} items
-            </span>
-          </div>
-        </nav>
-      </div>
+          </nav>
+        </div>
+      )}
 
       
     </header>
