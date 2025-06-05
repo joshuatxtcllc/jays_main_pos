@@ -624,8 +624,8 @@ export function ArtworkSizeDetector({
                       ) : (
                         <>
                           <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                          <p className="text-sm font-medium">Click to upload</p>
-                          <p className="text-xs text-muted-foreground mt-1">
+                          <p className="text-sm font-medium mb-1">Click to upload</p>
+                          <p className="text-xs text-muted-foreground">
                             JPG, PNG or GIF
                           </p>
                         </>
