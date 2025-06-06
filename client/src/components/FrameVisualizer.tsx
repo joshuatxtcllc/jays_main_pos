@@ -49,16 +49,17 @@ export default function FrameVisualizer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set fixed large canvas size
-    const canvasSize = 600;
-    canvas.width = canvasSize;
-    canvas.height = canvasSize;
+    // Set wide canvas size
+    const canvasWidth = 900;
+    const canvasHeight = 600;
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate artwork display size (much larger)
-    const artworkDisplaySize = 300; // Increased base size
+    // Calculate artwork display size for wide canvas
+    const artworkDisplaySize = 400; // Larger base size for wide canvas
     const aspectRatio = artworkWidth / artworkHeight;
     
     let artworkDisplayWidth, artworkDisplayHeight;
@@ -238,10 +239,10 @@ export default function FrameVisualizer({
         <canvas 
           ref={canvasRef}
           className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
-          width={600}
+          width={900}
           height={600}
           style={{ 
-            width: '600px',
+            width: '900px',
             height: '600px',
             maxWidth: '100%',
             maxHeight: '70vh'
