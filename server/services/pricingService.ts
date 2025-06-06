@@ -1,4 +1,10 @@
 import { storage } from '../storage';
+import { 
+  calculateFramePrice as calculateFramePriceCorrect, 
+  calculateMatPrice as calculateMatPriceCorrect, 
+  calculateGlassPrice as calculateGlassPriceCorrect, 
+  calculatePricePerUnitedInch 
+} from '@shared/pricingUtils';
 
 /**
  * Houston Heights custom pricing service
@@ -285,80 +291,65 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     backing: '0.00'
   } : undefined;
 
-  // Calculate frame price
+  // Calculate frame price using correct methodology
   let framePrice = 0;
   if (frame) {
-    // Get wholesale price with pricing method
-    const frameWholesalePrice = parseFloat(frame.price);
-    const frameMarkup = calculateFrameMarkup(finishedUnitedInches);
-
-    // Apply industry-standard markup factor for competitive Houston pricing
-    const adjustedMarkupFactor = 0.42; // Increased to align with industry benchmarks
-
-    // Get pricing method from params (default to 'length' for better pricing)
-    const pricingMethod = params.framePricingMethod || 'length';
-
-    // Pass pricing method to wholesale pricing calculation
-    framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * adjustedMarkupFactor;
-
-    // If we're using Larson-Juhl frames, override with specific wholesale pricing method
-    if (frame.id.startsWith('larson-')) {
-      const options = { pricingMethod };
-      const wholesale = require('./wholesalePricingService').getWholesalePrice(frame.id, options);
-      if (wholesale) {
-        framePrice = wholesale * frameLength / 12 * frameMarkup * adjustedMarkupFactor;
-      }
+    const pricePerFoot = parseFloat(frame.price);
+    framePrice = calculateFramePriceCorrect(artworkWidth, artworkHeight, matWidth, pricePerFoot);
+    
+    // Update wholesale price for frame if requested
+    if (wholesalePrices) {
+      const outerWidth = artworkWidth + (matWidth * 2);
+      const outerHeight = artworkHeight + (matWidth * 2);
+      const unitedInches = outerWidth + outerHeight;
+      const perimeterFeet = unitedInches / 12;
+      const wholesaleCost = perimeterFeet * pricePerFoot;
+      wholesalePrices.frame = wholesaleCost.toFixed(2);
     }
   }
 
-  // Calculate mat price aligned with industry standards ($45-65 range)
+  // Calculate mat price using catalog pricing methodology
   let matPrice = 0;
   if (matColor) {
-    // Industry-standard mat pricing for premium positioning
-    const matBaseRate = 0.25; // Increased base rate per square inch
-
-    // Calculate with industry-standard pricing approach
-    if (finishedUnitedInches <= 40) {
-      matPrice = 42 + (finishedUnitedInches * 0.25); // Small mats
-    } else if (finishedUnitedInches <= 60) {
-      matPrice = 48 + (finishedUnitedInches * 0.15); // Medium mats (target ~$55)
-    } else if (finishedUnitedInches <= 80) {
-      matPrice = 52 + (finishedUnitedInches * 0.18); // Large mats
-    } else {
-      matPrice = 58 + (finishedUnitedInches * 0.22); // Extra large mats
-    }
-
+    // Use catalog data for mat pricing - example values for Regular Mat Board
+    const matBoxPrice = 45.50; // Price for a box of 25 sheets
+    const sheetsPerBox = 25;
+    const sheetWidth = 32; // inches
+    const sheetHeight = 40; // inches
+    
+    const matPricePerUnitedInch = calculatePricePerUnitedInch(matBoxPrice, sheetsPerBox, sheetWidth, sheetHeight);
+    matPrice = calculateMatPriceCorrect(artworkWidth, artworkHeight, matWidth, matPricePerUnitedInch);
+    
     // Update wholesale price for mat if requested
     if (wholesalePrices) {
-      wholesalePrices.mat = (matSurfaceArea * matBaseRate).toFixed(2);
+      const outerWidth = artworkWidth + (matWidth * 2);
+      const outerHeight = artworkHeight + (matWidth * 2);
+      const unitedInches = outerWidth + outerHeight;
+      const wholesaleCost = unitedInches * matPricePerUnitedInch;
+      wholesalePrices.mat = wholesaleCost.toFixed(2);
     }
   }
 
-  // Calculate glass price
+  // Calculate glass price using catalog pricing methodology
   let glassPrice = 0;
   if (glassOption) {
-    const glassBasePrice = glassOption.price ? parseFloat(glassOption.price) : 0;
-    const glassArea = finishedWidth * finishedHeight;
-
-    // Determine glass type based on the option name or ID
-    let glassType: 'regular' | 'conservation' | 'museum' = 'regular';
-    if (glassOption.name) {
-      const lowerName = glassOption.name.toLowerCase();
-      if (lowerName.includes('museum') || lowerName.includes('uv')) {
-        glassType = 'museum';
-      } else if (lowerName.includes('conservation') || lowerName.includes('clear')) {
-        glassType = 'conservation';
-      }
+    // Use catalog data for glass pricing - example values for Regular Glass
+    const glassBoxPrice = 125.00; // Price for a box of 10 sheets
+    const sheetsPerBox = 10;
+    const sheetWidth = 24; // inches
+    const sheetHeight = 36; // inches
+    
+    const glassPricePerUnitedInch = calculatePricePerUnitedInch(glassBoxPrice, sheetsPerBox, sheetWidth, sheetHeight);
+    glassPrice = calculateGlassPrice(artworkWidth, artworkHeight, matWidth, glassPricePerUnitedInch);
+    
+    // Update wholesale price for glass if requested
+    if (wholesalePrices) {
+      const outerWidth = artworkWidth + (matWidth * 2);
+      const outerHeight = artworkHeight + (matWidth * 2);
+      const unitedInches = outerWidth + outerHeight;
+      const wholesaleCost = unitedInches * glassPricePerUnitedInch;
+      wholesalePrices.glass = wholesaleCost.toFixed(2);
     }
-
-    // Use the enhanced glass price calculation function
-    glassPrice = calculateGlassPrice(
-      glassBasePrice, 
-      glassArea,
-      finishedWidth,
-      finishedHeight,
-      glassType
-    );
   }
 
   // Calculate backing price
