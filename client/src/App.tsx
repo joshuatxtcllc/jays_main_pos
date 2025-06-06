@@ -35,7 +35,7 @@ import ChatWidget from "./components/ChatWidget";
 import FrameEducationPage from '@/pages/FrameEducationPage';
 import { AuthProvider } from './hooks/use-auth';
 import { IntuitivePerformanceMonitor } from './components/IntuitivePerformanceMonitor';
-import { MobileNavMenu } from './components/MobileNavMenu';
+import MobileNavMenu from './components/MobileNavMenu';
 import { lazy } from 'react';
 // Import the notification service
 import { notificationService } from "./lib/notificationService";

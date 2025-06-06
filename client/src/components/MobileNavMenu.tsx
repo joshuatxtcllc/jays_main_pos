@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'wouter';
-import { Menu, X, Home, Package, ShoppingCart, Users, Settings, BarChart3 } from 'lucide-react';
+import { Menu, Home, Package, ShoppingCart, Users, Settings, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
