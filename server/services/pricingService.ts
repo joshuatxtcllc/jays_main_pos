@@ -340,7 +340,7 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     const sheetHeight = 36; // inches
     
     const glassPricePerUnitedInch = calculatePricePerUnitedInch(glassBoxPrice, sheetsPerBox, sheetWidth, sheetHeight);
-    glassPrice = calculateGlassPrice(artworkWidth, artworkHeight, matWidth, glassPricePerUnitedInch);
+    glassPrice = calculateGlassPriceCorrect(artworkWidth, artworkHeight, matWidth, glassPricePerUnitedInch);
     
     // Update wholesale price for glass if requested
     if (wholesalePrices) {
