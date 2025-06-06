@@ -5,7 +5,11 @@ import {
   getArtworkImage,
   getOrderFilesList,
   uploadOrderFile,
-  saveFramePreview
+  saveFramePreview,
+  upload,
+  uploadOrderArtwork,
+  getOrderFiles,
+  deleteOrderFile
 } from '../controllers/fileController';
 
 const router = Router();
@@ -21,20 +25,14 @@ router.post('/orders/:orderId/preview', saveFramePreview);
 router.get('/orders/:orderId/files', getOrderFilesList);
 router.post('/orders/:orderId/files', uploadOrderFile);
 
-export default router;
-import { Router } from 'express';
-import { upload, uploadOrderArtwork, uploadOrderFile, getOrderFiles, deleteOrderFile } from '../controllers/fileController';
+// Upload artwork for an order (with multer)
+router.post('/orders/:orderId/artwork-upload', upload.single('artwork'), uploadOrderArtwork);
 
-const router = Router();
-
-// Upload artwork for an order
-router.post('/orders/:orderId/artwork', upload.single('artwork'), uploadOrderArtwork);
-
-// Upload additional files for an order
-router.post('/orders/:orderId/files', upload.single('file'), uploadOrderFile);
+// Upload additional files for an order (with multer)
+router.post('/orders/:orderId/files-upload', upload.single('file'), uploadOrderFile);
 
 // Get all files for an order
-router.get('/orders/:orderId/files', getOrderFiles);
+router.get('/orders/:orderId/all-files', getOrderFiles);
 
 // Delete a file
 router.delete('/files/:fileId', deleteOrderFile);
