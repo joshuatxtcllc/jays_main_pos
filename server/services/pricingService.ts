@@ -20,17 +20,29 @@ const REDUCED_MARKUP_FACTOR = 1.2; // This replaces the higher FRAME_MARKUP_FACT
  * @returns The retail price
  */
 export function calculateFramePrice(wholesalePrice: number, perimeter: number): number {
-  // Calculate united inches (rough approximation from perimeter)
-  const unitedInches = perimeter * 6; // Rough conversion
+  // Calculate wholesale cost: perimeter in feet * wholesale price per foot
+  const wholesaleCost = perimeter * wholesalePrice;
 
-  // Get markup based on united inches
-  const markup = calculateFrameMarkup(unitedInches);
+  // Apply sliding scale markup based on wholesale dollar amount
+  let markupFactor = 4.0; // Base markup for $0-$1.99
 
-  // Apply a more reasonable pricing factor (reduced from original FRAME_MARKUP_FACTOR)
-  // This prevents astronomical pricing
-  const adjustedMarkupFactor = 1.2; // Reduced from original value
+  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+    markupFactor = 3.5;
+  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+    markupFactor = 3.2;
+  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+    markupFactor = 3.0;
+  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+    markupFactor = 2.8;
+  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
+    markupFactor = 2.6;
+  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
+    markupFactor = 2.4;
+  } else if (wholesaleCost >= 40.00) {
+    markupFactor = 2.2;
+  }
 
-  return wholesalePrice * perimeter * markup * adjustedMarkupFactor;
+  return wholesaleCost * markupFactor;
 }
 
 /**

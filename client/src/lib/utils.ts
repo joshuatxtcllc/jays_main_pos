@@ -86,27 +86,30 @@ export function calculateFramePrice(width: number, height: number, basePrice: nu
   // Calculate frame perimeter in feet
   const perimeterFeet = calculateFramePerimeter(width, height);
 
-  // Apply sliding scale based on size - adjust markup factors based on united inches
-  let markupFactor = 6.0; // Standard retail markup for custom framing is 5-6x
+  // Calculate the wholesale cost: perimeter in feet * base price per foot
+  const wholesaleCost = perimeterFeet * basePrice;
 
-  if (unitedInches > 40) {
-    markupFactor = 5.8;
-  }
-  if (unitedInches > 60) {
-    markupFactor = 5.5;
-  }
-  if (unitedInches > 80) {
-    markupFactor = 5.2;
-  }
-  if (unitedInches > 100) {
-    markupFactor = 5.0;
-  }
+  // Apply sliding scale markup based on wholesale dollar amount
+  let markupFactor = 4.0; // Base markup for $0-$1.99
 
-  // Calculate the wholesale price: perimeter in feet * base price per foot
-  const wholesalePrice = perimeterFeet * basePrice;
+  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+    markupFactor = 3.5;
+  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+    markupFactor = 3.2;
+  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+    markupFactor = 3.0;
+  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+    markupFactor = 2.8;
+  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
+    markupFactor = 2.6;
+  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
+    markupFactor = 2.4;
+  } else if (wholesaleCost >= 40.00) {
+    markupFactor = 2.2;
+  }
 
   // Apply retail markup to get final price
-  return wholesalePrice * markupFactor;
+  return wholesaleCost * markupFactor;
 }
 
 // Calculate mat price based on dimensions and base price
@@ -115,30 +118,30 @@ export function calculateMatPrice(width: number, height: number, matWidth: numbe
   const outerWidth = width + (matWidth * 2);
   const outerHeight = height + (matWidth * 2);
 
-  // Calculate united inches (outer width + outer height)
-  const unitedInches = outerWidth + outerHeight;
-
   // Calculate mat area in square inches
   const matArea = (outerWidth * outerHeight) - (width * height);
 
-  // Apply sliding scale markup based on united inches
-  let markupFactor = 5.0; // Standard retail markup for matboard
-
-  if (unitedInches > 40) {
-    markupFactor = 4.8;
-  }
-  if (unitedInches > 60) {
-    markupFactor = 4.5;
-  }
-  if (unitedInches > 80) {
-    markupFactor = 4.2;
-  }
-  if (unitedInches > 100) {
-    markupFactor = 4.0;
-  }
-
   // Calculate wholesale cost: mat area * base price per square inch
   const wholesaleCost = matArea * (basePrice / 100);
+
+  // Apply sliding scale markup based on wholesale dollar amount
+  let markupFactor = 4.0; // Base markup for $0-$1.99
+
+  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+    markupFactor = 3.5;
+  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+    markupFactor = 3.2;
+  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+    markupFactor = 3.0;
+  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+    markupFactor = 2.8;
+  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
+    markupFactor = 2.6;
+  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
+    markupFactor = 2.4;
+  } else if (wholesaleCost >= 40.00) {
+    markupFactor = 2.2;
+  }
 
   // Apply retail markup
   return wholesaleCost * markupFactor;
@@ -153,27 +156,27 @@ export function calculateGlassPrice(width: number, height: number, matWidth: num
   // Calculate glass area in square inches
   const glassArea = glassWidth * glassHeight;
 
-  // Calculate united inches
-  const unitedInches = glassWidth + glassHeight;
-
-  // Apply sliding scale markup factor based on united inches
-  let markupFactor = 6.0; // Standard retail markup for specialty glass
-
-  if (unitedInches > 40) {
-    markupFactor = 5.5;
-  }
-  if (unitedInches > 60) {
-    markupFactor = 5.0;
-  }
-  if (unitedInches > 80) {
-    markupFactor = 4.7;
-  }
-  if (unitedInches > 100) {
-    markupFactor = 4.5;
-  }
-
-  // Calculate the wholesale price: glass area * base price per square inch
+  // Calculate the wholesale cost: glass area * base price per square inch
   const wholesaleCost = glassArea * (basePrice / 100);
+
+  // Apply sliding scale markup based on wholesale dollar amount
+  let markupFactor = 4.0; // Base markup for $0-$1.99
+
+  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+    markupFactor = 3.5;
+  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+    markupFactor = 3.2;
+  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+    markupFactor = 3.0;
+  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+    markupFactor = 2.8;
+  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
+    markupFactor = 2.6;
+  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
+    markupFactor = 2.4;
+  } else if (wholesaleCost >= 40.00) {
+    markupFactor = 2.2;
+  }
 
   // Apply retail markup
   // For Museum Glass (higher end), we need to ensure prices are proportionally high
