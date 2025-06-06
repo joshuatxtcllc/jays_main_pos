@@ -115,7 +115,7 @@ export function useMaterialSuppliers() {
 
 export function useUpdateMaterial() {
   const { toast } = useToast();
-  
+
   return useMutation({
     mutationFn: async (params: { id: string; data: Partial<Material> }) => {
       // Convert { id, data } format to the format expected by the server
@@ -143,7 +143,7 @@ export function useUpdateMaterial() {
 
 export function useCreatePurchaseOrder() {
   const { toast } = useToast();
-  
+
   return useMutation({
     mutationFn: async (data: CreatePurchaseOrderPayload) => {
       const response = await apiRequest('POST', '/api/materials/purchase-orders', data);
@@ -162,6 +162,21 @@ export function useCreatePurchaseOrder() {
         description: error.message,
         variant: "destructive",
       });
+    }
+  });
+}
+
+export function useMaterials() {
+  return useQuery({
+    queryKey: ['materials'],
+    queryFn: async () => {
+      const response = await apiRequest('/api/materials');
+      const result = await response.json();
+      // Handle both old and new response formats
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return result.materials || result || [];
     }
   });
 }

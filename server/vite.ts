@@ -69,18 +69,46 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath = path.resolve(import.meta.dirname, "public");
+  const clientDistPath = path.resolve(__dirname, '..', 'client', 'dist');
+  const distPath = path.resolve(__dirname, '..', 'dist');
 
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
+  let staticPath = '';
+
+  // Check for client build first, then fallback to dist
+  if (fs.existsSync(clientDistPath)) {
+    staticPath = clientDistPath;
+    log(`Serving static files from: ${clientDistPath}`);
+  } else if (fs.existsSync(distPath)) {
+    staticPath = distPath;
+    log(`Serving static files from: ${distPath}`);
+  } else {
+    log('No static files found. Please build the client application.', 'error');
   }
 
-  app.use(express.static(distPath));
+  if (staticPath) {
+    // Serve static files with proper cache headers
+    app.use(express.static(staticPath, {
+      maxAge: process.env.NODE_ENV === 'production' ? '1d' : 0,
+      etag: true
+    }));
+  }
 
-  // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+  // Catch-all handler for client-side routing
+  app.get('*', (req, res, next) => {
+    // Skip API routes and uploads
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      return next();
+    }
+
+    const indexPath = path.resolve(staticPath, 'index.html');
+
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(500).json({ 
+        error: 'Client application not built', 
+        message: 'Please run "npm run build" to build the client application' 
+      });
+    }
   });
 }

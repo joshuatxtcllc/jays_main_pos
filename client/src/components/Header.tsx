@@ -237,17 +237,8 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
 
             {/* Additional menu items */}
             <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2">
-              <Link href="/customers">
-                <div 
-                  className={cn(
-                    "py-2 px-2 font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer rounded-md hover:bg-gray-50 dark:hover:bg-gray-800",
-                    location === "/customers" 
-                      ? "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20" 
-                      : "text-gray-700 dark:text-gray-300"
-                  )}
-                >
-                  Customers
-                </div>
+              <Link href="/customers" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Customers
               </Link>
 
               <Link href="/frame-education">
@@ -282,7 +273,7 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
         </div>
       )}
 
-      
+
     </header>
   );
 }
