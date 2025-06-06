@@ -49,80 +49,89 @@ export default function FrameVisualizer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set much larger canvas size for better visibility
-    canvas.width = 800;
-    canvas.height = 800;
+    // Set fixed large canvas size
+    const canvasSize = 600;
+    canvas.width = canvasSize;
+    canvas.height = canvasSize;
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate artwork dimensions for display with much larger scaling
-    const maxArtworkSize = 400; // Increased from 300
+    // Calculate artwork display size (much larger)
+    const artworkDisplaySize = 300; // Increased base size
     const aspectRatio = artworkWidth / artworkHeight;
     
-    let displayWidth, displayHeight;
+    let artworkDisplayWidth, artworkDisplayHeight;
     if (aspectRatio > 1) {
-      displayWidth = Math.min(maxArtworkSize, artworkWidth * 30); // Increased multiplier
-      displayHeight = displayWidth / aspectRatio;
+      artworkDisplayWidth = artworkDisplaySize;
+      artworkDisplayHeight = artworkDisplaySize / aspectRatio;
     } else {
-      displayHeight = Math.min(maxArtworkSize, artworkHeight * 30); // Increased multiplier
-      displayWidth = displayHeight * aspectRatio;
+      artworkDisplayHeight = artworkDisplaySize;
+      artworkDisplayWidth = artworkDisplaySize * aspectRatio;
     }
 
-    // Calculate total border width from frames and mats
-    let totalBorderWidth = 0;
-    
-    // Add frame widths (scaled for visual display) with much larger scaling
-    const scaleFactor = 45; // Increased from 15 for better visibility
+    // Calculate frame and mat border widths (much more visible)
+    let totalFrameWidth = 0;
+    let totalMatWidth = 0;
+
     frames.forEach(frameItem => {
       const frameWidth = parseFloat(frameItem.frame.width) || 1;
-      totalBorderWidth += frameWidth * scaleFactor;
-    });
-    
-    // Add mat widths (scaled for visual display) with much larger scaling
-    mats.forEach(matItem => {
-      totalBorderWidth += matItem.width * scaleFactor;
+      totalFrameWidth += frameWidth * 30; // Much larger multiplier
     });
 
-    // Calculate total dimensions including borders
-    const totalWidth = displayWidth + (totalBorderWidth * 2);
-    const totalHeight = displayHeight + (totalBorderWidth * 2);
-    
-    // Center the entire composition
+    mats.forEach(matItem => {
+      totalMatWidth += matItem.width * 30; // Much larger multiplier
+    });
+
+    const totalBorderWidth = totalFrameWidth + totalMatWidth;
+
+    // Calculate total composition size
+    const totalWidth = artworkDisplayWidth + (totalBorderWidth * 2);
+    const totalHeight = artworkDisplayHeight + (totalBorderWidth * 2);
+
+    // Center the composition on canvas
     const startX = (canvas.width - totalWidth) / 2;
     const startY = (canvas.height - totalHeight) / 2;
 
-    // Draw from outside to inside
+    // Current drawing position (start from outside)
     let currentX = startX;
     let currentY = startY;
     let currentWidth = totalWidth;
     let currentHeight = totalHeight;
 
-    // Sort frames by position (outermost first)
+    // Draw frames from outside to inside
     const sortedFrames = [...frames].sort((a, b) => b.position - a.position);
     
-    // Draw frames
     if (useMultipleFrames) {
       sortedFrames.forEach(frameItem => {
-        const frameWidth = (parseFloat(frameItem.frame.width) || 1) * scaleFactor;
+        const frameWidth = (parseFloat(frameItem.frame.width) || 1) * 30;
         
-        // Draw frame
+        // Draw frame rectangle
         ctx.fillStyle = frameItem.frame.color || '#8B4513';
         ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
         
-        // Move inward
+        // Create inner opening
+        ctx.fillStyle = 'transparent';
+        ctx.clearRect(currentX + frameWidth, currentY + frameWidth, 
+                     currentWidth - frameWidth * 2, currentHeight - frameWidth * 2);
+        
+        // Move inward for next layer
         currentX += frameWidth;
         currentY += frameWidth;
         currentWidth -= frameWidth * 2;
         currentHeight -= frameWidth * 2;
       });
     } else if (frames.length > 0) {
-      // Draw single frame (innermost)
       const frame = sortedFrames[sortedFrames.length - 1].frame;
-      const frameWidth = (parseFloat(frame.width) || 1) * scaleFactor;
+      const frameWidth = (parseFloat(frame.width) || 1) * 30;
       
+      // Draw single frame
       ctx.fillStyle = frame.color || '#8B4513';
       ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
+      
+      // Create inner opening
+      ctx.clearRect(currentX + frameWidth, currentY + frameWidth,
+                   currentWidth - frameWidth * 2, currentHeight - frameWidth * 2);
       
       currentX += frameWidth;
       currentY += frameWidth;
@@ -130,51 +139,38 @@ export default function FrameVisualizer({
       currentHeight -= frameWidth * 2;
     }
 
-    // Sort mats by position (innermost first - highest position number first)
+    // Draw mats from outside to inside
     const sortedMats = [...mats].sort((a, b) => b.position - a.position);
     
-    // Draw mats
-    if (useMultipleMats && sortedMats.length > 0) {
-      // Find the top mat (position 1 - outermost)
-      const topMat = sortedMats.find(mat => mat.position === 1);
-      if (topMat) {
-        // Draw the main top mat area
-        const topMatWidth = topMat.width * scaleFactor;
-        ctx.fillStyle = topMat.matboard.color || '#FFFFFF';
+    if (useMultipleMats) {
+      sortedMats.forEach(matItem => {
+        const matWidth = matItem.width * 30;
+        
+        // Draw mat rectangle
+        ctx.fillStyle = matItem.matboard.color || '#FFFFFF';
         ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
         
-        // Move inward by top mat width
-        currentX += topMatWidth;
-        currentY += topMatWidth;
-        currentWidth -= topMatWidth * 2;
-        currentHeight -= topMatWidth * 2;
+        // Create inner opening
+        ctx.clearRect(currentX + matWidth, currentY + matWidth,
+                     currentWidth - matWidth * 2, currentHeight - matWidth * 2);
         
-        // Draw thin lines for middle and bottom mats inside the top mat
-        sortedMats.forEach(matItem => {
-          if (matItem.position > 1) { // Middle (2) and bottom (3) mats
-            const lineWidth = Math.max(1, matItem.width * scaleFactor * 0.3); // Thin line representation
-            
-            // Draw thin border line
-            ctx.strokeStyle = matItem.matboard.color || '#FFFFFF';
-            ctx.lineWidth = lineWidth;
-            ctx.strokeRect(currentX, currentY, currentWidth, currentHeight);
-            
-            // Move slightly inward for next mat line
-            const inset = lineWidth + 2;
-            currentX += inset;
-            currentY += inset;
-            currentWidth -= inset * 2;
-            currentHeight -= inset * 2;
-          }
-        });
-      }
+        // Move inward for next layer
+        currentX += matWidth;
+        currentY += matWidth;
+        currentWidth -= matWidth * 2;
+        currentHeight -= matWidth * 2;
+      });
     } else if (mats.length > 0) {
-      // Draw single mat (use the first available mat)
-      const mat = sortedMats[0];
-      const matWidth = mat.width * scaleFactor;
+      const mat = sortedMats[sortedMats.length - 1];
+      const matWidth = mat.width * 30;
       
+      // Draw single mat
       ctx.fillStyle = mat.matboard.color || '#FFFFFF';
       ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
+      
+      // Create inner opening
+      ctx.clearRect(currentX + matWidth, currentY + matWidth,
+                   currentWidth - matWidth * 2, currentHeight - matWidth * 2);
       
       currentX += matWidth;
       currentY += matWidth;
@@ -182,17 +178,16 @@ export default function FrameVisualizer({
       currentHeight -= matWidth * 2;
     }
 
-    // Draw artwork
+    // Draw artwork in the center
     if (artworkImage) {
       const img = new Image();
       img.onload = () => {
         ctx.drawImage(img, currentX, currentY, currentWidth, currentHeight);
         
-        // Capture the frame design
         if (onFrameImageCaptured) {
           setTimeout(() => {
             try {
-              const frameDesignImage = canvas.toDataURL('image/jpeg', 0.8);
+              const frameDesignImage = canvas.toDataURL('image/jpeg', 0.9);
               onFrameImageCaptured(frameDesignImage);
             } catch (error) {
               console.error('Error capturing frame design:', error);
@@ -200,10 +195,7 @@ export default function FrameVisualizer({
           }, 100);
         }
       };
-      img.onerror = () => {
-        // Fallback if image fails to load
-        drawPlaceholder();
-      };
+      img.onerror = () => drawPlaceholder();
       img.src = artworkImage;
     } else {
       drawPlaceholder();
@@ -216,19 +208,20 @@ export default function FrameVisualizer({
       ctx.fillStyle = '#f8f9fa';
       ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
       ctx.strokeStyle = '#dee2e6';
+      ctx.lineWidth = 2;
       ctx.strokeRect(currentX, currentY, currentWidth, currentHeight);
       
       // Add placeholder text
       ctx.fillStyle = '#6c757d';
-      ctx.font = '20px Arial';
+      ctx.font = 'bold 18px Arial';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText('Your Artwork', currentX + currentWidth / 2, currentY + currentHeight / 2);
       
-      // Capture the frame design
       if (onFrameImageCaptured) {
         setTimeout(() => {
           try {
-            const frameDesignImage = canvas.toDataURL('image/jpeg', 0.8);
+            const frameDesignImage = canvas.toDataURL('image/jpeg', 0.9);
             onFrameImageCaptured(frameDesignImage);
           } catch (error) {
             console.error('Error capturing frame design:', error);
@@ -240,31 +233,32 @@ export default function FrameVisualizer({
   }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleFrames, useMultipleMats, onFrameImageCaptured]);
 
   return (
-    <div className="frame-visualizer-container flex flex-col items-center justify-center p-2 w-full h-full">
-      <div className="flex-1 w-full flex items-center justify-center">
+    <div className="frame-visualizer-container w-full">
+      <div className="flex justify-center items-center bg-gray-50 p-6 rounded-lg">
         <canvas 
           ref={canvasRef}
-          className="border border-gray-300 shadow-lg rounded-lg bg-white"
+          className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
+          width={600}
+          height={600}
           style={{ 
-            maxWidth: '100%', 
-            maxHeight: '80vh',
-            width: 'min(800px, 100vw - 2rem)', 
-            height: 'min(800px, 80vh)',
-            aspectRatio: '1/1'
+            width: '600px',
+            height: '600px',
+            maxWidth: '100%',
+            maxHeight: '70vh'
           }}
         />
       </div>
-      <div className="text-center text-xs sm:text-sm text-gray-600 mt-2 w-full px-2">
+      <div className="text-center text-sm text-gray-600 mt-4">
         {frames.length > 0 || mats.length > 0 ? (
-          <>
-            <p className="mb-2 break-words">
+          <div className="space-y-2">
+            <p>
               {frames.length > 0 && (useMultipleFrames ? `${frames.length} frames` : 'Single frame')}
               {frames.length > 0 && mats.length > 0 && ' | '}
               {mats.length > 0 && (useMultipleMats ? `${mats.length} mats` : 'Single mat')}
               {(frames.length > 0 || mats.length > 0) && ` | Artwork: ${artworkWidth}" × ${artworkHeight}"`}
             </p>
             <button 
-              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs sm:text-sm"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               onClick={() => {
                 if (canvasRef.current) {
                   try {
@@ -280,9 +274,9 @@ export default function FrameVisualizer({
             >
               Download Preview
             </button>
-          </>
+          </div>
         ) : (
-          <p className="text-xs sm:text-sm">Select frames and mats to see preview</p>
+          <p>Select frames and mats to see preview</p>
         )}
       </div>
     </div>
