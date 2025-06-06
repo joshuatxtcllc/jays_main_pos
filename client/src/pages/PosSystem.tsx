@@ -457,6 +457,18 @@ const PosSystem = () => {
   // Handle mat color selection
   const handleMatColorChange = (id: string) => {
     console.log('Changing mat color to ID:', id);
+    
+    // Handle "No Mat" selection
+    if (id === 'none' || id === 'no-mat') {
+      const existingMatIndex = selectedMatboards.findIndex(m => m.position === activeMatPosition);
+      if (existingMatIndex >= 0) {
+        // Remove the mat at this position
+        const updatedMats = selectedMatboards.filter(m => m.position !== activeMatPosition);
+        setSelectedMatboards(updatedMats);
+      }
+      return;
+    }
+    
     const matColor = getMatboardById(id);
 
     if (matColor) {
@@ -540,6 +552,71 @@ const PosSystem = () => {
       if (activeMatPosition === 1) {
         setPrimaryMatWidth(newWidth);
       }
+    }
+  };
+
+  // Handle matboard selection from MatboardSelector component
+  const handleSelectMatboard = (matboard: MatColor | null, position: number) => {
+    if (!matboard) {
+      // Handle "No Mat" selection - remove mat at this position
+      const updatedMats = selectedMatboards.filter(m => m.position !== position);
+      setSelectedMatboards(updatedMats);
+      return;
+    }
+
+    // Check if we already have a mat at this position
+    const existingMatIndex = selectedMatboards.findIndex(m => m.position === position);
+
+    if (existingMatIndex >= 0) {
+      // Replace existing mat
+      const updatedMats = [...selectedMatboards];
+      updatedMats[existingMatIndex] = {
+        ...updatedMats[existingMatIndex],
+        matboard: matboard
+      };
+      setSelectedMatboards(updatedMats);
+    } else {
+      // Add new mat
+      setSelectedMatboards([
+        ...selectedMatboards,
+        {
+          matboard: matboard,
+          position: position,
+          width: 2,
+          offset: 0
+        }
+      ]);
+    }
+  };
+
+  // Handle mat width update from MatboardSelector
+  const handleUpdateMatWidth = (width: number, position: number) => {
+    const existingMatIndex = selectedMatboards.findIndex(m => m.position === position);
+    if (existingMatIndex >= 0) {
+      const updatedMats = [...selectedMatboards];
+      updatedMats[existingMatIndex] = {
+        ...updatedMats[existingMatIndex],
+        width: width
+      };
+      setSelectedMatboards(updatedMats);
+
+      // If this is the primary mat (position 1), update the primaryMatWidth state
+      if (position === 1) {
+        setPrimaryMatWidth(width);
+      }
+    }
+  };
+
+  // Handle mat offset update from MatboardSelector
+  const handleUpdateMatOffset = (offset: number, position: number) => {
+    const existingMatIndex = selectedMatboards.findIndex(m => m.position === position);
+    if (existingMatIndex >= 0) {
+      const updatedMats = [...selectedMatboards];
+      updatedMats[existingMatIndex] = {
+        ...updatedMats[existingMatIndex],
+        offset: offset
+      };
+      setSelectedMatboards(updatedMats);
     }
   };
 

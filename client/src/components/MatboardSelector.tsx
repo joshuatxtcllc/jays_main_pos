@@ -247,7 +247,8 @@ export function MatboardSelector({
               value={activeMatboard?.id || ""} 
               onValueChange={(value) => {
                 if (value === "none") {
-                  // Handle no mat selection - you may want to call a different handler
+                  // Handle no mat selection by calling with null
+                  onSelectMatboard(null as any, activePosition);
                   return;
                 }
                 const mat = matboards.find(m => m.id === value);
