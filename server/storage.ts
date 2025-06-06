@@ -1996,6 +1996,95 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // File storage methods
+  async updateOrderArtwork(orderId: string, artworkData: any): Promise<void> {
+    try {
+      const { data, error } = await db
+        .from('orders')
+        .update({
+          artwork_image_path: artworkData.artworkImagePath,
+          artwork_file_type: artworkData.fileType,
+          artwork_file_name: artworkData.fileName,
+          artwork_upload_date: artworkData.uploadDate
+        })
+        .eq('id', orderId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating order artwork:', error);
+      throw error;
+    }
+  }
+
+  async addOrderFile(orderId: string, fileData: any): Promise<string> {
+    try {
+      const { data, error } = await db
+        .from('order_files')
+        .insert({
+          order_id: orderId,
+          file_path: fileData.path,
+          file_type: fileData.type,
+          file_name: fileData.name,
+          mime_type: fileData.mimeType,
+          file_size: fileData.size,
+          upload_date: fileData.uploadDate
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data.id;
+    } catch (error) {
+      console.error('Error adding order file:', error);
+      throw error;
+    }
+  }
+
+  async getOrderFiles(orderId: string): Promise<any[]> {
+    try {
+      const { data, error } = await db
+        .from('order_files')
+        .select('*')
+        .eq('order_id', orderId);
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error getting order files:', error);
+      return [];
+    }
+  }
+
+  async getOrderFileById(fileId: string): Promise<any | null> {
+    try {
+      const { data, error } = await db
+        .from('order_files')
+        .select('*')
+        .eq('id', fileId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (error) {
+      console.error('Error getting order file by id:', error);
+      return null;
+    }
+  }
+
+  async deleteOrderFile(fileId: string): Promise<void> {
+    try {
+      const { error } = await db
+        .from('order_files')
+        .delete()
+        .eq('id', fileId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting order file:', error);
+      throw error;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

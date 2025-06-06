@@ -1,4 +1,3 @@
-
 import { Request, Response } from 'express';
 import { 
   saveOrderArtworkImage, 
@@ -16,20 +15,20 @@ export async function uploadArtworkImage(req: Request, res: Response) {
   try {
     const { orderId } = req.params;
     const { imageData } = req.body;
-    
+
     if (!imageData) {
       return res.status(400).json({ message: 'No image data provided' });
     }
-    
+
     // Validate that the order exists
     const order = await storage.getOrder(parseInt(orderId));
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     // Save the image
     const filePath = await saveOrderArtworkImage(parseInt(orderId), imageData);
-    
+
     // Return success response
     return res.status(200).json({ 
       message: 'Artwork image saved successfully',
@@ -45,20 +44,20 @@ export async function uploadArtworkImage(req: Request, res: Response) {
 export async function getArtworkImage(req: Request, res: Response) {
   try {
     const { orderId } = req.params;
-    
+
     // Validate that the order exists
     const order = await storage.getOrder(parseInt(orderId));
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     // Get the image
     const imageData = await getOrderArtworkImage(parseInt(orderId));
-    
+
     if (!imageData) {
       return res.status(404).json({ message: 'Artwork image not found' });
     }
-    
+
     // Set content type and send the image
     res.contentType('image/jpeg');
     return res.send(imageData);
@@ -72,16 +71,16 @@ export async function getArtworkImage(req: Request, res: Response) {
 export async function getOrderFilesList(req: Request, res: Response) {
   try {
     const { orderId } = req.params;
-    
+
     // Validate that the order exists
     const order = await storage.getOrder(parseInt(orderId));
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     // Get all files for the order
     const files = await getOrderFiles(parseInt(orderId));
-    
+
     // Return file information
     const fileInfos = files.map(file => ({
       name: path.basename(file),
@@ -90,7 +89,7 @@ export async function getOrderFilesList(req: Request, res: Response) {
       size: fs.statSync(file).size,
       lastModified: fs.statSync(file).mtime
     }));
-    
+
     return res.status(200).json(fileInfos);
   } catch (error) {
     console.error('Error retrieving order files:', error);
@@ -101,7 +100,7 @@ export async function getOrderFilesList(req: Request, res: Response) {
 // Helper to determine file type
 function determineFileType(filePath: string): string {
   const ext = path.extname(filePath).toLowerCase();
-  
+
   switch (ext) {
     case '.jpg':
     case '.jpeg':
@@ -122,17 +121,17 @@ export async function uploadOrderFile(req: Request, res: Response) {
   try {
     const { orderId } = req.params;
     const { fileData, fileName, fileType } = req.body;
-    
+
     if (!fileData || !fileName) {
       return res.status(400).json({ message: 'File data and name are required' });
     }
-    
+
     // Validate that the order exists
     const order = await storage.getOrder(parseInt(orderId));
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     // Save the file
     let data: Buffer;
     if (fileData.startsWith('data:')) {
@@ -141,9 +140,9 @@ export async function uploadOrderFile(req: Request, res: Response) {
     } else {
       data = Buffer.from(fileData, 'base64');
     }
-    
+
     const filePath = await saveOrderFile(parseInt(orderId), data, fileName);
-    
+
     // Return success response
     return res.status(200).json({ 
       message: 'File saved successfully',
@@ -160,20 +159,20 @@ export async function saveFramePreview(req: Request, res: Response) {
   try {
     const { orderId } = req.params;
     const { previewData } = req.body;
-    
+
     if (!previewData) {
       return res.status(400).json({ message: 'No preview data provided' });
     }
-    
+
     // Validate that the order exists
     const order = await storage.getOrder(parseInt(orderId));
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    
+
     // Save the preview
     const filePath = await saveOrderFramePreview(parseInt(orderId), previewData);
-    
+
     // Return success response
     return res.status(200).json({ 
       message: 'Frame preview saved successfully',
@@ -184,36 +183,33 @@ export async function saveFramePreview(req: Request, res: Response) {
     return res.status(500).json({ message: 'Error saving frame preview' });
   }
 }
-import path from 'path';
-import fs from 'fs';
+// Multer setup for file uploads
 import multer from 'multer';
-import { Express, Request, Response } from 'express';
-import { storage } from '../storage';
+import { Express } from 'express';
+import { FileFilterCallback } from 'multer';
 
-// Configure storage for uploaded files
 const fileStorage = multer.diskStorage({
-  destination: function(req, file, cb) {
+  destination: function(req: Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) {
     const orderId = req.params.orderId || req.body.orderId;
     const uploadDir = path.join(__dirname, '../../uploads', orderId);
-    
+
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    
+
     cb(null, uploadDir);
   },
-  filename: function(req, file, cb) {
+  filename: function(req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) {
     const fileExt = path.extname(file.originalname);
     const fileName = `${Date.now()}-${file.fieldname}${fileExt}`;
     cb(null, fileName);
   }
 });
 
-// Filter for accepted file types
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: any, file: Express.Multer.File, cb: FileFilterCallback) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-  
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -221,7 +217,6 @@ const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCa
   }
 };
 
-// Initialize upload middleware
 export const upload = multer({ 
   storage: fileStorage,
   limits: {
@@ -230,17 +225,17 @@ export const upload = multer({
   fileFilter: fileFilter
 });
 
-// Upload artwork for an order
+// Upload artwork for an order with multer
 export const uploadOrderArtwork = async (req: Request, res: Response) => {
   const orderId = req.params.orderId;
-  
+
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
-    
+
     const filePath = req.file.path.replace(/\\/g, '/').replace('uploads/', '');
-    
+
     // Update order with artwork image path
     await storage.updateOrderArtwork(orderId, {
       artworkImagePath: filePath,
@@ -248,7 +243,7 @@ export const uploadOrderArtwork = async (req: Request, res: Response) => {
       fileName: req.file.originalname,
       uploadDate: new Date()
     });
-    
+
     res.status(200).json({ 
       message: 'Artwork uploaded successfully',
       file: {
@@ -264,49 +259,10 @@ export const uploadOrderArtwork = async (req: Request, res: Response) => {
   }
 };
 
-// Upload additional files for an order (QR codes, work orders, invoices)
-export const uploadOrderFile = async (req: Request, res: Response) => {
-  const orderId = req.params.orderId;
-  const fileType = req.body.fileType || 'other'; // qr-code, work-order, invoice, virtual-frame, other
-  
-  try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-    
-    const filePath = req.file.path.replace(/\\/g, '/').replace('uploads/', '');
-    
-    // Save file metadata to database
-    const fileId = await storage.addOrderFile(orderId, {
-      path: filePath,
-      type: fileType,
-      name: req.file.originalname,
-      mimeType: req.file.mimetype,
-      size: req.file.size,
-      uploadDate: new Date()
-    });
-    
-    res.status(200).json({
-      message: 'File uploaded successfully',
-      fileId,
-      file: {
-        path: filePath,
-        type: fileType,
-        name: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size
-      }
-    });
-  } catch (error) {
-    console.error('Error uploading order file:', error);
-    res.status(500).json({ message: 'Failed to upload file' });
-  }
-};
-
-// Get all files for an order
+// Get all files for an order with multer metadata
 export const getOrderFiles = async (req: Request, res: Response) => {
   const orderId = req.params.orderId;
-  
+
   try {
     const files = await storage.getOrderFiles(orderId);
     res.status(200).json(files);
@@ -319,24 +275,24 @@ export const getOrderFiles = async (req: Request, res: Response) => {
 // Delete an order file
 export const deleteOrderFile = async (req: Request, res: Response) => {
   const fileId = req.params.fileId;
-  
+
   try {
     const file = await storage.getOrderFileById(fileId);
-    
+
     if (!file) {
       return res.status(404).json({ message: 'File not found' });
     }
-    
+
     // Delete file from filesystem
     const filePath = path.join(__dirname, '../../uploads', file.path);
-    
+
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
-    
+
     // Delete file record from database
     await storage.deleteOrderFile(fileId);
-    
+
     res.status(200).json({ message: 'File deleted successfully' });
   } catch (error) {
     console.error('Error deleting file:', error);
