@@ -53,11 +53,29 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
  * @returns The retail price
  */
 export function calculateMatPrice(wholesalePrice: number, area: number, unitedInches: number): number {
-  // Get markup based on united inches
-  const markup = calculateMatMarkup(unitedInches);
+  // Calculate wholesale cost: area * wholesale price per square inch
+  const wholesaleCost = area * wholesalePrice;
 
-  // Calculate price
-  return area * wholesalePrice * markup;
+  // Apply sliding scale markup based on wholesale dollar amount
+  let markupFactor = 4.0; // Base markup for $0-$1.99
+
+  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+    markupFactor = 3.5;
+  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+    markupFactor = 3.2;
+  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+    markupFactor = 3.0;
+  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+    markupFactor = 2.8;
+  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
+    markupFactor = 2.6;
+  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
+    markupFactor = 2.4;
+  } else if (wholesaleCost >= 40.00) {
+    markupFactor = 2.2;
+  }
+
+  return wholesaleCost * markupFactor;
 }
 
 /**
