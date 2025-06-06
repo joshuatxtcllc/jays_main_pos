@@ -54,7 +54,11 @@ export const getMaterialsPickList = async (req: Request, res: Response) => {
       ];
     }
 
-    res.json(materialsList);
+    res.json({ 
+      success: true, 
+      data: materialsList, 
+      message: 'Materials loaded successfully' 
+    });
   } catch (error: any) {
     console.error('Error in getMaterialsPickList:', error);
     res.status(500).json({ message: error.message, materials: [] });
