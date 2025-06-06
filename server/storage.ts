@@ -188,7 +188,7 @@ export interface IStorage {
 
 import { db } from "./db";
 import { eq, desc, sql, asc } from "drizzle-orm";
-import { log } from "@server/utils/logger";
+import { log } from "./utils/logger";
 
 export class DatabaseStorage implements IStorage {
   /**
