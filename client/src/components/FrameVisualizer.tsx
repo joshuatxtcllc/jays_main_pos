@@ -234,19 +234,22 @@ export default function FrameVisualizer({
   }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleFrames, useMultipleMats, onFrameImageCaptured]);
 
   return (
-    <div className="frame-visualizer-container w-full overflow-x-auto">
-      <div className="flex justify-center items-center bg-gray-50 p-6 rounded-lg" style={{ minWidth: '920px' }}>
-        <canvas 
-          ref={canvasRef}
-          className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
-          width={900}
-          height={600}
-          style={{ 
-            width: '900px',
-            height: '600px',
-            display: 'block'
-          }}
-        />
+    <div className="frame-visualizer-container w-full">
+      <div className="w-full bg-gray-50 p-4 rounded-lg" style={{ minWidth: '1000px', width: '100%' }}>
+        <div className="flex justify-center">
+          <canvas 
+            ref={canvasRef}
+            className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
+            width={900}
+            height={600}
+            style={{ 
+              width: '900px',
+              height: '600px',
+              display: 'block',
+              maxWidth: 'none'
+            }}
+          />
+        </div>
       </div>
       <div className="text-center text-sm text-gray-600 mt-4">
         {frames.length > 0 || mats.length > 0 ? (

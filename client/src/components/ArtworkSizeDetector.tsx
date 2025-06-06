@@ -479,19 +479,19 @@ export function ArtworkSizeDetector({
   };
 
   return (
-    <Card className="w-full border-2 border-red-200">
+    <Card className="w-full max-w-none border-2 border-red-200">
       <CardHeader>
         <CardTitle className="text-red-700">Artwork Upload & Frame Preview</CardTitle>
         <CardDescription>
           <strong className="text-red-600">REQUIRED:</strong> Upload an image of your artwork with a reference marker to automatically determine its size and see your framing preview. Orders cannot proceed without artwork images.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
+      <CardContent className="max-w-none">
+        <div className="space-y-4 w-full">
           {/* Main display area with integrated camera and preview */}
-          <div className="space-y-4">
+          <div className="space-y-4 w-full">
             {/* Main display area */}
-            <div className="border rounded-md bg-muted/10 min-h-[500px] flex flex-col">
+            <div className="border rounded-md bg-muted/10 min-h-[400px] flex flex-col w-full">
               <div className="p-4 border-b bg-white/50 rounded-t-md">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-medium">Artwork Capture & Detection</h4>
@@ -601,19 +601,21 @@ export function ArtworkSizeDetector({
 
                 {/* Show captured/uploaded image and frame preview */}
                 {imagePreview && (
-                  <div className="mt-6 space-y-4">
-                    <div className="border rounded-md p-4 bg-white">
-                      <h4 className="text-sm font-medium mb-3">Frame Preview</h4>
-                      <FrameVisualizer
-                        frames={frames}
-                        mats={mats}
-                        artworkWidth={dimensions.width}
-                        artworkHeight={dimensions.height}
-                        artworkImage={imagePreview}
-                        useMultipleFrames={useMultipleFrames}
-                        useMultipleMats={useMultipleMats}
-                        onFrameImageCaptured={onFrameImageCaptured}
-                      />
+                  <div className="mt-6 space-y-4 w-full">
+                    <div className="border rounded-md p-2 bg-white w-full max-w-none">
+                      <h4 className="text-sm font-medium mb-2">Frame Preview</h4>
+                      <div className="w-full overflow-x-auto">
+                        <FrameVisualizer
+                          frames={frames}
+                          mats={mats}
+                          artworkWidth={dimensions.width}
+                          artworkHeight={dimensions.height}
+                          artworkImage={imagePreview}
+                          useMultipleFrames={useMultipleFrames}
+                          useMultipleMats={useMultipleMats}
+                          onFrameImageCaptured={onFrameImageCaptured}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}

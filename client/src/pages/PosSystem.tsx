@@ -943,9 +943,10 @@ const PosSystem = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-      {/* Left side - Frame selection, Mat selection, Glass options */}
-      <div className="lg:col-span-2 space-y-6">
+    <div className="w-full max-w-none min-w-[1200px]">
+      <div className="grid grid-cols-1 xl:grid-cols-7 gap-6">
+        {/* Left side - Frame selection, Mat selection, Glass options */}
+        <div className="xl:col-span-3 space-y-6">
         {/* Order Information Section */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Order Information</h2>
@@ -1582,7 +1583,7 @@ const PosSystem = () => {
       </div>
 
       {/* Right side - Visualizer and Order Summary */}
-      <div className="lg:col-span-3 space-y-6">
+      <div className="xl:col-span-4 space-y-6">
         {/* Unified Artwork Detection and Frame Preview */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <ArtworkSizeDetector 
@@ -1678,6 +1679,7 @@ const PosSystem = () => {
           manualFrameCost={manualFrameCost}
           miscCharges={miscCharges}
         />
+      </div>
       </div>
     </div>
   );
