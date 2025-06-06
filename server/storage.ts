@@ -184,6 +184,14 @@ export interface IStorage {
   getMaterialsForOrder(orderId: number): Promise<any[]>; // Materials for a specific order
   updateMaterialOrder(id: string, data: any): Promise<any>; // Update material status
   createPurchaseOrder(materialIds: string[]): Promise<any>; // Create a purchase order from materials
+
+  // Webhook endpoint methods
+  getWebhookEndpoints(): Promise<any[]>;
+  getWebhookEndpoint(id: number): Promise<any | undefined>;
+  createWebhookEndpoint(data: any): Promise<any>;
+  updateWebhookEndpoint(id: number, data: any): Promise<any>;
+  deleteWebhookEndpoint(id: number): Promise<void>;
+  getWebhookEndpointsByEvent(event: string): Promise<any[]>;
 }
 
 import { db } from "./db";
@@ -1925,6 +1933,67 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error in createPurchaseOrder:', error);
       throw error;
+    }
+  }
+
+  // Webhook endpoint methods
+  async getWebhookEndpoints(): Promise<any[]> {
+    try {
+      // For now, return empty array - webhook functionality would be implemented here
+      return [];
+    } catch (error) {
+      console.error('Error in getWebhookEndpoints:', error);
+      return [];
+    }
+  }
+
+  async getWebhookEndpoint(id: number): Promise<any | undefined> {
+    try {
+      // For now, return undefined - webhook functionality would be implemented here
+      return undefined;
+    } catch (error) {
+      console.error('Error in getWebhookEndpoint:', error);
+      return undefined;
+    }
+  }
+
+  async createWebhookEndpoint(data: any): Promise<any> {
+    try {
+      // For now, return the data back - webhook functionality would be implemented here
+      return { ...data, id: Date.now() };
+    } catch (error) {
+      console.error('Error in createWebhookEndpoint:', error);
+      throw error;
+    }
+  }
+
+  async updateWebhookEndpoint(id: number, data: any): Promise<any> {
+    try {
+      // For now, return the data back - webhook functionality would be implemented here
+      return { ...data, id };
+    } catch (error) {
+      console.error('Error in updateWebhookEndpoint:', error);
+      throw error;
+    }
+  }
+
+  async deleteWebhookEndpoint(id: number): Promise<void> {
+    try {
+      // For now, do nothing - webhook functionality would be implemented here
+      console.log(`Webhook endpoint ${id} would be deleted`);
+    } catch (error) {
+      console.error('Error in deleteWebhookEndpoint:', error);
+      throw error;
+    }
+  }
+
+  async getWebhookEndpointsByEvent(event: string): Promise<any[]> {
+    try {
+      // For now, return empty array - webhook functionality would be implemented here
+      return [];
+    } catch (error) {
+      console.error('Error in getWebhookEndpointsByEvent:', error);
+      return [];
     }
   }
 }
