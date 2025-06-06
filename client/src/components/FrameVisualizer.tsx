@@ -49,42 +49,37 @@ export default function FrameVisualizer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size based on container size for better mobile handling
-    const container = canvas.parentElement;
-    const containerWidth = container?.clientWidth || 600;
-    const containerHeight = container?.clientHeight || 600;
-    const size = Math.min(containerWidth - 32, containerHeight - 32, 600);
-    
-    canvas.width = size;
-    canvas.height = size;
+    // Set much larger canvas size for better visibility
+    canvas.width = 800;
+    canvas.height = 800;
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate artwork dimensions for display - make responsive to canvas size
-    const maxArtworkSize = Math.min(canvas.width * 0.5, 300);
+    // Calculate artwork dimensions for display with much larger scaling
+    const maxArtworkSize = 400; // Increased from 300
     const aspectRatio = artworkWidth / artworkHeight;
     
     let displayWidth, displayHeight;
     if (aspectRatio > 1) {
-      displayWidth = Math.min(maxArtworkSize, artworkWidth * 15);
+      displayWidth = Math.min(maxArtworkSize, artworkWidth * 30); // Increased multiplier
       displayHeight = displayWidth / aspectRatio;
     } else {
-      displayHeight = Math.min(maxArtworkSize, artworkHeight * 15);
+      displayHeight = Math.min(maxArtworkSize, artworkHeight * 30); // Increased multiplier
       displayWidth = displayHeight * aspectRatio;
     }
 
     // Calculate total border width from frames and mats
     let totalBorderWidth = 0;
     
-    // Add frame widths (scaled for visual display) - responsive scaling
-    const scaleFactor = Math.min(canvas.width / 600, 1) * 15;
+    // Add frame widths (scaled for visual display) with much larger scaling
+    const scaleFactor = 45; // Increased from 15 for better visibility
     frames.forEach(frameItem => {
       const frameWidth = parseFloat(frameItem.frame.width) || 1;
       totalBorderWidth += frameWidth * scaleFactor;
     });
     
-    // Add mat widths (scaled for visual display)
+    // Add mat widths (scaled for visual display) with much larger scaling
     mats.forEach(matItem => {
       totalBorderWidth += matItem.width * scaleFactor;
     });
@@ -250,9 +245,9 @@ export default function FrameVisualizer({
           className="border border-gray-300 shadow-lg rounded-lg bg-white"
           style={{ 
             maxWidth: '100%', 
-            maxHeight: '70vh',
-            width: 'min(600px, 100vw - 2rem)', 
-            height: 'min(600px, 70vh)',
+            maxHeight: '80vh',
+            width: 'min(800px, 100vw - 2rem)', 
+            height: 'min(800px, 80vh)',
             aspectRatio: '1/1'
           }}
         />
