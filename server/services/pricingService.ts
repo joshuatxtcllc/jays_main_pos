@@ -20,29 +20,17 @@ const REDUCED_MARKUP_FACTOR = 1.2; // This replaces the higher FRAME_MARKUP_FACT
  * @returns The retail price
  */
 export function calculateFramePrice(wholesalePrice: number, perimeter: number): number {
-  // Calculate wholesale cost: perimeter in feet * wholesale price per foot
-  const wholesaleCost = perimeter * wholesalePrice;
+  // Calculate united inches (rough approximation from perimeter)
+  const unitedInches = perimeter * 6; // Rough conversion
 
-  // Apply sliding scale markup based on wholesale dollar amount
-  let markupFactor = 4.0; // Base markup for $0-$1.99
+  // Get markup based on united inches
+  const markup = calculateFrameMarkup(unitedInches);
 
-  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
-    markupFactor = 3.5;
-  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
-    markupFactor = 3.2;
-  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
-    markupFactor = 3.0;
-  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
-    markupFactor = 2.8;
-  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
-    markupFactor = 2.6;
-  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
-    markupFactor = 2.4;
-  } else if (wholesaleCost >= 40.00) {
-    markupFactor = 2.2;
-  }
+  // Apply a more reasonable pricing factor (reduced from original FRAME_MARKUP_FACTOR)
+  // This prevents astronomical pricing
+  const adjustedMarkupFactor = 1.2; // Reduced from original value
 
-  return wholesaleCost * markupFactor;
+  return wholesalePrice * perimeter * markup * adjustedMarkupFactor;
 }
 
 /**
@@ -53,29 +41,11 @@ export function calculateFramePrice(wholesalePrice: number, perimeter: number): 
  * @returns The retail price
  */
 export function calculateMatPrice(wholesalePrice: number, area: number, unitedInches: number): number {
-  // Calculate wholesale cost: area * wholesale price per square inch
-  const wholesaleCost = area * wholesalePrice;
+  // Get markup based on united inches
+  const markup = calculateMatMarkup(unitedInches);
 
-  // Apply sliding scale markup based on wholesale dollar amount
-  let markupFactor = 4.0; // Base markup for $0-$1.99
-
-  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
-    markupFactor = 3.5;
-  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
-    markupFactor = 3.2;
-  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
-    markupFactor = 3.0;
-  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
-    markupFactor = 2.8;
-  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
-    markupFactor = 2.6;
-  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
-    markupFactor = 2.4;
-  } else if (wholesaleCost >= 40.00) {
-    markupFactor = 2.2;
-  }
-
-  return wholesaleCost * markupFactor;
+  // Calculate price
+  return area * wholesalePrice * markup;
 }
 
 /**
@@ -169,13 +139,13 @@ export interface PricingResult {
   };
 }
 
-// Houston-specific markup values aligned with industry benchmarks
-const FRAME_MARKUP_FACTOR = 0.45; // Further increased to match industry standards (45%)
-const GLASS_MARKUP_FACTOR = 4.2; // Increased for premium museum glass positioning
-const MAT_BASE_PRICE = 12.0; // Increased to industry-standard mat pricing
-const BACKING_MARKUP_FACTOR = 1.6; // Increased backing price by 60%
-const HOUSTON_REGIONAL_FACTOR = 1.45; // Increased Houston Heights premium regional factor
-const BASE_LABOR_RATE = 75; // Increased to upper industry standard hourly rate
+// Houston-specific markup values - reduced for competitive pricing with length pricing
+const FRAME_MARKUP_FACTOR = 0.28; // Reduced significantly with length pricing
+const GLASS_MARKUP_FACTOR = 2.8; // Reduced for more competitive glass pricing
+const MAT_BASE_PRICE = 8.0; // Reduced mat base pricing
+const BACKING_MARKUP_FACTOR = 1.2; // Reduced backing markup
+const HOUSTON_REGIONAL_FACTOR = 1.15; // Reduced regional factor
+const BASE_LABOR_RATE = 45; // Reduced labor rate for competitive pricing
 
 // Business overhead and profitability settings
 const OVERHEAD_PERCENTAGE = 0.30; // 30% overhead allocation for utilities, rent, etc.
@@ -184,14 +154,14 @@ const MIN_PROFIT_MARGIN = 0.25; // 25% minimum acceptable profit margin
 
 /**
  * Calculate sliding scale markup for frame pricing
- * Based on united inches - aligned with industry standards
+ * Based on united inches - reduced for length pricing method
  */
 function calculateFrameMarkup(unitedInches: number): number {
-  if (unitedInches <= 20) return 2.8;
-  if (unitedInches <= 40) return 3.5;
-  if (unitedInches <= 60) return 4.2;
-  if (unitedInches <= 80) return 4.8;
-  return 5.5;
+  if (unitedInches <= 20) return 1.8;
+  if (unitedInches <= 40) return 2.2;
+  if (unitedInches <= 60) return 2.6;
+  if (unitedInches <= 80) return 3.0;
+  return 3.4;
 }
 
 /**
@@ -325,8 +295,8 @@ export async function calculateFramingPrice(params: FramePricingParams): Promise
     // Apply industry-standard markup factor for competitive Houston pricing
     const adjustedMarkupFactor = 0.42; // Increased to align with industry benchmarks
 
-    // Get pricing method from params
-    const pricingMethod = params.framePricingMethod || 'chop';
+    // Get pricing method from params (default to 'length' for better pricing)
+    const pricingMethod = params.framePricingMethod || 'length';
 
     // Pass pricing method to wholesale pricing calculation
     framePrice = frameWholesalePrice * frameLength / 12 * frameMarkup * adjustedMarkupFactor;

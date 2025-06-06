@@ -72,7 +72,8 @@ export async function getFrameWholesalePrice(frameId: string, options?: { pricin
             wholesalePrice = larsonPrice.joinPrice ? larsonPrice.joinPrice / 2.2 : larsonPrice.basePricePerFoot;
             break;
           default:
-            wholesalePrice = larsonPrice.chopPrice ? larsonPrice.chopPrice / 2.2 : larsonPrice.basePricePerFoot;
+            // Default to length pricing for better rates
+            wholesalePrice = larsonPrice.lengthPrice ? larsonPrice.lengthPrice / 2.2 : larsonPrice.basePricePerFoot;
         }
 
         console.log(`Using official Larson-Juhl wholesale price for ${frameId}: $${wholesalePrice}/ft (from base: $${larsonPrice.basePricePerFoot}/ft)`);

@@ -286,7 +286,7 @@ const PosSystem = () => {
           console.error('Error calculating dimensions:', dimensionError);
         }
       };
-      
+
       img.onerror = (imgError) => {
         console.error('Error loading image for dimension calculation:', imgError);
         // Don't throw error here, just log it
@@ -1101,7 +1101,7 @@ const PosSystem = () => {
             </div>
           </div>
 
-          
+
         </div>
 
         {/* Frame Customization Section */}
@@ -1300,7 +1300,7 @@ const PosSystem = () => {
                   key={frame.id}
                   className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden frame-option ${selectedFrames.some(f => f.frame.id === frame.id) ? 'border-2 border-primary' : ''}`}
                   onClick={() => {
-                    handleSelectFrame(frame, activeFramePosition, 'chop'); // Default pricing method
+                    handleSelectFrame(frame, activeFramePosition, 'length'); // Default pricing method
                   }}
                 >
                   <div 
@@ -1670,7 +1670,8 @@ const PosSystem = () => {
           onCreateWholesaleOrder={handleCreateWholesaleOrder}
           useMultipleMats={useMultipleMats}
           useMultipleFrames={useMultipleFrames}
-          addToWholesaleOrder={addToWholesaleOrder}
+          addToWholesaleOrder```text
+={addToWholesaleOrder}
           setAddToWholesaleOrder={setAddToWholesaleOrder}
           orderId={1} // Temporary ID for testing - will be replaced with actual order ID after creation
           sizeSurcharge={getSizeSurcharge()}

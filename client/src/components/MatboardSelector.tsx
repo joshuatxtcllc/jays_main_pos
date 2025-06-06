@@ -246,11 +246,36 @@ export function MatboardSelector({
             <RadioGroup 
               value={activeMatboard?.id || ""} 
               onValueChange={(value) => {
+                if (value === "none") {
+                  // Handle no mat selection - you may want to call a different handler
+                  return;
+                }
                 const mat = matboards.find(m => m.id === value);
                 if (mat) onSelectMatboard(mat, activePosition);
               }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2"
             >
+              {/* No Mat Option */}
+              <div className="flex items-start space-x-2">
+                <RadioGroupItem value="none" id="no-mat" />
+                <div className="flex-1">
+                  <Label 
+                    htmlFor="no-mat" 
+                    className="flex items-center cursor-pointer p-2 rounded-md hover:bg-accent"
+                  >
+                    <div className="w-8 h-8 rounded-md mr-2 border border-dashed border-gray-400 flex items-center justify-center">
+                      <span className="text-xs text-gray-500">None</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">No Mat</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        No matting selected
+                      </p>
+                    </div>
+                  </Label>
+                </div>
+              </div>
+              
               {getMatboardsForTab("all").map((mat) => (
                 <div key={mat.id} className="flex items-start space-x-2">
                   <RadioGroupItem value={mat.id} id={mat.id} />
