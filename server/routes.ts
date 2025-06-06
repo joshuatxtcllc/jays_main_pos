@@ -18,7 +18,7 @@ import customerNotificationRoutes from './routes/customerNotificationRoutes';
 import invoiceRoutes from './routes/invoiceRoutes';
 import inventoryRoutes from './routes/inventoryRoutes';
 import materialsRoutes from './routes/materialsRoutes';
-import pricingMonitorRoutes from './routes/pricingMonitorRoutes';
+import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
 import hubApiRoutes from './routes/hubApiRoutes';
 import hubAdminRoutes from './routes/hubAdminRoutes';
 import integrationApiRoutes from './routes/integrationApiRoutes';
