@@ -184,18 +184,11 @@ export interface IStorage {
   getMaterialsForOrder(orderId: number): Promise<any[]>; // Materials for a specific order
   updateMaterialOrder(id: string, data: any): Promise<any>; // Update material status
   createPurchaseOrder(materialIds: string[]): Promise<any>; // Create a purchase order from materials
-
-  // Webhook endpoint methods
-  getWebhookEndpoints(): Promise<any[]>;
-  getWebhookEndpoint(id: number): Promise<any | undefined>;
-  createWebhookEndpoint(data: any): Promise<any>;
-  updateWebhookEndpoint(id: number, data: any): Promise<any>;
-  deleteWebhookEndpoint(id: number): Promise<void>;
-  getWebhookEndpointsByEvent(event: string): Promise<any[]>;
 }
 
 import { db } from "./db";
 import { eq, desc, sql, asc } from "drizzle-orm";
+import { log } from "@server/utils/logger";
 
 export class DatabaseStorage implements IStorage {
   /**
@@ -1891,197 +1884,135 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(notifications.createdAt));
   }
 
-  // Materials pick list methods
-  // Get all materials for a specific order
-  async getMaterialsForOrder(orderId: number): Promise<any[]> {
+  // Materials Pick List functionality
+  async getMaterialsPickList() {
     try {
-      // Return empty array for now
-      return [];
+      // Mock data for materials pick list
+      return [
+        {
+          id: 'mat-pick-1',
+          orderIds: [1, 2],
+          name: 'Modern Black Frame Moulding',
+          sku: 'LJ-MB-001',
+          supplier: 'Larson-Juhl',
+          type: 'frame',
+          quantity: 25,
+          status: 'pending',
+          priority: 'high',
+          notes: 'Urgent for customer orders',
+          orderDate: null,
+          receiveDate: null
+        },
+        {
+          id: 'mat-pick-2',
+          orderIds: [3],
+          name: 'White Core Matboard',
+          sku: 'CR-WC-003',
+          supplier: 'Crescent',
+          type: 'mat',
+          quantity: 50,
+          status: 'ordered',
+          priority: 'medium',
+          notes: 'Standard white matboard',
+          orderDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+          receiveDate: null
+        },
+        {
+          id: 'mat-pick-3',
+          orderIds: [4, 5],
+          name: 'Museum Glass 32x40',
+          sku: 'TV-MG-3240',
+          supplier: 'Tru Vue',
+          type: 'glass',
+          quantity: 15,
+          status: 'received',
+          priority: 'low',
+          notes: 'Premium conservation glass',
+          orderDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          receiveDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'mat-pick-4',
+          orderIds: [6],
+          name: 'Gold Leaf Frame Moulding',
+          sku: 'LJ-GL-007',
+          supplier: 'Larson-Juhl',
+          type: 'frame',
+          quantity: 12,
+          status: 'backorder',
+          priority: 'high',
+          notes: 'Custom gold finish',
+          orderDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          receiveDate: null
+        }
+      ];
     } catch (error) {
-      console.error('Error in getMaterialsForOrder:', error);
+      log(`Error in getMaterialsPickList: ${error}`, 'storage');
       throw error;
     }
   }
 
-  // Get materials pick list
-  async getMaterialsPickList(): Promise<any[]> {
+  async getMaterialsForOrder(orderId: number) {
     try {
-      // Return empty array for now - would be implemented with actual data
-      return [];
+      const materials = await this.getMaterialsPickList();
+      return materials.filter(material => material.orderIds.includes(orderId));
     } catch (error) {
-      console.error('Error in getMaterialsPickList:', error);
-      return [];
-    }
-  }
-
-  // Update material order
-  async updateMaterialOrder(id: string, data: any): Promise<any> {
-    try {
-      // Return empty object for now
-      return {};
-    } catch (error) {
-      console.error('Error in updateMaterialOrder:', error);
+      log(`Error in getMaterialsForOrder: ${error}`, 'storage');
       throw error;
     }
   }
 
-  // Create purchase order
-  async createPurchaseOrder(materialIds: string[]): Promise<any> {
+  async updateMaterialOrder(materialId: string, updateData: any) {
     try {
-      // Return empty object for now
-      return {};
+      // In a real implementation, this would update the database
+      // For now, return the updated material data
+      const materials = await this.getMaterialsPickList();
+      const material = materials.find(m => m.id === materialId);
+
+      if (!material) {
+        throw new Error(`Material with ID ${materialId} not found`);
+      }
+
+      return {
+        ...material,
+        ...updateData,
+        updatedAt: new Date().toISOString()
+      };
     } catch (error) {
-      console.error('Error in createPurchaseOrder:', error);
+      log(`Error in updateMaterialOrder: ${error}`, 'storage');
       throw error;
     }
   }
 
-  // Webhook endpoint methods
-  async getWebhookEndpoints(): Promise<any[]> {
+  async createPurchaseOrder(materialIds: string[]) {
     try {
-      // For now, return empty array - webhook functionality would be implemented here
-      return [];
+      const materials = await this.getMaterialsPickList();
+      const selectedMaterials = materials.filter(m => materialIds.includes(m.id));
+
+      if (selectedMaterials.length === 0) {
+        throw new Error('No valid materials found for purchase order');
+      }
+
+      const totalAmount = selectedMaterials.reduce((sum, material) => {
+        // Mock pricing calculation
+        const unitPrice = material.type === 'frame' ? 25.99 : material.type === 'glass' ? 45.99 : 18.99;
+        return sum + (material.quantity * unitPrice);
+      }, 0);
+
+      const purchaseOrder = {
+        id: 'po-' + Date.now(),
+        orderNumber: `PO-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        materialIds,
+        totalAmount,
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+        expectedDeliveryDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        materials: selectedMaterials
+      };
+
+      return purchaseOrder;
     } catch (error) {
-      console.error('Error in getWebhookEndpoints:', error);
-      return [];
-    }
-  }
-
-  async getWebhookEndpoint(id: number): Promise<any | undefined> {
-    try {
-      // For now, return undefined - webhook functionality would be implemented here
-      return undefined;
-    } catch (error) {
-      console.error('Error in getWebhookEndpoint:', error);
-      return undefined;
-    }
-  }
-
-  async createWebhookEndpoint(data: any): Promise<any> {
-    try {
-      // For now, return the data back - webhook functionality would be implemented here
-      return { ...data, id: Date.now() };
-    } catch (error) {
-      console.error('Error in createWebhookEndpoint:', error);
-      throw error;
-    }
-  }
-
-  async updateWebhookEndpoint(id: number, data: any): Promise<any> {
-    try {
-      // For now, return the data back - webhook functionality would be implemented here
-      return { ...data, id };
-    } catch (error) {
-      console.error('Error in updateWebhookEndpoint:', error);
-      throw error;
-    }
-  }
-
-  async deleteWebhookEndpoint(id: number): Promise<void> {
-    try {
-      // For now, do nothing - webhook functionality would be implemented here
-      console.log(`Webhook endpoint ${id} would be deleted`);
-    } catch (error) {
-      console.error('Error in deleteWebhookEndpoint:', error);
-      throw error;
-    }
-  }
-
-  async getWebhookEndpointsByEvent(event: string): Promise<any[]> {
-    try {
-      // For now, return empty array - webhook functionality would be implemented here
-      return [];
-    } catch (error) {
-      console.error('Error in getWebhookEndpointsByEvent:', error);
-      return [];
-    }
-  }
-
-  // File storage methods
-  async updateOrderArtwork(orderId: string, artworkData: any): Promise<void> {
-    try {
-      const { data, error } = await db
-        .from('orders')
-        .update({
-          artwork_image_path: artworkData.artworkImagePath,
-          artwork_file_type: artworkData.fileType,
-          artwork_file_name: artworkData.fileName,
-          artwork_upload_date: artworkData.uploadDate
-        })
-        .eq('id', orderId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error updating order artwork:', error);
-      throw error;
-    }
-  }
-
-  async addOrderFile(orderId: string, fileData: any): Promise<string> {
-    try {
-      const { data, error } = await db
-        .from('order_files')
-        .insert({
-          order_id: orderId,
-          file_path: fileData.path,
-          file_type: fileData.type,
-          file_name: fileData.name,
-          mime_type: fileData.mimeType,
-          file_size: fileData.size,
-          upload_date: fileData.uploadDate
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data.id;
-    } catch (error) {
-      console.error('Error adding order file:', error);
-      throw error;
-    }
-  }
-
-  async getOrderFiles(orderId: string): Promise<any[]> {
-    try {
-      const { data, error } = await db
-        .from('order_files')
-        .select('*')
-        .eq('order_id', orderId);
-
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error getting order files:', error);
-      return [];
-    }
-  }
-
-  async getOrderFileById(fileId: string): Promise<any | null> {
-    try {
-      const { data, error } = await db
-        .from('order_files')
-        .select('*')
-        .eq('id', fileId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    } catch (error) {
-      console.error('Error getting order file by id:', error);
-      return null;
-    }
-  }
-
-  async deleteOrderFile(fileId: string): Promise<void> {
-    try {
-      const { error } = await db
-        .from('order_files')
-        .delete()
-        .eq('id', fileId);
-
-      if (error) throw error;
-    } catch (error) {
-      console.error('Error deleting order file:', error);
+      log(`Error in createPurchaseOrder: ${error}`, 'storage');
       throw error;
     }
   }

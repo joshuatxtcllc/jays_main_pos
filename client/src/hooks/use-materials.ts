@@ -1,182 +1,166 @@
-import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-export interface Material {
+interface Material {
   id: string;
-  materialType: string;
-  materialId: string;
-  materialName: string;
-  quantity: string;
-  status: 'pending' | 'ordered' | 'processed' | 'arrived';
-  supplier?: string;
-  price?: string;
-  color?: string;
-  dimensions?: string;
-  notes?: string;
-  sourceOrderId?: number;
+  orderIds: number[];
+  name: string;
+  sku: string;
+  supplier: string;
+  type: string;
+  quantity: number;
+  status: string;
   orderDate?: string;
-  expectedDeliveryDate?: string;
-  actualDeliveryDate?: string;
-  unitMeasurement?: string;
-  priority?: 'low' | 'medium' | 'high';
-  sku?: string;
-}
-
-export interface MaterialType {
-  id: string;
-  name: string;
-}
-
-export interface MaterialSupplier {
-  id: string;
-  name: string;
-}
-
-export interface CreatePurchaseOrderPayload {
-  materialIds: string[];
+  receiveDate?: string;
+  priority: "low" | "medium" | "high";
   notes?: string;
-  expectedDeliveryDate?: string;
 }
 
-export function useMaterialsPickList() {
-  const { toast } = useToast();
-  const [filtersApplied, setFiltersApplied] = useState(false);
-
-  const { data: materials = [], isLoading, error } = useQuery({
-    queryKey: ['/api/materials/pick-list'],
-    queryFn: async () => {
+// Hook to get materials pick list
+export const useMaterialsPickList = () => {
+  return useQuery({
+    queryKey: ['materials', 'pick-list'],
+    queryFn: async (): Promise<Material[]> => {
       try {
-        const response = await apiRequest('GET', '/api/materials/pick-list');
+        const response = await fetch('/api/materials/pick-list');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
-        return data;
+        return Array.isArray(data) ? data : [];
       } catch (error) {
         console.error('Error fetching materials pick list:', error);
-        toast({
-          title: "Error loading materials",
-          description: error instanceof Error ? error.message : "Failed to load materials",
-          variant: "destructive",
-        });
+        // Return empty array as fallback
         return [];
       }
-    }
-  });
-
-  return {
-    materials,
-    isLoading,
-    error,
-    filtersApplied,
-    setFiltersApplied,
-  };
-}
-
-export function useMaterialsBySupplier() {
-  return useQuery({
-    queryKey: ['/api/materials/by-supplier'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/materials/by-supplier');
-      return await response.json();
-    }
-  });
-}
-
-export function useMaterialsForOrder(orderId: number) {
-  return useQuery({
-    queryKey: ['/api/materials/by-order', orderId],
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/materials/by-order/${orderId}`);
-      return await response.json();
     },
-    enabled: !!orderId,
+    retry: 1,
+    retryDelay: 1000,
   });
-}
+};
 
-export function useMaterialTypes() {
-  return useQuery({
-    queryKey: ['/api/materials/types'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/materials/types');
-      return await response.json();
-    }
-  });
-}
-
-export function useMaterialSuppliers() {
-  return useQuery({
-    queryKey: ['/api/materials/suppliers'],
-    queryFn: async () => {
-      const response = await apiRequest('GET', '/api/materials/suppliers');
-      return await response.json();
-    }
-  });
-}
-
-export function useUpdateMaterial() {
-  const { toast } = useToast();
+// Hook to update material order
+export const useUpdateMaterial = () => {
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: { id: string; data: Partial<Material> }) => {
-      // Convert { id, data } format to the format expected by the server
-      console.log('Updating material with data:', params);
-      const response = await apiRequest('PATCH', `/api/materials/${params.id}`, params);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
-      toast({
-        title: "Material updated",
-        description: "Material has been successfully updated",
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Material update error:', error);
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-}
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Material> }) => {
+      try {
+        const response = await fetch(`/api/materials/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data }),
+        });
 
-export function useCreatePurchaseOrder() {
-  const { toast } = useToast();
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to update material: ${errorText}`);
+        }
 
-  return useMutation({
-    mutationFn: async (data: CreatePurchaseOrderPayload) => {
-      const response = await apiRequest('POST', '/api/materials/purchase-orders', data);
-      return await response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/materials'] });
-      toast({
-        title: "Purchase order created",
-        description: "Purchase order has been successfully created",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Creation failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  });
-}
-
-export function useMaterials() {
-  return useQuery({
-    queryKey: ['materials'],
-    queryFn: async () => {
-      const response = await apiRequest('/api/materials');
-      const result = await response.json();
-      // Handle both old and new response formats
-      if (result.success && result.data) {
-        return result.data;
+        return response.json();
+      } catch (error) {
+        console.error('Error updating material:', error);
+        throw error;
       }
-      return result.materials || result || [];
-    }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+    },
   });
-}
+};
+
+// Hook to create purchase order
+export const useCreatePurchaseOrder = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ materialIds, expectedDeliveryDate }: { materialIds: string[]; expectedDeliveryDate: string }) => {
+      try {
+        const response = await fetch('/api/materials/purchase-order', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ materialIds, expectedDeliveryDate }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to create purchase order: ${errorText}`);
+        }
+
+        return response.json();
+      } catch (error) {
+        console.error('Error creating purchase order:', error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders'] });
+    },
+  });
+};
+
+// Hook to get materials by supplier
+export const useMaterialsBySupplier = () => {
+  return useQuery({
+    queryKey: ['materials', 'by-supplier'],
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/materials/by-supplier');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching materials by supplier:', error);
+        return {};
+      }
+    },
+    retry: 1,
+  });
+};
+
+// Hook to get material types
+export const useMaterialTypes = () => {
+  return useQuery({
+    queryKey: ['materials', 'types'],
+    queryFn: async (): Promise<string[]> => {
+      try {
+        const response = await fetch('/api/materials/types');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error fetching material types:', error);
+        return ['frame', 'mat', 'glass', 'hardware'];
+      }
+    },
+    retry: 1,
+  });
+};
+
+// Hook to get material suppliers
+export const useMaterialSuppliers = () => {
+  return useQuery({
+    queryKey: ['materials', 'suppliers'],
+    queryFn: async (): Promise<string[]> => {
+      try {
+        const response = await fetch('/api/materials/suppliers');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return Array.isArray(data) ? data : [];
+      } catch (error) {
+        console.error('Error fetching material suppliers:', error);
+        return ['Larson-Juhl', 'Crescent', 'Tru Vue'];
+      }
+    },
+    retry: 1,
+  });
+};

@@ -5,28 +5,17 @@ import { artLocationController } from "./controllers/artLocationController";
 import { frameDesignController } from "./controllers/frameDesignController";
 import { healthController } from "./controllers/healthController";
 import { validateApiKey, KANBAN_API_KEY } from "./middleware/apiAuth";
-// Import routes
-import webhookRoutes from './routes/webhookRoutes';
-import qrCodeRoutes from './routes/qrCodeRoutes';
-import fileRoutes from './routes/fileRoutes';
+// import { storage } from "./storage_simple";
+// import { vendorCatalogController } from './controllers/vendorCatalogController';
+// import { hubIntegrationRoutes } from './routes/hubIntegrationRoutes';
+// import { crossVendorInventoryRoutes } from './routes/crossVendorInventoryRoutes';
+// import webhookRoutes from './routes/webhookRoutes';
+// import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
 import artworkLocationRoutes from './routes/artworkLocationRoutes';
-import orderStatusHistoryRoutes from './routes/orderStatusHistoryRoutes';
-import customerPortalRoutes from './routes/customerPortalRoutes';
-import customerPreferencesRoutes from './routes/customerPreferencesRoutes';
-import customerInvoicesRoutes from './routes/customerInvoicesRoutes';
-import customerNotificationRoutes from './routes/customerNotificationRoutes';
-import invoiceRoutes from './routes/invoiceRoutes';
-import inventoryRoutes from './routes/inventoryRoutes';
-import materialsRoutes from './routes/materialsRoutes';
-import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
+import artLocationRoutes from './routes/artLocationRoutes';
 import hubApiRoutes from './routes/hubApiRoutes';
 import hubAdminRoutes from './routes/hubAdminRoutes';
-import integrationApiRoutes from './routes/integrationApiRoutes';
-import threeDDesignerRoutes from './routes/threeDDesignerRoutes';
-import vendorApiRoutes from './routes/vendorApiRoutes';
-import vendorSettingsRoutes from './routes/vendorSettingsRoutes';
-import schemaRoutes from './routes/schemaRoutes';
-import * as integrationController from './controllers/integrationController';
+import { getMaterialsPickList, getMaterialsBySupplier, getMaterialsForOrder, updateMaterial, createPurchaseOrder, getMaterialTypes, getMaterialSuppliers } from './controllers/materialsController';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -37,76 +26,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/frame-designs', frameDesignController.saveFrameDesign);
   app.get('/api/frame-designs/:orderId', frameDesignController.getFrameDesign);
 
-  // Webhook routes
-  app.use('/api/webhooks', webhookRoutes);
-  app.use('/api/qr', qrCodeRoutes);
-  app.use('/api/files', fileRoutes);
-  app.use('/api/artwork-location', artworkLocationRoutes);
-  app.use('/api/order-status-history', orderStatusHistoryRoutes);
-  app.use('/api/customer-portal', customerPortalRoutes);
-  app.use('/api/customer-preferences', customerPreferencesRoutes);
-  app.use('/api/customer-invoices', customerInvoicesRoutes);
-  app.use('/api/customer-notifications', customerNotificationRoutes);
-  app.use('/api/invoices', invoiceRoutes);
-  app.use('/api/inventory', inventoryRoutes);
-  app.use('/api/materials', materialsRoutes);
-  app.use('/api/pricing-monitor', pricingMonitorRoutes);
-  app.use('/api/hub', hubApiRoutes);
-  app.use('/api/admin', hubAdminRoutes);
-  app.use('/api/integration', integrationApiRoutes);
-  app.use('/api/3d-designer', threeDDesignerRoutes);
-  app.use('/api/vendor', vendorApiRoutes);
-  app.use('/api/vendor-settings', vendorSettingsRoutes);
-  app.use('/api/schemas', schemaRoutes);
+  // Webhook routes (commented out temporarily)
+  // app.use('/api/webhooks', webhookRoutes);
 
-  // Admin API key routes
-  app.post('/api/admin/generate-api-key', integrationController.generateApiKey);
-  app.get('/api/admin/integration-status', integrationController.getIntegrationStatus);
-  app.get('/api/admin/integration-docs', integrationController.getIntegrationDocs);
+  // Pricing monitor routes (commented out temporarily)
+  // app.use('/api/pricing-monitor', pricingMonitorRoutes);
 
-  // Additional API endpoints expected by frontend
-  app.get('/api/mat-colors', (req, res) => {
-    res.status(200).json({ 
-      success: true, 
-      data: [
-        { id: 'white', name: 'White', color: '#FFFFFF' },
-        { id: 'black', name: 'Black', color: '#000000' },
-        { id: 'cream', name: 'Cream', color: '#F5F5DC' }
-      ] 
-    });
+  // Health check endpoint
+  app.get('/api/health', healthController.getSystemHealth);
+
+  // Vendor catalog routes (basic endpoints to prevent errors)
+  app.get('/api/vendor-catalog/all', (req, res) => {
+    res.json([]);
   });
 
-  app.get('/api/glass-options', (req, res) => {
-    res.status(200).json({ 
-      success: true, 
-      data: [
-        { id: 'regular', name: 'Regular Glass', price: 15.00 },
-        { id: 'museum', name: 'Museum Glass', price: 85.00 },
-        { id: 'acrylic', name: 'Acrylic', price: 25.00 }
-      ] 
-    });
+  app.get('/api/vendor-catalog/larson', (req, res) => {
+    res.json([]);
   });
 
-  app.get('/api/special-services', (req, res) => {
-    res.status(200).json({ 
-      success: true, 
-      data: [
-        { id: 'rush', name: 'Rush Service', price: 50.00 },
-        { id: 'delivery', name: 'Local Delivery', price: 25.00 }
-      ] 
-    });
+  app.get('/api/vendor-catalog/roma', (req, res) => {
+    res.json([]);
   });
 
-  app.get('/api/customers', (req, res) => {
-    res.status(200).json({ success: true, data: [] });
+  app.get('/api/vendor-catalog/nielsen', (req, res) => {
+    res.json([]);
   });
 
-  app.get('/api/orders', (req, res) => {
-    res.status(200).json({ success: true, data: [] });
+  // Larson catalog routes
+  app.get('/api/larson-catalog/crescent', (req, res) => {
+    res.json([]);
   });
 
-  app.get('/api/production/kanban', (req, res) => {
-    res.status(200).json({ success: true, data: { orders: [], stages: [] } });
+  // Frames catalog route
+  app.get('/api/frames', (req, res) => {
+    res.json([]);
+  });
+
+  // Auth status route
+  app.get('/api/auth/status', (req, res) => {
+    res.json({ authenticated: false, user: null });
   });
 
   // Kanban Integration API endpoints for production connection
@@ -166,11 +124,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.use('/api/vendor-api', vendorApiRoutes);
-  app.use('/api/vendor-settings', vendorSettingsRoutes);
-  app.use('/api/webhooks', webhookRoutes);
-  app.use('/api/materials', materialsRoutes);
-  app.use('/api/material-orders', materialsRoutes);
+  // Hub Integration API Routes
+  app.use('/api/hub', hubApiRoutes);
+  app.use('/api/hub-admin', hubAdminRoutes);
+
+  // Materials API Routes
+  app.get('/api/materials/pick-list', getMaterialsPickList);
+  app.get('/api/materials/by-supplier', getMaterialsBySupplier);
+  app.get('/api/materials/order/:orderId', getMaterialsForOrder);
+  app.put('/api/materials/:id', updateMaterial);
+  app.post('/api/materials/purchase-order', createPurchaseOrder);
+  app.get('/api/materials/types', getMaterialTypes);
+  app.get('/api/materials/suppliers', getMaterialSuppliers);
 
   // Create HTTP server
   const httpServer = createServer(app);

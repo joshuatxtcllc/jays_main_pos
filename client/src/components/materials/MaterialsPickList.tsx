@@ -99,7 +99,7 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
   const [statusNotes, setStatusNotes] = useState("");
   
   const { toast } = useToast();
-  const { data: materials = [], isLoading } = useMaterialsPickList();
+  const { data: materials = [], isLoading, error } = useMaterialsPickList();
   const updateMaterialOrder = useUpdateMaterial();
   
   // Calculate unique suppliers and material types for filters
@@ -509,7 +509,15 @@ const MaterialsPickList: React.FC<MaterialsPickListProps> = ({ onCreateOrder }) 
       
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
+          {error ? (
+            <div className="text-center py-12">
+              <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+              <h3 className="mt-4 text-lg font-semibold text-red-600">Error loading materials</h3>
+              <p className="text-muted-foreground">
+                {error instanceof Error ? error.message : 'Unable to load materials pick list. Please try again.'}
+              </p>
+            </div>
+          ) : isLoading ? (
             <div className="flex justify-center items-center py-8">
               <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
             </div>
