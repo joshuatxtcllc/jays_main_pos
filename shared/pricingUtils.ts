@@ -1,7 +1,7 @@
 /**
  * Shared Pricing Utilities
  * 
- * Implements the correct dollar-based sliding scale markup structure:
+ * Frame Pricing: Dollar-based sliding scale markup structure
  * - $0.00-$1.99: 4.0x markup
  * - $2.00-$3.99: 3.5x markup  
  * - $4.00-$5.99: 3.2x markup
@@ -10,7 +10,40 @@
  * - $15.00-$24.99: 2.6x markup
  * - $25.00-$39.99: 2.4x markup
  * - $40.00+: 2.2x markup
+ * 
+ * Glass/Mat Pricing: Size-based markup structure
+ * - 5x7 and smaller: 4.0x markup
+ * - 8x10: 3.8x markup
+ * - 11x14: 3.5x markup
+ * - 16x20: 3.2x markup
+ * - 18x24: 3.0x markup
+ * - 24x30: 2.8x markup
+ * - Larger: 2.5x markup
  */
+
+/**
+ * Calculate wholesale price per united inch from catalog data
+ * @param boxPrice Total price for a box from catalog
+ * @param sheetsPerBox Number of sheets (lites) in the box
+ * @param sheetWidth Width of each sheet in inches
+ * @param sheetHeight Height of each sheet in inches
+ * @returns Price per united inch
+ */
+export function calculatePricePerUnitedInch(
+  boxPrice: number, 
+  sheetsPerBox: number, 
+  sheetWidth: number, 
+  sheetHeight: number
+): number {
+  // Calculate price per sheet
+  const pricePerSheet = boxPrice / sheetsPerBox;
+  
+  // Calculate united inches per sheet
+  const unitedInchesPerSheet = sheetWidth + sheetHeight;
+  
+  // Calculate price per united inch
+  return pricePerSheet / unitedInchesPerSheet;
+}
 
 /**
  * Calculate markup factor based on wholesale dollar amount
@@ -66,51 +99,83 @@ export function calculateFramePrice(width: number, height: number, matWidth: num
 }
 
 /**
- * Calculate mat pricing using dollar-based markup
+ * Calculate mat pricing using size-based markup structure
  * @param width Artwork width in inches
  * @param height Artwork height in inches
  * @param matWidth Mat width in inches
- * @param pricePerSquareInch Wholesale price per square inch
+ * @param pricePerUnitedInch Wholesale price per united inch
  * @returns Retail price
  */
-export function calculateMatPrice(width: number, height: number, matWidth: number, pricePerSquareInch: number): number {
+export function calculateMatPrice(width: number, height: number, matWidth: number, pricePerUnitedInch: number): number {
   // Calculate outer dimensions with mat
   const outerWidth = width + (matWidth * 2);
   const outerHeight = height + (matWidth * 2);
   
-  // Calculate mat area (outer area minus artwork area)
-  const matArea = (outerWidth * outerHeight) - (width * height);
+  // Calculate united inches of finished size
+  const unitedInches = outerWidth + outerHeight;
   
   // Calculate wholesale cost
-  const wholesaleCost = matArea * pricePerSquareInch;
+  const wholesaleCost = unitedInches * pricePerUnitedInch;
   
-  // Apply dollar-based markup
-  const markupFactor = calculateMarkupFactor(wholesaleCost);
+  // Apply size-based markup factor
+  let markupFactor = 4.0; // Base markup for small sizes (5x7 and smaller)
+  
+  if (unitedInches <= 24) { // 5x7 = 24 united inches
+    markupFactor = 4.0;
+  } else if (unitedInches <= 36) { // 8x10 = 36 united inches
+    markupFactor = 3.8;
+  } else if (unitedInches <= 50) { // 11x14 = 50 united inches
+    markupFactor = 3.5;
+  } else if (unitedInches <= 68) { // 16x20 = 68 united inches
+    markupFactor = 3.2;
+  } else if (unitedInches <= 88) { // 18x24 = 88 united inches
+    markupFactor = 3.0;
+  } else if (unitedInches <= 108) { // 24x30 = 108 united inches
+    markupFactor = 2.8;
+  } else { // Larger than 24x30
+    markupFactor = 2.5;
+  }
   
   return wholesaleCost * markupFactor;
 }
 
 /**
- * Calculate glass pricing using dollar-based markup
+ * Calculate glass pricing using size-based markup structure
  * @param width Artwork width in inches
  * @param height Artwork height in inches
  * @param matWidth Mat width in inches
- * @param pricePerSquareInch Wholesale price per square inch
+ * @param pricePerUnitedInch Wholesale price per united inch
  * @returns Retail price
  */
-export function calculateGlassPrice(width: number, height: number, matWidth: number, pricePerSquareInch: number): number {
+export function calculateGlassPrice(width: number, height: number, matWidth: number, pricePerUnitedInch: number): number {
   // Calculate glass dimensions (artwork + mat)
   const glassWidth = width + (matWidth * 2);
   const glassHeight = height + (matWidth * 2);
   
-  // Calculate glass area
-  const glassArea = glassWidth * glassHeight;
+  // Calculate united inches of finished size
+  const unitedInches = glassWidth + glassHeight;
   
   // Calculate wholesale cost
-  const wholesaleCost = glassArea * pricePerSquareInch;
+  const wholesaleCost = unitedInches * pricePerUnitedInch;
   
-  // Apply dollar-based markup
-  const markupFactor = calculateMarkupFactor(wholesaleCost);
+  // Apply size-based markup factor (same structure as mats)
+  let markupFactor = 4.0; // Base markup for small sizes (5x7 and smaller)
+  
+  if (unitedInches <= 24) { // 5x7 = 24 united inches
+    markupFactor = 4.0;
+  } else if (unitedInches <= 36) { // 8x10 = 36 united inches
+    markupFactor = 3.8;
+  } else if (unitedInches <= 50) { // 11x14 = 50 united inches
+    markupFactor = 3.5;
+  } else if (unitedInches <= 68) { // 16x20 = 68 united inches
+    markupFactor = 3.2;
+  } else if (unitedInches <= 88) { // 18x24 = 88 united inches
+    markupFactor = 3.0;
+  } else if (unitedInches <= 108) { // 24x30 = 108 united inches
+    markupFactor = 2.8;
+  } else { // Larger than 24x30
+    markupFactor = 2.5;
+  }
   
   return wholesaleCost * markupFactor;
 }

@@ -112,35 +112,35 @@ export function calculateFramePrice(width: number, height: number, basePrice: nu
   return wholesaleCost * markupFactor;
 }
 
-// Calculate mat price based on dimensions and base price
-export function calculateMatPrice(width: number, height: number, matWidth: number, basePrice: number): number {
+// Calculate mat price based on dimensions and price per united inch
+export function calculateMatPrice(width: number, height: number, matWidth: number, pricePerUnitedInch: number): number {
   // Calculate outer dimensions with mat
   const outerWidth = width + (matWidth * 2);
   const outerHeight = height + (matWidth * 2);
 
-  // Calculate mat area in square inches
-  const matArea = (outerWidth * outerHeight) - (width * height);
+  // Calculate united inches of finished size
+  const unitedInches = outerWidth + outerHeight;
 
-  // Calculate wholesale cost: mat area * base price per square inch
-  const wholesaleCost = matArea * (basePrice / 100);
+  // Calculate wholesale cost: united inches * price per united inch
+  const wholesaleCost = unitedInches * pricePerUnitedInch;
 
-  // Apply sliding scale markup based on wholesale dollar amount
-  let markupFactor = 4.0; // Base markup for $0-$1.99
+  // Apply size-based markup factor
+  let markupFactor = 4.0; // Base markup for small sizes (5x7 and smaller)
 
-  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+  if (unitedInches <= 24) { // 5x7 = 24 united inches
+    markupFactor = 4.0;
+  } else if (unitedInches <= 36) { // 8x10 = 36 united inches
+    markupFactor = 3.8;
+  } else if (unitedInches <= 50) { // 11x14 = 50 united inches
     markupFactor = 3.5;
-  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+  } else if (unitedInches <= 68) { // 16x20 = 68 united inches
     markupFactor = 3.2;
-  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+  } else if (unitedInches <= 88) { // 18x24 = 88 united inches
     markupFactor = 3.0;
-  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+  } else if (unitedInches <= 108) { // 24x30 = 108 united inches
     markupFactor = 2.8;
-  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
-    markupFactor = 2.6;
-  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
-    markupFactor = 2.4;
-  } else if (wholesaleCost >= 40.00) {
-    markupFactor = 2.2;
+  } else { // Larger than 24x30
+    markupFactor = 2.5;
   }
 
   // Apply retail markup
@@ -156,31 +156,32 @@ export function calculateGlassPrice(width: number, height: number, matWidth: num
   // Calculate glass area in square inches
   const glassArea = glassWidth * glassHeight;
 
-  // Calculate the wholesale cost: glass area * base price per square inch
-  const wholesaleCost = glassArea * (basePrice / 100);
+  // Calculate united inches of finished size
+  const unitedInches = glassWidth + glassHeight;
 
-  // Apply sliding scale markup based on wholesale dollar amount
-  let markupFactor = 4.0; // Base markup for $0-$1.99
+  // Calculate wholesale cost: united inches * price per united inch
+  const wholesaleCost = unitedInches * (basePrice / 100);
 
-  if (wholesaleCost >= 2.00 && wholesaleCost < 4.00) {
+  // Apply size-based markup factor (same structure as mats)
+  let markupFactor = 4.0; // Base markup for small sizes (5x7 and smaller)
+
+  if (unitedInches <= 24) { // 5x7 = 24 united inches
+    markupFactor = 4.0;
+  } else if (unitedInches <= 36) { // 8x10 = 36 united inches
+    markupFactor = 3.8;
+  } else if (unitedInches <= 50) { // 11x14 = 50 united inches
     markupFactor = 3.5;
-  } else if (wholesaleCost >= 4.00 && wholesaleCost < 6.00) {
+  } else if (unitedInches <= 68) { // 16x20 = 68 united inches
     markupFactor = 3.2;
-  } else if (wholesaleCost >= 6.00 && wholesaleCost < 10.00) {
+  } else if (unitedInches <= 88) { // 18x24 = 88 united inches
     markupFactor = 3.0;
-  } else if (wholesaleCost >= 10.00 && wholesaleCost < 15.00) {
+  } else if (unitedInches <= 108) { // 24x30 = 108 united inches
     markupFactor = 2.8;
-  } else if (wholesaleCost >= 15.00 && wholesaleCost < 25.00) {
-    markupFactor = 2.6;
-  } else if (wholesaleCost >= 25.00 && wholesaleCost < 40.00) {
-    markupFactor = 2.4;
-  } else if (wholesaleCost >= 40.00) {
-    markupFactor = 2.2;
+  } else { // Larger than 24x30
+    markupFactor = 2.5;
   }
 
-  // Apply retail markup
-  // For Museum Glass (higher end), we need to ensure prices are proportionally high
-  // Museum glass can be 2.5-3x more expensive than regular glass at retail
+  // Apply premium glass multiplier for museum glass
   if (basePrice >= 0.45) { // Museum glass threshold
     markupFactor *= 1.5; // Increase markup for premium glass
   }
