@@ -13,7 +13,7 @@ import { getMatColorById, getMatColorsByManufacturer, getMatColorsByCategory, ge
 import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '@/data/glassOptions';
 import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import FrameVisualizer from '@/components/FrameVisualizer';
+
 import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
 import MatboardCatalogViewer from '@/components/MatboardCatalogViewer';
