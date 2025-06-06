@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import * as qrCodeController from './qrCodeController';
+import crypto from 'crypto';
 
 /**
  * Integration Controller
@@ -188,5 +189,150 @@ export async function receiveWebhook(req: Request, res: Response) {
   } catch (error: any) {
     console.error('Error processing webhook:', error);
     res.status(500).json({ error: error.message || 'Failed to process webhook' });
+  }
+}
+
+/**
+ * Generate API key for external integrations
+ */
+export async function generateApiKey(req: Request, res: Response) {
+  try {
+    // Generate a secure API key
+    const apiKey = 'jf_' + crypto.randomBytes(32).toString('hex');
+    
+    const keyInfo = {
+      key: apiKey,
+      name: 'Jay\'s Frames API Integration',
+      permissions: ['orders:read', 'orders:write', 'integration:webhook'],
+      createdAt: new Date().toISOString(),
+      lastUsed: null
+    };
+    
+    console.log('Generated API Key:', apiKey);
+    
+    res.json({
+      success: true,
+      ...keyInfo,
+      message: 'API key generated successfully. Store this securely.',
+      endpoints: {
+        baseUrl: process.env.REPL_URL || 'https://your-repl-url.replit.dev',
+        orders: '/api/integration/orders',
+        webhook: '/api/integration/webhook',
+        status: '/api/integration/status'
+      },
+      authentication: {
+        method: 'Bearer Token',
+        header: 'Authorization',
+        value: `Bearer ${apiKey}`
+      }
+    });
+  } catch (error: any) {
+    console.error('Error generating API key:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to generate API key' 
+    });
+  }
+}
+
+/**
+ * Get integration status and connection information
+ */
+export async function getIntegrationStatus(req: Request, res: Response) {
+  try {
+    res.json({
+      success: true,
+      status: 'active',
+      integrations: {
+        webhooks: {
+          enabled: true,
+          endpointCount: 0
+        },
+        apiAccess: {
+          enabled: true,
+          lastGenerated: new Date().toISOString()
+        }
+      },
+      endpoints: {
+        baseUrl: process.env.REPL_URL || 'https://your-repl-url.replit.dev',
+        orders: '/api/integration/orders',
+        webhook: '/api/integration/webhook'
+      }
+    });
+  } catch (error: any) {
+    console.error('Error getting integration status:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to get integration status' 
+    });
+  }
+}
+
+/**
+ * Get integration documentation
+ */
+export async function getIntegrationDocs(req: Request, res: Response) {
+  try {
+    res.json({
+      success: true,
+      documentation: {
+        authentication: {
+          method: 'Bearer Token',
+          header: 'Authorization',
+          example: 'Authorization: Bearer YOUR_API_KEY'
+        },
+        endpoints: [
+          {
+            method: 'GET',
+            path: '/api/integration/orders',
+            description: 'Get all orders with QR codes',
+            parameters: {
+              status: 'optional - filter by order status',
+              limit: 'optional - limit number of results'
+            }
+          },
+          {
+            method: 'GET',
+            path: '/api/integration/orders/:id',
+            description: 'Get specific order with QR code',
+            parameters: {
+              id: 'required - order ID'
+            }
+          },
+          {
+            method: 'PATCH',
+            path: '/api/integration/orders/:id/status',
+            description: 'Update order status',
+            body: {
+              status: 'required - new status',
+              notes: 'optional - status change notes'
+            }
+          },
+          {
+            method: 'POST',
+            path: '/api/integration/webhook',
+            description: 'Receive webhook notifications',
+            body: {
+              source: 'required - webhook source',
+              event: 'required - event type',
+              data: 'optional - event data'
+            }
+          }
+        ],
+        webhookEvents: [
+          'order.created',
+          'order.updated',
+          'order.completed',
+          'payment.received',
+          'qr.generated'
+        ]
+      }
+    });
+  } catch (error: any) {
+    console.error('Error getting integration docs:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to get integration documentation' 
+    });
   }
 }
