@@ -210,6 +210,8 @@ export default function FrameVisualizer({
     }
 
     function drawPlaceholder() {
+      if (!ctx) return;
+      
       // Draw placeholder artwork
       ctx.fillStyle = '#f8f9fa';
       ctx.fillRect(currentX, currentY, currentWidth, currentHeight);
@@ -218,7 +220,7 @@ export default function FrameVisualizer({
       
       // Add placeholder text
       ctx.fillStyle = '#6c757d';
-      ctx.font = '16px Arial';
+      ctx.font = '20px Arial';
       ctx.textAlign = 'center';
       ctx.fillText('Your Artwork', currentX + currentWidth / 2, currentY + currentHeight / 2);
       
