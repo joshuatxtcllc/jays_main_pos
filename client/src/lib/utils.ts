@@ -153,9 +153,6 @@ export function calculateGlassPrice(width: number, height: number, matWidth: num
   const glassWidth = width + (matWidth * 2);
   const glassHeight = height + (matWidth * 2);
 
-  // Calculate glass area in square inches
-  const glassArea = glassWidth * glassHeight;
-
   // Calculate united inches of finished size
   const unitedInches = glassWidth + glassHeight;
 

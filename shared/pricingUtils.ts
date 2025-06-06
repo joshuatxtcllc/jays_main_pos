@@ -230,7 +230,7 @@ export function examplePricingCalculation() {
   const total = framePrice + matPrice + glassPrice + backingPrice;
   
   return {
-    dimensions: `${width}x${height} with ${matWidth}" mat`,
+    dimensions: `${width}x${height} with ${matWidth}\" mat`,
     framePrice: `$${framePrice.toFixed(2)}`,
     matPrice: `$${matPrice.toFixed(2)}`,
     glassPrice: `$${glassPrice.toFixed(2)}`,

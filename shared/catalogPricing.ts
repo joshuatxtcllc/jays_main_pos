@@ -167,12 +167,12 @@ export function calculateJobCostFromCatalog(
   const matWholesaleCost = unitedInches * matPricePerUI;
   
   return {
-    dimensions: `${width}"x${height}" with ${matWidth}" mat`,
-    finishedSize: `${finishedWidth}"x${finishedHeight}"`,
+    dimensions: width + 'x' + height + ' with ' + matWidth + ' mat',
+    finishedSize: finishedWidth + 'x' + finishedHeight,
     unitedInches: unitedInches,
-    glassPricePerUI: `$${glassPricePerUI.toFixed(3)}`,
-    matPricePerUI: `$${matPricePerUI.toFixed(3)}`,
-    glassWholesaleCost: `$${glassWholesaleCost.toFixed(2)}`,
-    matWholesaleCost: `$${matWholesaleCost.toFixed(2)}`
+    glassPricePerUI: '$' + glassPricePerUI.toFixed(3),
+    matPricePerUI: '$' + matPricePerUI.toFixed(3),
+    glassWholesaleCost: '$' + glassWholesaleCost.toFixed(2),
+    matWholesaleCost: '$' + matWholesaleCost.toFixed(2)
   };
 }

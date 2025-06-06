@@ -1670,8 +1670,7 @@ const PosSystem = () => {
           onCreateWholesaleOrder={handleCreateWholesaleOrder}
           useMultipleMats={useMultipleMats}
           useMultipleFrames={useMultipleFrames}
-          addToWholesaleOrder```text
-={addToWholesaleOrder}
+          addToWholesaleOrder={addToWholesaleOrder}
           setAddToWholesaleOrder={setAddToWholesaleOrder}
           orderId={1} // Temporary ID for testing - will be replaced with actual order ID after creation
           sizeSurcharge={getSizeSurcharge()}
