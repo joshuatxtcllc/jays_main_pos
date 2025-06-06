@@ -1524,6 +1524,14 @@ const PosSystem = () => {
                     </div>
                   ) : (
                     <>
+                      {/* No Mat Option */}
+                      <div
+                        className={`mat-color-option ${selectedMatboards.length === 0 ? 'border-2 border-primary' : 'border border-gray-400'} rounded-md h-8 w-8 cursor-pointer hover:scale-110 transition-transform overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center`}
+                        onClick={() => handleMatColorChange('none')}
+                        title="No Mat"
+                      >
+                        <span className="text-xs text-gray-500">✕</span>
+                      </div>
                       {(matManufacturerFilter === 'all' ? matboards : crescentMatboards).map(matColor => (
                         <div
                           key={matColor.id}

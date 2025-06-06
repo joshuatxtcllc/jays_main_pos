@@ -77,11 +77,11 @@ export default function FrameVisualizer({
 
     frames.forEach(frameItem => {
       const frameWidth = parseFloat(frameItem.frame.width) || 1;
-      totalFrameWidth += frameWidth * 30; // Much larger multiplier
+      totalFrameWidth += frameWidth * 8; // Reduced multiplier for better proportions
     });
 
     mats.forEach(matItem => {
-      totalMatWidth += matItem.width * 30; // Much larger multiplier
+      totalMatWidth += matItem.width * 8; // Reduced multiplier for better proportions
     });
 
     const totalBorderWidth = totalFrameWidth + totalMatWidth;
@@ -105,7 +105,7 @@ export default function FrameVisualizer({
     
     if (useMultipleFrames) {
       sortedFrames.forEach(frameItem => {
-        const frameWidth = (parseFloat(frameItem.frame.width) || 1) * 30;
+        const frameWidth = (parseFloat(frameItem.frame.width) || 1) * 8;
         
         // Draw frame rectangle
         ctx.fillStyle = frameItem.frame.color || '#8B4513';
@@ -124,7 +124,7 @@ export default function FrameVisualizer({
       });
     } else if (frames.length > 0) {
       const frame = sortedFrames[sortedFrames.length - 1].frame;
-      const frameWidth = (parseFloat(frame.width) || 1) * 30;
+      const frameWidth = (parseFloat(frame.width) || 1) * 8;
       
       // Draw single frame
       ctx.fillStyle = frame.color || '#8B4513';
@@ -145,7 +145,7 @@ export default function FrameVisualizer({
     
     if (useMultipleMats) {
       sortedMats.forEach(matItem => {
-        const matWidth = matItem.width * 30;
+        const matWidth = matItem.width * 8;
         
         // Draw mat rectangle
         ctx.fillStyle = matItem.matboard.color || '#FFFFFF';
@@ -163,7 +163,7 @@ export default function FrameVisualizer({
       });
     } else if (mats.length > 0) {
       const mat = sortedMats[sortedMats.length - 1];
-      const matWidth = mat.width * 30;
+      const matWidth = mat.width * 8;
       
       // Draw single mat
       ctx.fillStyle = mat.matboard.color || '#FFFFFF';
