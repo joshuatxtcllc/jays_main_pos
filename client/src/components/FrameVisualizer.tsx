@@ -49,8 +49,8 @@ export default function FrameVisualizer({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set wide canvas size
-    const canvasWidth = 900;
+    // Set properly proportioned canvas size
+    const canvasWidth = 800;
     const canvasHeight = 600;
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
@@ -235,15 +235,15 @@ export default function FrameVisualizer({
 
   return (
     <div className="frame-visualizer-container w-full">
-      <div className="w-full bg-gray-50 p-4 rounded-lg" style={{ minWidth: '1000px', width: '100%' }}>
+      <div className="w-full bg-gray-50 p-4 rounded-lg" style={{ minWidth: '800px', width: '100%' }}>
         <div className="flex justify-center">
           <canvas 
             ref={canvasRef}
             className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
-            width={900}
+            width={800}
             height={600}
             style={{ 
-              width: '900px',
+              width: '800px',
               height: '600px',
               display: 'block',
               maxWidth: 'none'
