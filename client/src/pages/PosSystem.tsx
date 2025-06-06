@@ -13,6 +13,12 @@ import { getMatColorById, getMatColorsByManufacturer, getMatColorsByCategory, ge
 import { glassOptionCatalog, getGlassOptionById, specialServicesCatalog } from '@/data/glassOptions';
 import { fileToDataUrl, resizeImage, calculateAspectRatio, calculateDimensions } from '@/lib/imageUtils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { 
+  calculateFramePrice, 
+  calculateMatPrice, 
+  calculateGlassPrice,
+  calculateBackingPrice
+} from '@shared/pricingUtils';
 
 import SpecialServices from '@/components/SpecialServices';
 import OrderSummary from '@/components/OrderSummary';
@@ -754,15 +760,33 @@ const PosSystem = () => {
       const customerResponse = await createCustomerMutation.mutateAsync(customer);
       console.log("Customer created/retrieved:", customerResponse);
 
-      // Calculate prices for the order - using primary frame and mat
+      // Prepare primary data for pricing calculations
       const primaryFrame = selectedFrames.length > 0 ? selectedFrames[0].frame : null;
       const primaryMat = selectedMatboards.length > 0 ? selectedMatboards[0].matboard : null;
-      const framePrice = primaryFrame ? primaryFrame.price : '0';
-      const matPrice = primaryMat ? primaryMat.price : '0';
-      const glassPrice = selectedGlassOption.price;
-
-      // Prepare order data - using primary frame, mat and width
       const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
+
+      // Calculate prices using the pricing service (same as OrderSummary)
+      const framePrices = selectedFrames.map(frameItem => 
+        calculateFramePrice(artworkWidth, artworkHeight, Number(frameItem.frame.price))
+      );
+      const totalFramePrice = framePrices.reduce((total, price) => total + price, 0);
+
+      const matPrices = selectedMatboards.map(matItem => 
+        calculateMatPrice(artworkWidth, artworkHeight, matItem.width, Number(matItem.matboard.price))
+      );
+      const totalMatPrice = matPrices.reduce((total, price) => total + price, 0);
+
+      const calculatedGlassPrice = selectedGlassOption ? 
+        calculateGlassPrice(artworkWidth, artworkHeight, primaryMatWidth, Number(selectedGlassOption.price)) : 0;
+      const backingPrice = calculateBackingPrice(artworkWidth, artworkHeight, primaryMatWidth, 0.02); // $0.02 per sq inch for backing
+      const laborPrice = 25; // Fixed labor price
+      const specialServicesPrice = selectedServices.reduce((total, service) => total + Number(service.price), 0);
+
+      // Calculate subtotal and total with tax
+      const subtotal = totalFramePrice + totalMatPrice + calculatedGlassPrice + backingPrice + laborPrice + specialServicesPrice;
+      const taxRate = 0.08; // 8% tax rate
+      const tax = subtotal * taxRate;
+      const total = subtotal + tax;
       const totalMiscCharges = miscCharges.reduce((sum, charge) => sum + charge.amount, 0);
       const miscChargeDescription = miscCharges.length > 0 
         ? miscCharges.map(charge => `${charge.description}: $${charge.amount.toFixed(2)}`).join('; ')
@@ -779,9 +803,9 @@ const PosSystem = () => {
         artworkDescription,
         artworkType,
         artworkLocation,
-        subtotal: "0", // Will be calculated on the server
-        tax: "0", // Will be calculated on the server
-        total: "0", // Will be calculated on the server
+        subtotal: subtotal.toFixed(2),
+        tax: tax.toFixed(2),
+        total: total.toFixed(2),
         artworkImage,
         useManualFrame,
         manualFrameName: useManualFrame ? manualFrameName : undefined,
