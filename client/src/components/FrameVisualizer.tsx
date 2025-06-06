@@ -234,8 +234,8 @@ export default function FrameVisualizer({
   }, [frames, mats, artworkWidth, artworkHeight, artworkImage, useMultipleFrames, useMultipleMats, onFrameImageCaptured]);
 
   return (
-    <div className="frame-visualizer-container w-full">
-      <div className="flex justify-center items-center bg-gray-50 p-6 rounded-lg">
+    <div className="frame-visualizer-container w-full overflow-x-auto">
+      <div className="flex justify-center items-center bg-gray-50 p-6 rounded-lg" style={{ minWidth: '920px' }}>
         <canvas 
           ref={canvasRef}
           className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
@@ -244,8 +244,7 @@ export default function FrameVisualizer({
           style={{ 
             width: '900px',
             height: '600px',
-            maxWidth: '100%',
-            maxHeight: '70vh'
+            display: 'block'
           }}
         />
       </div>
