@@ -80,6 +80,7 @@ app.use((req, res, next) => {
   }
 
   // Use PORT from environment or fallback to port 5000
+  let port = parseInt(process.env.PORT || '5000', 10);
 
   // Function to find an available port
   const startServer = () => {
