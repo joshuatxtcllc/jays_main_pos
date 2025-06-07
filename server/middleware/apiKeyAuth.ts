@@ -23,6 +23,12 @@ const API_KEYS: Record<string, {
     permissions: ['orders:create', 'orders:read', 'orders:update', 'pricing:read', 'files:upload'],
     created: new Date().toISOString(),
     lastUsed: null
+  },
+  'jf_houston_heights_framing_2025_master_api_key_secure_access': {
+    name: 'Houston Heights Framing API Integration',
+    permissions: ['orders:read', 'orders:write', 'integration:webhook', 'pricing:read', 'catalog:read'],
+    created: new Date().toISOString(),
+    lastUsed: null
   }
 };
 

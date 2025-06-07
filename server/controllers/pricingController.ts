@@ -33,7 +33,7 @@ export async function calculatePrice(req: Request, res: Response) {
 
     // Extract frame pricing method if available
     const framePricingMethod = req.body.framePricingMethod || 'chop';
-    
+
     // Create calculation parameters
     const params: FramePricingParams = {
       frameId: frameId || 'none',

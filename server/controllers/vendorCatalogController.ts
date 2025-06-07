@@ -53,11 +53,11 @@ export async function getLarsonJuhlWholesalePricingByCollection(req: Request, re
   try {
     const collection = req.params.collection;
     console.log(`Fetching Larson-Juhl wholesale pricing data for collection: ${collection}`);
-    
+
     if (!collection) {
       return res.status(400).json({ message: 'Collection name is required' });
     }
-    
+
     const prices = getLarsonJuhlWholesalePricesByCollection(collection);
     res.json(prices);
   } catch (error: any) {
@@ -158,47 +158,47 @@ export async function getAllVendorFrames(req: Request, res: Response) {
 export async function searchFramesByItemNumber(req: Request, res: Response) {
   try {
     const { itemNumber } = req.params;
-    
+
     if (!itemNumber) {
       return res.status(400).json([]);
     }
-    
+
     console.log(`Searching for frame with item number: ${itemNumber} across vendor APIs`);
-    
+
     // First try the new vendor API service
     try {
       const matchingFrames = await vendorApiService.searchFrames(itemNumber);
-      
+
       if (matchingFrames.length > 0) {
         console.log(`Found ${matchingFrames.length} frames matching item number ${itemNumber} in vendor APIs`);
         return res.json(matchingFrames);
       }
-      
+
       // If no matches found in vendor APIs, try database search
       console.log(`No frames found in vendor APIs, checking database`);
-      
+
       // Try database search using IStorage
       const databaseFrames = await storage.searchFramesByItemNumber(itemNumber);
-      
+
       if (databaseFrames.length > 0) {
         console.log(`Found ${databaseFrames.length} frames matching item number ${itemNumber} in database`);
         return res.json(databaseFrames);
       }
-      
+
       // Finally, fall back to catalog service if needed
       console.log(`No frames found in database, falling back to catalog service`);
       const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
-      
+
       console.log(`Found ${catalogFrames.length} frames matching item number ${itemNumber} in catalog service`);
       return res.json(catalogFrames); // Always return array, even if empty
-      
+
     } catch (apiError) {
       console.error('Error using direct vendor API, falling back to catalog service:', apiError);
-      
+
       try {
         // Fall back to catalog service
         const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
-        
+
         console.log(`Fallback search found ${catalogFrames.length} frames matching item number ${itemNumber}`);
         return res.json(catalogFrames); // Always return array, even if empty
       } catch (catalogError) {

@@ -199,18 +199,18 @@ export async function generateApiKey(req: Request, res: Response) {
     // Set content type header to ensure JSON response
     res.setHeader('Content-Type', 'application/json');
     
-    // Generate a secure API key
-    const apiKey = 'jf_' + crypto.randomBytes(32).toString('hex');
+    // Use a fixed API key for now
+    const apiKey = 'jf_houston_heights_framing_2025_master_api_key_secure_access';
 
     const keyInfo = {
       key: apiKey,
-      name: 'Jay\'s Frames API Integration',
-      permissions: ['orders:read', 'orders:write', 'integration:webhook'],
+      name: 'Houston Heights Framing API Integration',
+      permissions: ['orders:read', 'orders:write', 'integration:webhook', 'pricing:read', 'catalog:read'],
       createdAt: new Date().toISOString(),
       lastUsed: null
     };
 
-    console.log('Generated API Key:', apiKey);
+    console.log('API Key provided:', apiKey);
 
     const response = {
       success: true,
@@ -220,7 +220,9 @@ export async function generateApiKey(req: Request, res: Response) {
         baseUrl: process.env.REPL_URL || 'https://your-repl-url.replit.dev',
         orders: '/api/integration/orders',
         webhook: '/api/integration/webhook',
-        status: '/api/integration/status'
+        status: '/api/integration/status',
+        pricing: '/api/pricing/calculate',
+        catalog: '/api/vendor-catalog/frames'
       },
       authentication: {
         method: 'Bearer Token',
