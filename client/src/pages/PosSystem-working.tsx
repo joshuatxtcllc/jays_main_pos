@@ -1,15 +1,34 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
-import { ArtworkSizeDetector } from '@/components/ArtworkSizeDetector';
-import { MatboardSelector } from '@/components/MatboardSelector';
 import OrderSummary from '@/components/OrderSummary';
 import ManualFrameEntry from '@/components/ManualFrameEntry';
 import SpecialServices from '@/components/SpecialServices';
 import MiscellaneousCharges from '@/components/MiscellaneousCharges';
-import { Frame, MatColor, GlassOption, SelectedFrame, SelectedMatboard, SpecialService, MiscCharge, InsertOrder, InsertCustomer } from '@shared/schema';
-import { glassOptionCatalog, filterFrames } from '@/lib/catalog-data';
+import { Frame, MatColor, InsertOrder, InsertCustomer } from '@shared/schema';
+
+// Simple glass options for the catalog
+const glassOptions = [
+  {
+    id: 'regular-glass',
+    name: 'Regular Glass',
+    description: 'Standard clear glass for basic protection',
+    price: '0.45'
+  },
+  {
+    id: 'uv-protection-glass',
+    name: 'UV Protection Glass',
+    description: 'Blocks 99% of harmful UV rays to prevent fading',
+    price: '1.25'
+  },
+  {
+    id: 'museum-glass',
+    name: 'Museum Glass',
+    description: 'Ultimate clarity with maximum UV protection',
+    price: '2.85'
+  }
+];
 
 const PosSystem = () => {
   // Customer info state
@@ -20,34 +39,24 @@ const PosSystem = () => {
   // Artwork dimensions state
   const [artworkWidth, setArtworkWidth] = useState(16);
   const [artworkHeight, setArtworkHeight] = useState(20);
-  const [aspectRatio, setAspectRatio] = useState(0.8);
-  const [artworkImage, setArtworkImage] = useState<string | null>(null);
-  const [frameDesignImage, setFrameDesignImage] = useState<string | null>(null);
   const [artworkType, setArtworkType] = useState('print');
   const [artworkDescription, setArtworkDescription] = useState('');
   const [artworkLocation, setArtworkLocation] = useState('');
 
   // Frame selection state
-  const [selectedFrames, setSelectedFrames] = useState<SelectedFrame[]>([]);
-  const [useMultipleFrames, setUseMultipleFrames] = useState(false);
-  const [activeFramePosition, setActiveFramePosition] = useState(1);
-  const [materialFilter, setMaterialFilter] = useState('all');
-  const [manufacturerFilter, setManufacturerFilter] = useState('all');
-  const [widthFilter, setWidthFilter] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
+  const [selectedFrames, setSelectedFrames] = useState<any[]>([]);
   const [frameSearch, setFrameSearch] = useState('');
 
   // Mat selection state
-  const [selectedMatboards, setSelectedMatboards] = useState<SelectedMatboard[]>([]);
+  const [selectedMatboards, setSelectedMatboards] = useState<any[]>([]);
   const [useMultipleMats, setUseMultipleMats] = useState(false);
   const [activeMatPosition, setActiveMatPosition] = useState(1);
   const [primaryMatWidth, setPrimaryMatWidth] = useState(2);
-  const [matManufacturerFilter, setMatManufacturerFilter] = useState('all');
 
   // Glass and services state
-  const [selectedGlassOption, setSelectedGlassOption] = useState<GlassOption>(glassOptionCatalog[0]);
-  const [selectedServices, setSelectedServices] = useState<SpecialService[]>([]);
-  const [miscCharges, setMiscCharges] = useState<MiscCharge[]>([]);
+  const [selectedGlassOption, setSelectedGlassOption] = useState(glassOptions[0]);
+  const [selectedServices, setSelectedServices] = useState<any[]>([]);
+  const [miscCharges, setMiscCharges] = useState<any[]>([]);
 
   // Manual frame entry state
   const [useManualFrame, setUseManualFrame] = useState(false);
@@ -67,77 +76,50 @@ const PosSystem = () => {
     queryKey: ['/api/mat-colors'],
   });
 
-  // Filter frames based on current filters
-  const filteredFrames = filterFrames(frames, {
-    material: materialFilter,
-    manufacturer: manufacturerFilter,
-    width: widthFilter,
-    price: priceFilter,
-    search: frameSearch
-  });
-
-  // Filter matboards
-  const filteredMatboards = matboards.filter(mat => {
-    if (matManufacturerFilter === 'all') return true;
-    return mat.manufacturer === matManufacturerFilter;
-  });
-
-  // Get unique mat categories for organization
-  const matCategories = [...new Set(filteredMatboards.map(mat => mat.category).filter(Boolean))];
+  // Filter frames based on search
+  const filteredFrames = frames.filter(frame => 
+    !frameSearch || frame.name?.toLowerCase().includes(frameSearch.toLowerCase()) ||
+    frame.material?.toLowerCase().includes(frameSearch.toLowerCase()) ||
+    frame.manufacturer?.toLowerCase().includes(frameSearch.toLowerCase())
+  );
 
   // Handle frame selection
-  const handleSelectFrame = (frame: Frame, position: number, pricingMethod: string = 'chop') => {
+  const handleSelectFrame = (frame: Frame) => {
     setSelectedFrames(prev => {
-      const existing = prev.find(f => f.position === position);
-      if (existing && existing.frame.id === frame.id) {
-        return prev.filter(f => f.position !== position);
+      const existing = prev.find(f => f.frame.id === frame.id);
+      if (existing) {
+        return prev.filter(f => f.frame.id !== frame.id);
       }
       
-      const newFrameSelection: SelectedFrame = {
+      return [...prev, {
         frame,
-        position,
-        pricingMethod
-      };
-      
-      return prev.filter(f => f.position !== position).concat(newFrameSelection);
+        position: 1,
+        pricingMethod: 'chop',
+        distance: 0
+      }];
     });
   };
 
   // Handle mat selection
-  const handleMatSelect = (matboard: MatColor, position: number) => {
+  const handleMatSelect = (matboard: MatColor) => {
     setSelectedMatboards(prev => {
-      const existing = prev.find(m => m.position === position);
-      if (existing && existing.matboard.id === matboard.id) {
-        return prev.filter(m => m.position !== position);
+      const existing = prev.find(m => m.matboard.id === matboard.id);
+      if (existing) {
+        return prev.filter(m => m.matboard.id !== matboard.id);
       }
       
-      const newMatSelection: SelectedMatboard = {
+      return [...prev, {
         matboard,
-        position,
-        width: primaryMatWidth
-      };
-      
-      return prev.filter(m => m.position !== position).concat(newMatSelection);
+        position: activeMatPosition,
+        width: primaryMatWidth,
+        offset: 0
+      }];
     });
-  };
-
-  // Handle mat width change
-  const handleMatWidthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const newWidth = parseFloat(event.target.value);
-    setPrimaryMatWidth(newWidth);
-    
-    setSelectedMatboards(prev => 
-      prev.map(mat => 
-        mat.position === activeMatPosition 
-          ? { ...mat, width: newWidth }
-          : mat
-      )
-    );
   };
 
   // Handle glass option change
   const handleGlassOptionChange = (glassId: string) => {
-    const glass = glassOptionCatalog.find(g => g.id === glassId);
+    const glass = glassOptions.find(g => g.id === glassId);
     if (glass) {
       setSelectedGlassOption(glass);
     }
@@ -153,7 +135,7 @@ const PosSystem = () => {
 
   // Create order mutation
   const createOrderMutation = useMutation({
-    mutationFn: async (orderData: InsertOrder) => {
+    mutationFn: async (orderData: any) => {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -204,10 +186,10 @@ const PosSystem = () => {
       });
 
       // Create order
-      const orderData: InsertOrder = {
+      const orderData = {
         customerId: customer.id,
-        artworkWidth,
-        artworkHeight,
+        artworkWidth: artworkWidth.toString(),
+        artworkHeight: artworkHeight.toString(),
         artworkType,
         artworkDescription,
         artworkLocation,
@@ -216,13 +198,13 @@ const PosSystem = () => {
         glassOption: selectedGlassOption.id,
         specialServices: selectedServices,
         miscCharges,
-        subtotal: 0, // Will be calculated by server
-        tax: 0,
-        total: 0,
+        subtotal: '0',
+        tax: '0',
+        total: '0',
         status: 'pending',
         useManualFrame,
         manualFrameName: useManualFrame ? manualFrameName : undefined,
-        manualFrameCost: useManualFrame ? manualFrameCost : undefined,
+        manualFrameCost: useManualFrame ? manualFrameCost.toString() : undefined,
       };
 
       await createOrderMutation.mutateAsync(orderData);
@@ -235,7 +217,7 @@ const PosSystem = () => {
     }
   };
 
-  // Handle save quote (placeholder)
+  // Handle save quote
   const handleSaveQuote = () => {
     toast({
       title: "Quote Saved",
@@ -243,7 +225,7 @@ const PosSystem = () => {
     });
   };
 
-  // Handle create wholesale order (placeholder)
+  // Handle create wholesale order
   const handleCreateWholesaleOrder = () => {
     toast({
       title: "Wholesale Order Created",
@@ -338,26 +320,17 @@ const PosSystem = () => {
       {/* Full Width Frame Preview Section */}
       <div className="mb-6">
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <ArtworkSizeDetector 
-            defaultWidth={artworkWidth}
-            defaultHeight={artworkHeight}
-            frames={selectedFrames}
-            mats={selectedMatboards}
-            useMultipleFrames={useMultipleFrames}
-            useMultipleMats={useMultipleMats}
-            onDimensionsDetected={(dimensions, imageDataUrl) => {
-              setArtworkWidth(dimensions.width);
-              setArtworkHeight(dimensions.height);
-              setAspectRatio(dimensions.width / dimensions.height);
-              setArtworkImage(imageDataUrl);
-
-              toast({
-                title: "Artwork Dimensions Detected",
-                description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
-              });
-            }}
-            onFrameImageCaptured={setFrameDesignImage}
-          />
+          <h2 className="text-xl font-semibold mb-4 header-underline">Frame Preview</h2>
+          <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div className="text-center">
+              <p className="text-lg text-gray-600 dark:text-gray-400">
+                Frame Preview Area - {artworkWidth}" x {artworkHeight}"
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                {selectedFrames.length} frame(s) selected, {selectedMatboards.length} mat(s) selected
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -386,23 +359,26 @@ const PosSystem = () => {
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
                   <span className="ml-3 text-gray-500">Loading frames...</span>
                 </div>
+              ) : filteredFrames.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <p>No frames found.</p>
+                </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {filteredFrames.map(frame => (
                     <div 
                       key={frame.id}
-                      className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden ${selectedFrames.some(f => f.frame.id === frame.id) ? 'border-2 border-primary' : ''}`}
-                      onClick={() => handleSelectFrame(frame, activeFramePosition)}
+                      className={`cursor-pointer hover:scale-105 transform transition-transform duration-200 relative rounded overflow-hidden ${selectedFrames.some(f => f.frame.id === frame.id) ? 'border-2 border-primary' : 'border border-gray-300'}`}
+                      onClick={() => handleSelectFrame(frame)}
                     >
                       <div 
                         className="w-full h-24 bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center"
                         style={{
                           backgroundColor: frame.color || '#8B4513',
-                          backgroundImage: `repeating-linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.1) 2px, transparent 2px, transparent 8px)`
                         }}
                       >
                         <span className="text-white text-xs font-mono tracking-tight opacity-70">
-                          {frame.manufacturer.split('-')[0]} #{frame.id.split('-')[1]}
+                          {frame.manufacturer?.split('-')[0]} #{frame.id?.split('-')[1]}
                         </span>
                       </div>
                       <div className="bg-black/70 text-white text-xs p-1 absolute bottom-0 left-0 right-0">
@@ -437,12 +413,35 @@ const PosSystem = () => {
               </label>
             </div>
 
-            <MatboardSelector
-              onMatSelect={handleMatSelect}
-              selectedMats={selectedMatboards}
-              activePosition={activeMatPosition}
-              useMultiple={useMultipleMats}
-            />
+            {/* Mat Grid */}
+            <div className="h-64 overflow-y-auto p-2 border border-light-border dark:border-dark-border rounded-lg">
+              {matboardsLoading ? (
+                <div className="flex justify-center items-center h-full">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+                  <span className="ml-3 text-gray-500">Loading mats...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-8 gap-2">
+                  {matboards.map(matboard => (
+                    <div
+                      key={matboard.id}
+                      className={`cursor-pointer hover:scale-110 transform transition-transform duration-200 relative ${
+                        selectedMatboards.some(m => m.matboard.id === matboard.id) 
+                          ? 'ring-2 ring-primary ring-offset-1' 
+                          : ''
+                      }`}
+                      onClick={() => handleMatSelect(matboard)}
+                      title={`${matboard.name} - ${matboard.manufacturer}`}
+                    >
+                      <div
+                        className="w-8 h-8 rounded-md border border-gray-300 shadow-sm"
+                        style={{ backgroundColor: matboard.color || '#FFFFFF' }}
+                      ></div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -451,27 +450,27 @@ const PosSystem = () => {
           <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4 header-underline">Glass Options</h2>
             <div className="grid grid-cols-1 gap-4">
-              {glassOptionCatalog.map(glassOption => (
+              {glassOptions.map(glassOption => (
                 <div 
                   key={glassOption.id}
-                  className={`border ${selectedGlassOption.id === glassOption.id ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-white dark:bg-dark-bg`}
+                  className={`border ${selectedGlassOption.id === glassOption.id ? 'border-primary' : 'border-gray-300'} rounded-lg p-3 cursor-pointer hover:border-primary transition-colors`}
                   onClick={() => handleGlassOptionChange(glassOption.id)}
                 >
                   <div className="flex justify-between items-start">
                     <div>
                       <h4 className="font-medium">{glassOption.name}</h4>
-                      <p className="text-sm text-light-textSecondary dark:text-dark-textSecondary">
+                      <p className="text-sm text-gray-600">
                         {glassOption.description}
                       </p>
                     </div>
-                    <div className={`flex h-5 w-5 ${selectedGlassOption.id === glassOption.id ? 'border border-primary' : 'border border-gray-300 dark:border-dark-border'} rounded-full items-center justify-center`}>
+                    <div className={`flex h-5 w-5 ${selectedGlassOption.id === glassOption.id ? 'border border-primary' : 'border border-gray-300'} rounded-full items-center justify-center`}>
                       {selectedGlassOption.id === glassOption.id && (
                         <div className="h-3 w-3 bg-primary rounded-full"></div>
                       )}
                     </div>
                   </div>
                   <div className="mt-2 text-sm text-right">
-                    ${parseFloat(String(glassOption.price)) * 100}/sq ft
+                    ${parseFloat(glassOption.price) * 100}/sq ft
                   </div>
                 </div>
               ))}
@@ -563,7 +562,7 @@ const PosSystem = () => {
           onSaveQuote={handleSaveQuote}
           onCreateWholesaleOrder={handleCreateWholesaleOrder}
           useMultipleMats={useMultipleMats}
-          useMultipleFrames={useMultipleFrames}
+          useMultipleFrames={false}
           addToWholesaleOrder={addToWholesaleOrder}
           setAddToWholesaleOrder={setAddToWholesaleOrder}
           orderId={1}

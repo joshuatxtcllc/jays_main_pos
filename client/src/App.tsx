@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import Header from "./components/Header";
-import PosSystem from "./pages/PosSystem";
+import PosSystem from "./pages/PosSystem-working";
 import Orders from "./pages/Orders";
 import Dashboard from "./pages/Dashboard";
 import Checkout from "./pages/Checkout";
