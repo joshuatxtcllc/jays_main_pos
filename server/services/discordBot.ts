@@ -155,6 +155,38 @@ class DiscordBot {
     await this.sendNotification(channelId, alertMessage);
   }
 
+  public async sendDirectMessage(userId: string, message: string) {
+    try {
+      const user = await this.client.users.fetch(userId);
+      const dmChannel = await user.createDM();
+      await dmChannel.send(message);
+      return true;
+    } catch (error) {
+      console.error('Failed to send Discord DM:', error);
+      return false;
+    }
+  }
+
+  public async sendOrderStatusDM(userId: string, orderId: string, status: string, details?: string) {
+    const message = `🔔 **Order Update - Jays Frames**\n\nYour order #${orderId} status has been updated to: **${status}**${details ? `\n\n${details}` : ''}\n\nThank you for choosing Jays Frames!`;
+    return await this.sendDirectMessage(userId, message);
+  }
+
+  public async sendCompletionNoticeDM(userId: string, orderId: string, pickupInfo?: string) {
+    const message = `✅ **Your Frame is Ready!**\n\nGreat news! Your order #${orderId} is complete and ready for pickup.${pickupInfo ? `\n\n📍 **Pickup Details:**\n${pickupInfo}` : ''}\n\nWe can't wait for you to see your beautiful custom frame!`;
+    return await this.sendDirectMessage(userId, message);
+  }
+
+  public async sendEstimateUpdateDM(userId: string, orderId: string, estimatedDays: number) {
+    const message = `📅 **Timeline Update - Jays Frames**\n\nYour order #${orderId} estimated completion has been updated to ${estimatedDays} days.\n\nWe'll keep you posted on any changes!`;
+    return await this.sendDirectMessage(userId, message);
+  }
+
+  public async sendCustomNotificationDM(userId: string, title: string, message: string) {
+    const formattedMessage = `**${title}**\n\n${message}\n\n- Jays Frames Team`;
+    return await this.sendDirectMessage(userId, formattedMessage);
+  }
+
   public async stop() {
     this.client.destroy();
   }

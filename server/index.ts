@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import DiscordBot from './services/discordBot.js';
+import UnifiedNotificationService from './services/unifiedNotificationService.js';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
@@ -11,9 +12,13 @@ import cors from "cors";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize Discord bot
+// Initialize Discord bot and unified notification service
 const discordBot = new DiscordBot();
+const notificationService = new UnifiedNotificationService(discordBot);
 discordBot.start();
+
+// Make notification service available to routes
+app.locals.notificationService = notificationService;
 
 // CORS setup for API requests
 app.use(cors({
