@@ -16,6 +16,9 @@ import artLocationRoutes from './routes/artLocationRoutes';
 import hubApiRoutes from './routes/hubApiRoutes';
 import hubAdminRoutes from './routes/hubAdminRoutes';
 import { getMaterialsPickList, getMaterialsBySupplier, getMaterialsForOrder, updateMaterial, createPurchaseOrder, getMaterialTypes, getMaterialSuppliers } from './controllers/materialsController';
+import integrationApiRoutes from './routes/integrationApiRoutes';
+import ordersRoutes from './routes/ordersRoutes';
+import customersRoutes from './routes/customersRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -127,6 +130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hub Integration API Routes
   app.use('/api/hub', hubApiRoutes);
   app.use('/api/hub-admin', hubAdminRoutes);
+  app.use('/api', integrationApiRoutes);
+  app.use('/api', ordersRoutes);
+  app.use('/api', customersRoutes);
 
   // Materials API Routes
   app.get('/api/materials/pick-list', getMaterialsPickList);
