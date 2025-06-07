@@ -1,4 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
+import DiscordBot from './services/discordBot.js';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import path from 'path';
@@ -8,6 +9,11 @@ import { dirname } from 'path';
 import cors from "cors";
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Initialize Discord bot
+const discordBot = new DiscordBot();
+discordBot.start();
 
 // CORS setup for API requests
 app.use(cors({
@@ -74,7 +80,6 @@ app.use((req, res, next) => {
   }
 
   // Use PORT from environment or fallback to port 5000
-  let port = parseInt(process.env.PORT || "5000");
 
   // Function to find an available port
   const startServer = () => {
