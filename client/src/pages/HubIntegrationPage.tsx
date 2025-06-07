@@ -516,8 +516,6 @@ export default function HubIntegrationPage() {
           </Alert>
         </CardContent>
       </Card>
-        </div>
-      </div>
     </div>
   );
 }
