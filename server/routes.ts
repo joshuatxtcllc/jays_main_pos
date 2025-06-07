@@ -12,7 +12,7 @@ import { validateApiKey, KANBAN_API_KEY } from "./middleware/apiAuth";
 // import webhookRoutes from './routes/webhookRoutes';
 // import { pricingMonitorRoutes } from './routes/pricingMonitorRoutes';
 import artworkLocationRoutes from './routes/artworkLocationRoutes';
-import artLocationRoutes from './routes/artLocationRoutes';
+import { registerArtLocationRoutes } from './routes/artLocationRoutes';
 import hubApiRoutes from './routes/hubApiRoutes';
 import hubAdminRoutes from './routes/hubAdminRoutes';
 import { getMaterialsPickList, getMaterialsBySupplier, getMaterialsForOrder, updateMaterial, createPurchaseOrder, getMaterialTypes, getMaterialSuppliers } from './controllers/materialsController';
@@ -21,6 +21,7 @@ import ordersRoutes from './routes/ordersRoutes';
 import customersRoutes from './routes/customersRoutes';
 import xmlPriceSheetRoutes from './routes/xmlPriceSheetRoutes';
 import larsonOrderOptimizerRoutes from './routes/larsonOrderOptimizerRoutes';
+import discordNotificationRoutes from './routes/discordNotificationRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -70,6 +71,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth status route
   app.get('/api/auth/status', (req, res) => {
     res.json({ authenticated: false, user: null });
+  });
+
+  // Discord bot info endpoint
+  app.get('/api/discord/bot-info', (req, res) => {
+    res.json({
+      botName: 'Jays Frames Ecosystem#5403',
+      status: 'online',
+      availableCommands: [
+        '/order-status - Check order status',
+        '/frame-quote - Get frame quotes',
+        '/production-status - Check production queue',
+        '/inventory-status - Check inventory levels',
+        '/help - Show available commands'
+      ],
+      features: [
+        'Direct message notifications to customers',
+        'Order status updates via Discord DM',
+        'Completion notices when frames are ready',
+        'Estimate updates for timeline changes',
+        'Production alerts for staff'
+      ]
+    });
+  });
+
+  // Test Discord notification endpoint
+  app.post('/api/discord/test-notification', async (req, res) => {
+    try {
+      const { discordUserId, orderId, type, message } = req.body;
+      
+      if (!discordUserId) {
+        return res.status(400).json({ error: 'Discord user ID is required' });
+      }
+
+      const notificationService = req.app.locals.notificationService;
+      
+      const testCustomer = {
+        id: 1,
+        email: 'customer@example.com',
+        discordUserId: discordUserId,
+        preferences: {
+          discord: true,
+          email: true,
+          inApp: true,
+          sms: false
+        }
+      };
+
+      let result;
+      
+      switch (type) {
+        case 'order_update':
+          result = await notificationService.sendOrderStatusUpdate(
+            testCustomer, 
+            orderId || 123, 
+            'In Production',
+            message || 'Your custom frame is now being crafted by our artisans.'
+          );
+          break;
+          
+        case 'completion':
+          result = await notificationService.sendCompletionNotice(
+            testCustomer,
+            orderId || 123,
+            message || 'Ready for pickup at our studio during business hours.'
+          );
+          break;
+          
+        case 'estimate':
+          result = await notificationService.sendEstimateUpdate(
+            testCustomer,
+            orderId || 123,
+            7
+          );
+          break;
+          
+        default:
+          result = await notificationService.notifyCustomer(testCustomer, {
+            title: 'Test Notification',
+            message: message || 'This is a test notification from Jays Frames.',
+            type: 'custom',
+            urgency: 'normal'
+          });
+      }
+
+      res.json({
+        success: true,
+        message: 'Discord notification sent successfully',
+        details: result
+      });
+
+    } catch (error) {
+      console.error('Error sending Discord notification:', error);
+      res.status(500).json({ 
+        error: 'Failed to send Discord notification',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   // External Kanban Integration - Fetch orders from external Kanban app
@@ -206,6 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', customersRoutes);
   app.use('/api/xml-price-sheets', xmlPriceSheetRoutes);
   app.use('/api/larson-optimizer', larsonOrderOptimizerRoutes);
+  app.use('/api/discord', discordNotificationRoutes);
 
   // Materials API Routes
   app.get('/api/materials/pick-list', getMaterialsPickList);
