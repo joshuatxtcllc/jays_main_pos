@@ -37,6 +37,8 @@ import { AuthProvider } from './hooks/use-auth';
 import { IntuitivePerformanceMonitor } from './components/IntuitivePerformanceMonitor';
 import MobileNavMenu from './components/MobileNavMenu';
 import { lazy } from 'react';
+import PricingMonitorPage from './pages/PricingMonitorPage';
+import LarsonOptimizerPage from './pages/LarsonOptimizerPage';
 // Import the notification service
 import { notificationService } from "./lib/notificationService";
 
@@ -143,6 +145,8 @@ function App() {
                       <Route path="/webhook-integration" component={WebhookIntegrationPage} />
                       <Route path="/mat-border-demo" component={MatBorderDemo} />
                       <Route path="/system-health" component={SystemHealthPage} />
+                      <Route path="/pricing-monitor" element={<PricingMonitorPage />} />
+                      <Route path="/larson-optimizer" element={<LarsonOptimizerPage />} />
                       <Route component={NotFound} />
                     </Switch>
                   </main>
