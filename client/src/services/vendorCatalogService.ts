@@ -69,14 +69,21 @@ export async function fetchAllVendorFrames(): Promise<Frame[]> {
 export async function searchFramesByItemNumber(itemNumber: string): Promise<Frame[]> {
   try {
     const response = await apiRequest('GET', `/api/vendor-catalog/search/${itemNumber}`);
-    return await response.json();
-  } catch (error) {
-    // If the request returns a 404, return an empty array
-    if (error instanceof Response && error.status === 404) {
-      return [];
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`No frames found for item number: ${itemNumber}`);
+        return [];
+      }
+      throw new Error(`Search failed with status: ${response.status}`);
     }
+    
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
     console.error(`Error searching for frames with item number ${itemNumber}:`, error);
-    throw error;
+    // Return empty array instead of throwing to prevent UI crashes
+    return [];
   }
 }
 

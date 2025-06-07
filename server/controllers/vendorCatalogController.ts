@@ -160,7 +160,10 @@ export async function searchFramesByItemNumber(req: Request, res: Response) {
     const { itemNumber } = req.params;
     
     if (!itemNumber) {
-      return res.status(400).json({ message: 'Item number is required' });
+      return res.status(400).json({ 
+        message: 'Item number is required',
+        frames: []
+      });
     }
     
     console.log(`Searching for frame with item number: ${itemNumber} across vendor APIs`);
@@ -189,27 +192,25 @@ export async function searchFramesByItemNumber(req: Request, res: Response) {
       console.log(`No frames found in database, falling back to catalog service`);
       const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
       
-      if (catalogFrames.length === 0) {
-        return res.status(404).json({ message: `No frames found with item number: ${itemNumber}` });
-      }
-      
       console.log(`Found ${catalogFrames.length} frames matching item number ${itemNumber} in catalog service`);
-      return res.json(catalogFrames);
+      return res.json(catalogFrames); // Always return array, even if empty
+      
     } catch (apiError) {
       console.error('Error using direct vendor API, falling back to catalog service:', apiError);
       
       // Fall back to catalog service
       const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
       
-      if (catalogFrames.length === 0) {
-        return res.status(404).json({ message: `No frames found with item number: ${itemNumber}` });
-      }
-      
-      return res.json(catalogFrames);
+      console.log(`Fallback search found ${catalogFrames.length} frames matching item number ${itemNumber}`);
+      return res.json(catalogFrames); // Always return array, even if empty
     }
   } catch (error: any) {
     console.error('Error searching frames by item number:', error);
-    res.status(500).json({ message: 'Failed to search for frames', error: error.message });
+    res.status(500).json({ 
+      message: 'Failed to search for frames', 
+      error: error.message,
+      frames: []
+    });
   }
 }
 

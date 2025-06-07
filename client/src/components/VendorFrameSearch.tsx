@@ -65,7 +65,7 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame, po
     }
   }, [searchError, toast, localIsSearching]);
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!itemNumber.trim()) {
       toast({
         title: "Search Error",
@@ -76,8 +76,19 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame, po
     }
 
     setLocalIsSearching(true);
-    // Use the searchByItemNumber mutation
-    searchByItemNumber(itemNumber.trim());
+    try {
+      // Use the searchByItemNumber mutation
+      await searchByItemNumber(itemNumber.trim());
+    } catch (error) {
+      console.error('Search error:', error);
+      toast({
+        title: "Search Error",
+        description: "Failed to search for frames. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLocalIsSearching(false);
+    }
   };
 
   const handleSyncFrames = () => {
