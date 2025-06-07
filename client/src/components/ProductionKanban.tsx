@@ -11,7 +11,6 @@ import { Loader2, AlertTriangle, ArrowLeftCircle, ArrowRightCircle, CalendarIcon
 import { ProductionStatus } from '@shared/schema';
 import { useProduction } from '@/hooks/use-production';
 import { WorkOrder } from './WorkOrder';
-import { Badge } from '@/components/ui/badge';
 import { ExternalKanbanStatus } from './ExternalKanbanStatus';
 import { formatCurrency } from '@/lib/utils';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
