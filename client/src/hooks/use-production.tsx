@@ -18,6 +18,16 @@ export function useProduction({
     queryKey: ['/api/production/kanban'],
     queryFn: async () => {
       try {
+        // First try to fetch from external Kanban app
+        const externalRes = await fetch('/api/kanban/external/orders');
+        if (externalRes.ok) {
+          const externalData = await externalRes.json();
+          if (externalData.success && externalData.orders) {
+            return externalData.orders;
+          }
+        }
+        
+        // Fallback to internal orders if external Kanban is unavailable
         const res = await fetch('/api/production/kanban');
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));

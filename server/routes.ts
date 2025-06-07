@@ -70,6 +70,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ authenticated: false, user: null });
   });
 
+  // External Kanban Integration - Fetch orders from external Kanban app
+  app.get('/api/kanban/external/orders', async (req, res) => {
+    try {
+      const { externalKanbanService } = await import('./services/externalKanbanService');
+      const result = await externalKanbanService.fetchOrders();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        orders: [],
+        error: 'Failed to fetch orders from external Kanban app'
+      });
+    }
+  });
+
+  // External Kanban health check
+  app.get('/api/kanban/external/health', async (req, res) => {
+    try {
+      const { externalKanbanService } = await import('./services/externalKanbanService');
+      const health = await externalKanbanService.healthCheck();
+      res.json(health);
+    } catch (error) {
+      res.status(500).json({
+        status: 'error',
+        connected: false,
+        error: 'Failed to check external Kanban health'
+      });
+    }
+  });
+
+  // Update order status in external Kanban
+  app.post('/api/kanban/external/orders/:orderId/status', async (req, res) => {
+    try {
+      const { orderId } = req.params;
+      const { status, stage, notes } = req.body;
+      
+      const { externalKanbanService } = await import('./services/externalKanbanService');
+      const success = await externalKanbanService.updateOrderStatus(orderId, status, stage, notes);
+      
+      if (success) {
+        res.json({
+          success: true,
+          orderId,
+          updatedStatus: status,
+          stage,
+          notes,
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          error: 'Failed to update order status in external Kanban'
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to update external Kanban order status'
+      });
+    }
+  });
+
   // Kanban Integration API endpoints for production connection
   app.get('/api/kanban/orders', validateApiKey, (req, res) => {
     // Returns all orders with production status for Kanban board

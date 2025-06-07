@@ -8,13 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProductionKanban } from '@/hooks/use-production';
 import { Loader2, AlertTriangle, ArrowLeftCircle, ArrowRightCircle, CalendarIcon, ClipboardList, Mail, Phone, Info, GripVertical, Edit } from 'lucide-react';
-import { Order, ProductionStatus, productionStatuses } from '@shared/schema';
+import { ProductionStatus } from '@shared/schema';
+import { useProduction } from '@/hooks/use-production';
+import { WorkOrder } from './WorkOrder';
+import { Badge } from '@/components/ui/badge';
+import { ExternalKanbanStatus } from './ExternalKanbanStatus';
 import { formatCurrency } from '@/lib/utils';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { OrderEditDialog } from '@/components/OrderEditDialog';
 import { FileText, Send } from 'lucide-react';
-import { WorkOrder } from './WorkOrder';
+import { Order, productionStatuses } from '@shared/schema';
 import { SendPaymentLink } from './SendPaymentLink';
 
 // Define item types for drag and drop
@@ -330,7 +334,7 @@ export function ProductionKanban() {
     error = null, 
     updateOrderStatus: updateStatus = (data) => console.log('Update status called with:', data),
     scheduleOrder = (data) => console.log('Schedule order called with:', data),
-  } = orders || {};
+  } = useProductionKanban();
 
   const [selectedOrderForWorkOrder, setSelectedOrderForWorkOrder] = useState<any>(null);
   const [selectedOrderForPayment, setSelectedOrderForPayment] = useState<any>(null);
