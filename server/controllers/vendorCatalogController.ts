@@ -160,10 +160,7 @@ export async function searchFramesByItemNumber(req: Request, res: Response) {
     const { itemNumber } = req.params;
     
     if (!itemNumber) {
-      return res.status(400).json({ 
-        message: 'Item number is required',
-        frames: []
-      });
+      return res.status(400).json([]);
     }
     
     console.log(`Searching for frame with item number: ${itemNumber} across vendor APIs`);
@@ -198,19 +195,20 @@ export async function searchFramesByItemNumber(req: Request, res: Response) {
     } catch (apiError) {
       console.error('Error using direct vendor API, falling back to catalog service:', apiError);
       
-      // Fall back to catalog service
-      const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
-      
-      console.log(`Fallback search found ${catalogFrames.length} frames matching item number ${itemNumber}`);
-      return res.json(catalogFrames); // Always return array, even if empty
+      try {
+        // Fall back to catalog service
+        const catalogFrames = await vendorCatalogService.searchFramesByItemNumber(itemNumber);
+        
+        console.log(`Fallback search found ${catalogFrames.length} frames matching item number ${itemNumber}`);
+        return res.json(catalogFrames); // Always return array, even if empty
+      } catch (catalogError) {
+        console.error('Catalog service also failed:', catalogError);
+        return res.json([]); // Return empty array if all methods fail
+      }
     }
   } catch (error: any) {
     console.error('Error searching frames by item number:', error);
-    res.status(500).json({ 
-      message: 'Failed to search for frames', 
-      error: error.message,
-      frames: []
-    });
+    res.status(500).json([]);
   }
 }
 

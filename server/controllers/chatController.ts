@@ -83,36 +83,36 @@ const ORDER_NUMBER_REGEX = /order\s+#?(\d+)|#(\d+)|order\s+number\s+(\d+)/i;
 export const processMessage = async (req: Request, res: Response) => {
   try {
     const { message } = req.body;
-    
+
     if (!message) {
       return res.status(400).json({ error: 'Message is required' });
     }
-    
+
     // Check if it's a specific order query first
     const orderMatch = message.match(ORDER_NUMBER_REGEX);
     if (orderMatch) {
       const orderNumber = orderMatch[1] || orderMatch[2] || orderMatch[3];
       const orderInfo = await findOrderByNumber(orderNumber);
-      
+
       if (orderInfo) {
         const statusHistory = await getOrderStatusHistory(orderInfo.id);
         let currentStatus = orderInfo.status;
-        
+
         if (statusHistory && Array.isArray(statusHistory) && statusHistory.length > 0) {
           currentStatus = statusHistory[0].status;
         }
-          
+
         return res.json({
           response: `Order #${orderNumber} is currently ${currentStatus}. It was created on ${new Date(orderInfo.createdAt).toLocaleDateString()} for customer ${orderInfo.customerName}.\n\nThe order contains a ${orderInfo.frameWidth}" × ${orderInfo.frameHeight}" ${orderInfo.frameStyle} frame with ${orderInfo.matDescription || 'no mat'} and ${orderInfo.glassType} glass.\n\nThe total price is $${orderInfo.totalPrice.toFixed(2)}.`
         });
       }
     }
-    
+
     // Check if it's an inventory query
     if (message.toLowerCase().includes('inventory') && 
        (message.toLowerCase().includes('low') || message.toLowerCase().includes('level'))) {
       const lowInventory = await getLowStockAlerts();
-      
+
       if (lowInventory && lowInventory.length > 0) {
         const lowItems = lowInventory.map(item => `${item.name} (${item.currentStock} remaining)`).join('\n- ');
         return res.json({
@@ -124,14 +124,14 @@ export const processMessage = async (req: Request, res: Response) => {
         });
       }
     }
-    
+
     // Check if it's a FAQ
     for (const faq of FAQ_DATA) {
       if (message.toLowerCase().includes(faq.question.toLowerCase().substring(0, 15))) {
         return res.json({ response: faq.answer });
       }
     }
-    
+
     // If we get here, use the OpenAI API
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
@@ -145,12 +145,12 @@ export const processMessage = async (req: Request, res: Response) => {
       max_tokens: 300,
       temperature: 0.7,
     });
-    
+
     const aiResponse = completion.choices[0]?.message?.content || 
       "I'm not sure how to help with that. Could you try rephrasing your question?";
-    
+
     return res.json({ response: aiResponse });
-    
+
   } catch (error) {
     console.error('Error processing chat message:', error);
     res.status(500).json({ error: 'Failed to process message. Please try again.' });
@@ -179,7 +179,7 @@ async function searchFrames(keyword: string, limit: number = 5) {
         )
       )
       .limit(limit);
-    
+
     return searchResults.map(frame => ({
       id: frame.id,
       type: 'frame',
@@ -218,7 +218,7 @@ async function searchMatboards(keyword: string, limit: number = 5) {
         )
       )
       .limit(limit);
-    
+
     return searchResults.map(matboard => ({
       id: matboard.id,
       type: 'matboard',
@@ -255,7 +255,7 @@ async function searchCustomers(keyword: string, limit: number = 3) {
         )
       )
       .limit(limit);
-    
+
     return searchResults.map(customer => ({
       id: `customer-${customer.id}`,
       type: 'customer',
@@ -277,9 +277,9 @@ async function searchOrders(keyword: string, limit: number = 3) {
   try {
     // Try to parse if this is a numeric order ID
     const orderId = parseInt(keyword);
-    
+
     let query;
-    
+
     if (!isNaN(orderId)) {
       // If keyword is a valid order ID, search directly by ID
       query = db
@@ -314,9 +314,9 @@ async function searchOrders(keyword: string, limit: number = 3) {
         )
         .limit(limit);
     }
-    
+
     const searchResults = await query;
-    
+
     return searchResults.map(order => ({
       id: `order-${order.id}`,
       type: 'order',
@@ -336,14 +336,14 @@ async function searchOrders(keyword: string, limit: number = 3) {
  */
 function searchHelp(keyword: string, limit: number = 3) {
   if (!keyword) return [];
-  
+
   const keywordLower = keyword.toLowerCase();
-  
+
   const matchingHelp = helpTopics.filter(topic => 
     topic.name.toLowerCase().includes(keywordLower) || 
     topic.description.toLowerCase().includes(keywordLower)
   ).slice(0, limit);
-  
+
   return matchingHelp;
 }
 
@@ -352,13 +352,13 @@ function searchHelp(keyword: string, limit: number = 3) {
  */
 async function processChatQuery(message: string) {
   const lowerMessage = message.toLowerCase();
-  
+
   // Extract potential keywords
   const words = lowerMessage
     .replace(/[^\w\s]/gi, '')
     .split(/\s+/)
     .filter(word => word.length > 2); // Filter out short words
-  
+
   // Handle common greeting patterns
   if (/^(hi|hello|hey|howdy)/i.test(lowerMessage)) {
     return {
@@ -366,7 +366,7 @@ async function processChatQuery(message: string) {
       searchResults: []
     };
   }
-  
+
   // Handle help requests
   if (/how (do|can) (i|we)|help|guide|tutorial|instructions/i.test(lowerMessage)) {
     let helpResponse = "Here are some help topics that might assist you:";
@@ -375,7 +375,7 @@ async function processChatQuery(message: string) {
       searchResults: searchHelp(message, 5)
     };
   }
-  
+
   // Handle navigation requests
   if (/where|find|go to|navigate|take me/i.test(lowerMessage)) {
     if (/customer|client/i.test(lowerMessage)) {
@@ -392,7 +392,7 @@ async function processChatQuery(message: string) {
         ]
       };
     }
-    
+
     if (/order|framing/i.test(lowerMessage)) {
       return {
         response: "You can manage orders here:",
@@ -407,7 +407,7 @@ async function processChatQuery(message: string) {
         ]
       };
     }
-    
+
     if (/inventory|stock|material/i.test(lowerMessage)) {
       return {
         response: "You can manage inventory here:",
@@ -422,7 +422,7 @@ async function processChatQuery(message: string) {
         ]
       };
     }
-    
+
     if (/payment|checkout|pay/i.test(lowerMessage)) {
       return {
         response: "Here are payment-related pages:",
@@ -445,11 +445,11 @@ async function processChatQuery(message: string) {
       };
     }
   }
-  
+
   // Default to search if no specific pattern matched
   // Combine keywords for better search results
   const searchTerm = words.join(' ');
-  
+
   // Perform searches in parallel
   const [frames, matboards, customers, orders, helpTopics] = await Promise.all([
     searchFrames(searchTerm),
@@ -458,17 +458,17 @@ async function processChatQuery(message: string) {
     searchOrders(searchTerm),
     searchHelp(searchTerm)
   ]);
-  
+
   // Combine all results
   const allResults = [...frames, ...matboards, ...customers, ...orders, ...helpTopics];
-  
+
   if (allResults.length === 0) {
     return {
       response: "I couldn't find anything matching your query. Could you try with different keywords? You can search for frames, matboards, customers, or orders.",
       searchResults: []
     };
   }
-  
+
   return {
     response: `Here are some results for "${message}":`,
     searchResults: allResults
@@ -481,16 +481,16 @@ async function processChatQuery(message: string) {
 export async function handleChatMessage(req: Request, res: Response) {
   try {
     const { message } = req.body;
-    
+
     if (!message) {
       return res.status(400).json({ 
         success: false, 
         error: 'Message is required' 
       });
     }
-    
+
     const response = await processChatQuery(message);
-    
+
     res.json({
       success: true,
       response: response.response,
@@ -503,4 +503,127 @@ export async function handleChatMessage(req: Request, res: Response) {
       error: `Failed to process message: ${error.message}` 
     });
   }
+}
+
+/**
+ * Checks if the message is a search query
+ */
+function isSearchQuery(message: string) {
+  // Implement your logic to determine if the message is a search query
+  // For example, check if it contains keywords like "search", "find", etc.
+  // Or use a more sophisticated NLP technique to analyze the intent of the message
+  return true; // Always returns true
+}
+
+/**
+ * Extracts the search term from the message
+ */
+function extractSearchTerm(message: string) {
+  // Implement your logic to extract the search term from the message
+  // For example, remove any keywords like "search", "find", etc.
+  return message; // Return the message as the search term
+}
+
+/**
+ * Generates a help response
+ */
+function generateHelpResponse(message: string) {
+  // Implement your logic to generate a help response based on the message
+  // For example, check if the message contains keywords like "help", "how to", etc.
+  // Or use a more sophisticated NLP technique to analyze the intent of the message
+  return "I'm sorry, I don't understand your question. Please try again.";
+}
+
+/**
+ * Processes chat messages and performs searches
+ */
+export async function processChatMessage(req: Request, res: Response) {
+  try {
+    const { message } = req.body;
+
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ 
+        response: "Please provide a valid message.",
+        searchResults: []
+      });
+    }
+
+    console.log(`Processing chat message: ${message}`);
+
+    // Check if this is a search query
+    if (isSearchQuery(message)) {
+      try {
+        const searchResponse = await performSearch(message);
+        return res.json(searchResponse);
+      } catch (searchError) {
+        console.error('Search error:', searchError);
+        return res.json({
+          response: "I encountered an error while searching. Please try a different search term or try again later.",
+          searchResults: []
+        });
+      }
+    }
+
+    // Handle other types of messages (help, FAQ, etc.)
+    const response = generateHelpResponse(message);
+    return res.json({ 
+      response,
+      searchResults: []
+    });
+
+  } catch (error) {
+    console.error('Error processing chat message:', error);
+    res.status(500).json({ 
+      response: "I encountered an error while processing your request. Please try again.",
+      searchResults: []
+    });
+  }
+}
+
+/**
+ * Performs a search across all data types
+ */
+async function performSearch(message: string) {
+  const searchTerm = extractSearchTerm(message);
+
+  // Search across all data types with individual error handling
+  const searchPromises = [
+    searchFrames(searchTerm).catch(err => {
+      console.error('Frame search error:', err);
+      return [];
+    }),
+    searchMatboards(searchTerm).catch(err => {
+      console.error('Matboard search error:', err);
+      return [];
+    }),
+    searchCustomers(searchTerm).catch(err => {
+      console.error('Customer search error:', err);
+      return [];
+    }),
+    searchOrders(searchTerm).catch(err => {
+      console.error('Order search error:', err);
+      return [];
+    }),
+    searchHelp(searchTerm).catch(err => {
+      console.error('Help search error:', err);
+      return [];
+    })
+  ];
+
+  const [frames, matboards, customers, orders, helpTopics] = await Promise.all(searchPromises);
+
+  // Combine all results
+  const allResults = [...frames, ...matboards, ...customers, ...orders, ...helpTopics];
+
+  if (allResults.length === 0) {
+    return {
+      response: "I couldn't find anything matching your query. Could you try with different keywords? You can search for frames, matboards, customers, or orders.",
+      searchResults: []
+    };
+  }
+
+  return {
+    response: `Here are some results for "${searchTerm}":`,
+    searchResults: allResults
+  };
 }

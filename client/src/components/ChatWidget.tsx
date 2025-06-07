@@ -102,24 +102,24 @@ const ChatWidget: React.FC = () => {
       sender: 'user',
       timestamp: new Date()
     };
-    
+
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
     setIsSearching(true);
-    
+
     try {
       // Send message to API for processing
       const response = await apiRequest('POST', '/api/chat', {
         message: userMessage.content
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to get response from assistant');
       }
-      
+
       const data = await response.json();
-      
+
       // Add system response
       const systemMessage: ChatMessage = {
         id: `system-${Date.now()}`,
@@ -127,9 +127,9 @@ const ChatWidget: React.FC = () => {
         sender: 'system',
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, systemMessage]);
-      
+
       // Update search results if any
       if (data.searchResults && data.searchResults.length > 0) {
         setSearchResults(data.searchResults);
@@ -137,25 +137,27 @@ const ChatWidget: React.FC = () => {
         setSearchResults([]);
       }
     } catch (error) {
-      console.error('Chat API error:', error);
-      // Fallback message if API fails
+      console.error('Chat search error:', error);
+
       const fallbackMessage: ChatMessage = {
-        id: `system-fallback-${Date.now()}`,
-        content: "I'm having trouble connecting to the search system. Please try again later or use the search bar directly.",
-        sender: 'system',
-        timestamp: new Date()
+        id: `msg-${Date.now()}`,
+        type: 'bot',
+        content: 'I apologize, but I\'m having trouble searching right now. Please try again in a moment, or try searching with different keywords.',
+        timestamp: new Date(),
+        searchResults: []
       };
-      
+
       setMessages(prev => [...prev, fallbackMessage]);
-      
+
       toast({
-        title: 'Search Error',
-        description: 'Failed to process your request. Please try again.',
+        title: 'Search Temporarily Unavailable',
+        description: 'Search is experiencing issues. Please try again shortly.',
         variant: 'destructive'
       });
     } finally {
       setIsTyping(false);
       setIsSearching(false);
+      setSearchResults([]);
     }
   };
 
@@ -208,7 +210,7 @@ const ChatWidget: React.FC = () => {
               <span className="sr-only">Close</span>
             </SheetClose>
           </SheetHeader>
-          
+
           <div 
             ref={messageContainerRef}
             className="px-4 py-2 overflow-y-auto flex-1" 
@@ -229,7 +231,7 @@ const ChatWidget: React.FC = () => {
                 </Card>
               </div>
             ))}
-            
+
             {isTyping && (
               <div className="mb-4">
                 <Card className="max-w-[80%] mr-auto">
@@ -242,7 +244,7 @@ const ChatWidget: React.FC = () => {
                 </Card>
               </div>
             )}
-            
+
             {/* Search results */}
             {searchResults.length > 0 && !isSearching && (
               <div className="mt-4 mb-2">
@@ -284,7 +286,7 @@ const ChatWidget: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           <SheetFooter className="px-4 py-3 border-t">
             <div className="flex w-full">
               <Input

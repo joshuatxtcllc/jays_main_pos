@@ -53,15 +53,19 @@ const VendorFrameSearch: React.FC<VendorFrameSearchProps> = ({ onSelectFrame, po
   // Handle search errors
   useEffect(() => {
     if (searchError) {
+      console.error('Vendor search error:', searchError);
       toast({
         title: "Search Error",
-        description: "Failed to search vendor catalogs. Please try again.",
+        description: "Unable to search vendor catalogs right now. Please try again in a moment.",
         variant: "destructive"
       });
 
       if (localIsSearching) {
         setLocalIsSearching(false);
       }
+      
+      // Clear search results on error
+      setLocalSearchResults([]);
     }
   }, [searchError, toast, localIsSearching]);
 
