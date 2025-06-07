@@ -1162,7 +1162,7 @@ const PosSystem = () => {
                 Art Type
               </label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800"
+                className="w-full p-3 text-base border border-gray-300 rounded-md bg-white text-gray-800 touch-manipulation"
                 value={artworkType}
                 onChange={(e) => setArtworkType(e.target.value)}
               >
@@ -1181,7 +1181,7 @@ const PosSystem = () => {
               </label>
               <input 
                 type="text" 
-                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+                className="w-full p-3 text-base border border-gray-300 rounded-md bg-white text-gray-800 touch-manipulation" 
                 placeholder="Enter artwork description"
                 value={artworkDescription}
                 onChange={(e) => setArtworkDescription(e.target.value)}
@@ -1193,7 +1193,7 @@ const PosSystem = () => {
               </label>
               <input 
                 type="text" 
-                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+                className="w-full p-3 text-base border border-gray-300 rounded-md bg-white text-gray-800 touch-manipulation" 
                 placeholder="Enter physical storage location at shop"
                 value={artworkLocation}
                 onChange={(e) => setArtworkLocation(e.target.value)}
@@ -1272,13 +1272,13 @@ const PosSystem = () => {
           </div>
 
           {/* Frame filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
                 Material
               </label>
               <select 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation"
                 value={materialFilter}
                 onChange={(e) => setMaterialFilter(e.target.value)}
               >
@@ -1294,7 +1294,7 @@ const PosSystem = () => {
                 Manufacturer
               </label>
               <select 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation"
                 value={manufacturerFilter}
                 onChange={(e) => setManufacturerFilter(e.target.value)}
               >
@@ -1310,7 +1310,7 @@ const PosSystem = () => {
                 Width Range
               </label>
               <select 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation"
                 value={widthFilter}
                 onChange={(e) => setWidthFilter(e.target.value)}
               >
@@ -1638,7 +1638,7 @@ const PosSystem = () => {
 
           {/* Glass Options */}
           <h3 className="text-lg font-medium mb-3">Glass Options</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 mb-6">
             {/* Using static glass options catalog for now, will be replaced with API data */}
             {glassOptionCatalog.map(glassOption => (
               <div 
@@ -1691,9 +1691,9 @@ const PosSystem = () => {
       </div>
 
       {/* Right side - Visualizer and Order Summary */}
-      <div className="xl:col-span-4 space-y-6">
+      <div className="lg:col-span-4 space-y-4 lg:space-y-6">
         {/* Unified Artwork Detection and Frame Preview */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4 lg:p-6">
           <ArtworkSizeDetector 
             defaultWidth={artworkWidth}
             defaultHeight={artworkHeight}
