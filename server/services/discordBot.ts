@@ -53,9 +53,20 @@ class DiscordBot {
 • \`/order-status <order-id>\` - Check order status
 • \`/frame-quote <dimensions>\` - Get frame quote
 • \`/production-status\` - View production queue
+• \`/inventory-status [item]\` - Check inventory levels
 • \`/help\` - Show this help message
         `;
         await interaction.reply(helpText);
+      }
+
+      if (interaction.commandName === 'inventory-status') {
+        const item = interaction.options.getString('item');
+        if (item) {
+          await interaction.reply(`Checking inventory for: ${item}`);
+        } else {
+          await interaction.reply('Checking overall inventory status...');
+        }
+        // TODO: Add your inventory checking logic here
       }
     });
   }
@@ -83,7 +94,15 @@ class DiscordBot {
         .setDescription('Check production queue status'),
       new SlashCommandBuilder()
         .setName('help')
-        .setDescription('Show available commands and help')
+        .setDescription('Show available commands and help'),
+      new SlashCommandBuilder()
+        .setName('inventory-status')
+        .setDescription('Check current inventory levels')
+        .addStringOption(option =>
+          option.setName('item')
+            .setDescription('Specific item to check (optional)')
+            .setRequired(false)
+        )
     ].map(command => command.toJSON());
 
     const rest = new REST().setToken(this.token);
