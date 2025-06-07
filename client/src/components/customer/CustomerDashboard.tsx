@@ -389,7 +389,7 @@ export default function CustomerDashboard({ customerId }: { customerId: number }
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => navigate(`/?customerId=${customer.id}`)}
+            onClick={() => navigate(`/pos?customerId=${customer.id}`)}
           >
             Create Order
             <ChevronRight className="ml-1 h-4 w-4" />

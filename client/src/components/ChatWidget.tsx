@@ -286,7 +286,7 @@ const ChatWidget: React.FC = () => {
           </div>
           
           <SheetFooter className="px-4 py-3 border-t">
-            <div className="flex w-full mb-3">
+            <div className="flex w-full">
               <Input
                 ref={inputRef}
                 value={inputValue}
@@ -303,30 +303,6 @@ const ChatWidget: React.FC = () => {
               >
                 <Send className="h-4 w-4" />
               </Button>
-            </div>
-            
-            {/* Custom Footer */}
-            <div className="text-center text-xs text-muted-foreground border-t pt-3">
-              <div className="mb-2">
-                <a 
-                  href="http://jaysframes.com" 
-                  className="text-primary hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Website
-                </a>
-                {' · '}
-                <a 
-                  href="mailto:frames@jaysframes.com" 
-                  className="text-primary hover:underline"
-                >
-                  Support
-                </a>
-              </div>
-              <div className="text-muted-foreground/70">
-                © 2025 Jay's Frames · All Rights Reserved
-              </div>
             </div>
           </SheetFooter>
         </SheetContent>

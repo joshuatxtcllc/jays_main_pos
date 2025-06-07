@@ -262,28 +262,6 @@ export const insertLarsonJuhlCatalogSchema = createInsertSchema(larsonJuhlCatalo
 export type InsertLarsonJuhlCatalog = z.infer<typeof insertLarsonJuhlCatalogSchema>;
 export type LarsonJuhlCatalog = typeof larsonJuhlCatalog.$inferSelect;
 
-// Miscellaneous charge interface
-export interface MiscCharge {
-  id: string;
-  description: string;
-  amount: number;
-  type: 'fixed' | 'percentage';
-}
-
-// Selected frame interface for POS
-export interface SelectedFrame {
-  frame: Frame;
-  position: number;
-  pricingMethod: string;
-}
-
-// Selected matboard interface for POS
-export interface SelectedMatboard {
-  matboard: MatColor;
-  position: number;
-  width: number;
-}
-
 // Notification types
 export const notificationTypes = [
   "status_update",
