@@ -19,6 +19,7 @@ import {
   Cell,
 } from 'recharts';
 import { Order, Frame, MatColor, GlassOption, WholesaleOrder } from '@shared/schema';
+import { IntuitivePerformanceMonitor } from '@/components/IntuitivePerformanceMonitor';
 
 // Dashboard overview stats
 interface StatCardProps {
@@ -487,6 +488,9 @@ const Dashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Intuitive Performance Monitor Overlay */}
+      <IntuitivePerformanceMonitor compact={true} updateInterval={5000} />
     </div>
   );
 };

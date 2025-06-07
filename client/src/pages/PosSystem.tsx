@@ -1790,6 +1790,9 @@ const PosSystem = () => {
         />
       </div>
       </div>
+
+      {/* Intuitive Performance Monitor Overlay */}
+      <IntuitivePerformanceMonitor compact={true} updateInterval={3000} />
     </div>
   );
 };

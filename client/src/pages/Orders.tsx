@@ -33,6 +33,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Order, Customer, Frame, MatColor, GlassOption, WholesaleOrder, OrderGroup } from '@shared/schema';
 import { generateOrderQrCode, generateMaterialQrCode } from '@/services/qrCodeService';
+import { IntuitivePerformanceMonitor } from '@/components/IntuitivePerformanceMonitor';
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -480,6 +481,9 @@ const Orders = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Intuitive Performance Monitor Overlay */}
+      <IntuitivePerformanceMonitor compact={true} updateInterval={4000} />
     </div>
   );
 };
