@@ -39,66 +39,28 @@ export class VendorCatalogService {
   }
   
   /**
-   * Gets mock/simulated Larson-Juhl frame data with real catalog URLs
-   * This would be replaced with actual API calls in production
+   * Gets frames from Larson-Juhl API directly (no mock data)
    */
   private async getEnhancedLarsonFrames(): Promise<Frame[]> {
-    const larsonFrames: Frame[] = [
-      {
-        id: "larson-210285",
-        name: "Larson Academie White",
-        manufacturer: "Larson-Juhl",
-        material: "Wood with White Finish",
-        width: "2.25",
-        depth: "1.25",
-        price: "16.75",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210285_fab.jpg",
-        color: "#F5F5F5",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/210285_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/210285_corner.jpg"
-      },
-      {
-        id: "larson-210286",
-        name: "Larson Academie Black",
-        manufacturer: "Larson-Juhl",
-        material: "Wood with Black Finish",
-        width: "2.25",
-        depth: "1.25",
-        price: "16.75",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_fab.jpg",
-        color: "#2C2C2C",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_corner.jpg"
-      },
-      {
-        id: "larson-567103",
-        name: "Larson Paloma Black",
-        manufacturer: "Larson-Juhl",
-        material: "Wood",
-        width: "1.75",
-        depth: "1",
-        price: "14.50",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/567103_fab.jpg",
-        color: "#000000",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/567103_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/567103_corner.jpg"
-      },
-      {
-        id: "larson-350715",
-        name: "Larson Biltmore Walnut",
-        manufacturer: "Larson-Juhl",
-        material: "Walnut",
-        width: "2.5",
-        depth: "1.25",
-        price: "22.75",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/350715_fab.jpg",
-        color: "#5C4033",
-        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/350715_edge.jpg",
-        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/350715_corner.jpg"
-      }
-    ];
+    // This should connect to the real Larson-Juhl API
+    // Use the vendorApiService to get real data
+    const { vendorApiService } = await import('./vendorApiService');
+    const vendorFrames = await vendorApiService.fetchLarsonCatalog();
     
-    return larsonFrames;
+    // Transform VendorFrame to Frame format
+    return vendorFrames.map(frame => ({
+      id: frame.id,
+      name: frame.name,
+      manufacturer: frame.vendor,
+      material: frame.material,
+      width: frame.width,
+      depth: frame.depth,
+      price: frame.price,
+      catalogImage: frame.imageUrl || '',
+      color: frame.color,
+      edgeTexture: '',
+      corner: ''
+    }));
   }
   
   /**
@@ -131,40 +93,27 @@ export class VendorCatalogService {
   }
   
   /**
-   * Gets mock/simulated Nielsen frame data with real catalog URLs
-   * This would be replaced with actual API calls in production
+   * Gets frames from Nielsen/Bella API directly (no mock data)
    */
   private async getEnhancedNielsenFrames(): Promise<Frame[]> {
-    const nielsenFrames: Frame[] = [
-      {
-        id: "nielsen-117",
-        name: "Nielsen Brushed Silver",
-        manufacturer: "Nielsen",
-        material: "Metal",
-        width: "0.625",
-        depth: "0.625",
-        price: "10.25",
-        catalogImage: "https://www.nielsenbainbridge.com/images/products/detail/117-Detail.jpg",
-        color: "#C0C0C0",
-        edgeTexture: "https://www.nielsenbainbridge.com/images/products/detail/117-Edge.jpg",
-        corner: "https://www.nielsenbainbridge.com/images/products/detail/117-Corner.jpg"
-      },
-      {
-        id: "nielsen-93",
-        name: "Nielsen Matte Black",
-        manufacturer: "Nielsen",
-        material: "Metal",
-        width: "0.75",
-        depth: "0.625",
-        price: "11.50",
-        catalogImage: "https://www.nielsenbainbridge.com/images/products/detail/93-Detail.jpg",
-        color: "#000000",
-        edgeTexture: "https://www.nielsenbainbridge.com/images/products/detail/93-Edge.jpg",
-        corner: "https://www.nielsenbainbridge.com/images/products/detail/93-Corner.jpg"
-      }
-    ];
+    // Connect to real API through vendorApiService
+    const { vendorApiService } = await import('./vendorApiService');
+    const vendorFrames = await vendorApiService.fetchBellaCatalog();
     
-    return nielsenFrames;
+    // Transform VendorFrame to Frame format
+    return vendorFrames.map(frame => ({
+      id: frame.id,
+      name: frame.name,
+      manufacturer: frame.vendor,
+      material: frame.material,
+      width: frame.width,
+      depth: frame.depth,
+      price: frame.price,
+      catalogImage: frame.imageUrl || '',
+      color: frame.color,
+      edgeTexture: '',
+      corner: ''
+    }));
   }
   
   /**
@@ -190,27 +139,27 @@ export class VendorCatalogService {
   }
   
   /**
-   * Gets mock/simulated Roma frame data with real catalog URLs
-   * This would be replaced with actual API calls in production
+   * Gets frames from Roma API directly (no mock data)
    */
   private async getEnhancedRomaFrames(): Promise<Frame[]> {
-    const romaFrames: Frame[] = [
-      {
-        id: "roma-307",
-        name: "Roma Gold Ornate",
-        manufacturer: "Roma",
-        material: "Wood with Gold Finish",
-        width: "3.5",
-        depth: "1.25",
-        price: "22.50",
-        catalogImage: "https://www.romaframe.com/images/mouldings/307_fab.jpg",
-        color: "#D4AF37",
-        edgeTexture: "https://www.romaframe.com/images/mouldings/307_edge.jpg",
-        corner: "https://www.romaframe.com/images/mouldings/307_corner.jpg"
-      }
-    ];
+    // Connect to real API through vendorApiService
+    const { vendorApiService } = await import('./vendorApiService');
+    const vendorFrames = await vendorApiService.fetchRomaCatalog();
     
-    return romaFrames;
+    // Transform VendorFrame to Frame format
+    return vendorFrames.map(frame => ({
+      id: frame.id,
+      name: frame.name,
+      manufacturer: frame.vendor,
+      material: frame.material,
+      width: frame.width,
+      depth: frame.depth,
+      price: frame.price,
+      catalogImage: frame.imageUrl || '',
+      color: frame.color,
+      edgeTexture: '',
+      corner: ''
+    }));
   }
   
   /**

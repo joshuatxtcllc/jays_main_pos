@@ -125,12 +125,11 @@ class VendorApiService {
    * Fetch complete catalog from Larson Juhl
    */
   async fetchLarsonCatalog(): Promise<VendorFrame[]> {
-    try {
-      if (!this.larsonConfig.apiKey) {
-        console.warn('Larson API key not configured. Using sample data.');
-        return this.getLarsonSampleFrames();
-      }
+    if (!this.larsonConfig.apiKey) {
+      throw new Error('Larson API key not configured. Please configure API credentials in vendor settings.');
+    }
 
+    try {
       const response = await axios.get<LarsonApiResponse>(
         `${this.larsonConfig.baseUrl}/catalog/frames`,
         {
@@ -160,8 +159,7 @@ class VendorApiService {
       }));
     } catch (error) {
       console.error('Error fetching Larson Juhl catalog:', error);
-      // Fallback to sample data on failure
-      return this.getLarsonSampleFrames();
+      throw new Error(`Failed to fetch Larson Juhl catalog: ${error.message}`);
     }
   }
 
@@ -169,12 +167,11 @@ class VendorApiService {
    * Fetch complete catalog from Roma Moulding
    */
   async fetchRomaCatalog(): Promise<VendorFrame[]> {
-    try {
-      if (!this.romaConfig.apiKey) {
-        console.warn('Roma API key not configured. Using sample data.');
-        return this.getRomaSampleFrames();
-      }
+    if (!this.romaConfig.apiKey) {
+      throw new Error('Roma API key not configured. Please configure API credentials in vendor settings.');
+    }
 
+    try {
       const response = await axios.get<RomaApiResponse>(
         `${this.romaConfig.baseUrl}/catalog/mouldings`,
         {
@@ -204,8 +201,7 @@ class VendorApiService {
       }));
     } catch (error) {
       console.error('Error fetching Roma catalog:', error);
-      // Fallback to sample data on failure
-      return this.getRomaSampleFrames();
+      throw new Error(`Failed to fetch Roma catalog: ${error.message}`);
     }
   }
 
@@ -213,12 +209,11 @@ class VendorApiService {
    * Fetch complete catalog from Bella Moulding
    */
   async fetchBellaCatalog(): Promise<VendorFrame[]> {
-    try {
-      if (!this.bellaConfig.apiKey) {
-        console.warn('Bella API key not configured. Using sample data.');
-        return this.getBellaSampleFrames();
-      }
+    if (!this.bellaConfig.apiKey) {
+      throw new Error('Bella API key not configured. Please configure API credentials in vendor settings.');
+    }
 
+    try {
       const response = await axios.get<BellaApiResponse>(
         `${this.bellaConfig.baseUrl}/products`,
         {
@@ -249,8 +244,7 @@ class VendorApiService {
       }));
     } catch (error) {
       console.error('Error fetching Bella catalog:', error);
-      // Fallback to sample data on failure
-      return this.getBellaSampleFrames();
+      throw new Error(`Failed to fetch Bella catalog: ${error.message}`);
     }
   }
 
@@ -571,144 +565,7 @@ class VendorApiService {
     }
   }
 
-  /**
-   * Get sample frames for Larson Juhl (when API is not available)
-   * @returns Sample frame data
-   */
-  private getLarsonSampleFrames(): VendorFrame[] {
-    return [
-      {
-        id: 'larson-210285',
-        itemNumber: '210285',
-        name: 'Larson Academie White',
-        price: '3.95',
-        material: 'Wood',
-        color: 'White',
-        width: '1.25',
-        height: '0.75',
-        depth: '0.625',
-        collection: 'Academie',
-        description: 'Classic white wood frame with smooth finish',
-        imageUrl: 'https://www.larsonjuhl.com/images/products/210285.jpg',
-        inStock: true,
-        vendor: 'Larson Juhl'
-      },
-      {
-        id: 'larson-210286',
-        itemNumber: '210286',
-        name: 'Larson Academie Black',
-        price: '3.85',
-        material: 'Wood',
-        color: 'Black',
-        width: '1.25',
-        height: '0.75',
-        depth: '0.625',
-        collection: 'Academie',
-        description: 'Classic black wood frame with smooth finish',
-        imageUrl: 'https://www.larsonjuhl.com/images/products/210286.jpg',
-        inStock: true,
-        vendor: 'Larson Juhl'
-      },
-      {
-        id: 'larson-655320',
-        itemNumber: '655320',
-        name: 'Larson Biltmore Gold',
-        price: '4.50',
-        material: 'Wood',
-        color: 'Gold',
-        width: '1.5',
-        height: '0.875',
-        depth: '0.75',
-        collection: 'Biltmore',
-        description: 'Elegant gold finish frame with ornate details',
-        imageUrl: 'https://www.larsonjuhl.com/images/products/655320.jpg',
-        inStock: true,
-        vendor: 'Larson Juhl'
-      },
-      {
-        id: 'larson-460530',
-        itemNumber: '460530',
-        name: 'Larson Ventura Silver',
-        price: '5.25',
-        material: 'Metal',
-        color: 'Silver',
-        width: '0.75',
-        height: '1.125',
-        depth: '0.5',
-        collection: 'Ventura',
-        description: 'Modern silver metallic frame',
-        imageUrl: 'https://www.larsonjuhl.com/images/products/460530.jpg',
-        inStock: true,
-        vendor: 'Larson Juhl'
-      }
-    ];
-  }
-
-  /**
-   * Get sample frames for Roma Moulding (when API is not available)
-   * @returns Sample frame data
-   */
-  private getRomaSampleFrames(): VendorFrame[] {
-    return [
-      {
-        id: 'roma-307',
-        itemNumber: '307',
-        name: 'Roma Gold Luxe',
-        price: '6.75',
-        material: 'Wood',
-        color: 'Gold',
-        width: '2.0',
-        height: '1.5',
-        depth: '0.875',
-        collection: 'Luxe',
-        description: 'Premium gold leaf finish with handcrafted details',
-        imageUrl: 'https://www.romamoulding.com/images/products/307.jpg',
-        inStock: true,
-        vendor: 'Roma Moulding'
-      }
-    ];
-  }
-
-  /**
-   * Get sample frames for Bella Moulding (when API is not available)
-   * @returns Sample frame data
-   */
-  private getBellaSampleFrames(): VendorFrame[] {
-    return [
-      {
-        id: 'bella-W8543',
-        itemNumber: 'W8543',
-        name: 'Bella Carrara White',
-        price: '4.95',
-        material: 'Wood',
-        color: 'White',
-        width: '1.75',
-        height: '1.125',
-        depth: '0.75',
-        collection: 'Carrara',
-        description: 'Elegant white wood frame with subtle texture',
-        imageUrl: 'https://www.bellamoulding.com/images/products/W8543.jpg',
-        inStock: true,
-        vendor: 'Bella Moulding'
-      },
-      {
-        id: 'bella-M2202',
-        itemNumber: 'M2202',
-        name: 'Bella Metropolitan Brushed Silver',
-        price: '5.85',
-        material: 'Metal',
-        color: 'Silver',
-        width: '0.625',
-        height: '1.0',
-        depth: '0.5',
-        collection: 'Metropolitan',
-        description: 'Contemporary brushed silver finish metal frame',
-        imageUrl: 'https://www.bellamoulding.com/images/products/M2202.jpg',
-        inStock: true,
-        vendor: 'Bella Moulding'
-      }
-    ];
-  }
+  
 }
 
 export const vendorApiService = new VendorApiService();

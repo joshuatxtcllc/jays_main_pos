@@ -52,12 +52,17 @@ export async function fetchRomaFrames(): Promise<Frame[]> {
  */
 export async function fetchAllVendorFrames(): Promise<Frame[]> {
   try {
-    // Temporarily disabled to prevent application freezing
-    console.log('Using static frame data to prevent freezing');
-    return [];
+    const response = await apiRequest('GET', '/api/vendor-catalog/all');
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch vendor frames: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('Error fetching all vendor frames:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -82,8 +87,7 @@ export async function searchFramesByItemNumber(itemNumber: string): Promise<Fram
     return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error(`Error searching for frames with item number ${itemNumber}:`, error);
-    // Return empty array instead of throwing to prevent UI crashes
-    return [];
+    throw new Error(`Failed to search for frames: ${error.message}`);
   }
 }
 
