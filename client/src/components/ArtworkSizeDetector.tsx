@@ -602,19 +602,21 @@ export function ArtworkSizeDetector({
                 {/* Show captured/uploaded image and frame preview */}
                 {imagePreview && (
                   <div className="mt-6 space-y-4 w-full">
-                    <div className="border rounded-md p-2 bg-white w-full max-w-none">
-                      <h4 className="text-sm font-medium mb-2">Frame Preview</h4>
-                      <div className="w-full overflow-x-auto">
-                        <FrameVisualizer
-                          frames={frames}
-                          mats={mats}
-                          artworkWidth={dimensions.width}
-                          artworkHeight={dimensions.height}
-                          artworkImage={imagePreview}
-                          useMultipleFrames={useMultipleFrames}
-                          useMultipleMats={useMultipleMats}
-                          onFrameImageCaptured={onFrameImageCaptured}
-                        />
+                    <div className="border rounded-md p-1 sm:p-2 bg-white w-full max-w-none">
+                      <h4 className="text-sm font-medium mb-2 text-center">Frame Preview</h4>
+                      <div className="w-full flex justify-center overflow-hidden">
+                        <div className="w-full max-w-full">
+                          <FrameVisualizer
+                            frames={frames}
+                            mats={mats}
+                            artworkWidth={dimensions.width}
+                            artworkHeight={dimensions.height}
+                            artworkImage={imagePreview}
+                            useMultipleFrames={useMultipleFrames}
+                            useMultipleMats={useMultipleMats}
+                            onFrameImageCaptured={onFrameImageCaptured}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
