@@ -22,6 +22,8 @@ import customersRoutes from './routes/customersRoutes';
 import xmlPriceSheetRoutes from './routes/xmlPriceSheetRoutes';
 import larsonOrderOptimizerRoutes from './routes/larsonOrderOptimizerRoutes';
 import discordNotificationRoutes from './routes/discordNotificationRoutes';
+import customerNotificationRoutes from './routes/customerNotificationRoutes';
+import testNotificationRoutes from './routes/testNotificationRoutes.js';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -99,13 +101,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/discord/test-notification', async (req, res) => {
     try {
       const { discordUserId, orderId, type, message } = req.body;
-      
+
       if (!discordUserId) {
         return res.status(400).json({ error: 'Discord user ID is required' });
       }
 
       const notificationService = req.app.locals.notificationService;
-      
+
       const testCustomer = {
         id: 1,
         email: 'customer@example.com',
@@ -119,7 +121,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       let result;
-      
+
       switch (type) {
         case 'order_update':
           result = await notificationService.sendOrderStatusUpdate(
@@ -129,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message || 'Your custom frame is now being crafted by our artisans.'
           );
           break;
-          
+
         case 'completion':
           result = await notificationService.sendCompletionNotice(
             testCustomer,
@@ -137,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message || 'Ready for pickup at our studio during business hours.'
           );
           break;
-          
+
         case 'estimate':
           result = await notificationService.sendEstimateUpdate(
             testCustomer,
@@ -145,7 +147,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             7
           );
           break;
-          
+
         default:
           result = await notificationService.notifyCustomer(testCustomer, {
             title: 'Test Notification',
@@ -304,7 +306,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', customersRoutes);
   app.use('/api/xml-price-sheets', xmlPriceSheetRoutes);
   app.use('/api/larson-optimizer', larsonOrderOptimizerRoutes);
+
+  // Discord notification routes
   app.use('/api/discord', discordNotificationRoutes);
+
+  // Customer notification routes
+  app.use('/api/notifications', customerNotificationRoutes);
+
+  // Test notification routes
+  app.use('/api/test', testNotificationRoutes);
 
   // Materials API Routes
   app.get('/api/materials/pick-list', getMaterialsPickList);
