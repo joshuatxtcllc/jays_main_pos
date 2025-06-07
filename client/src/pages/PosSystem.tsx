@@ -1236,9 +1236,9 @@ const PosSystem = () => {
         <div className="space-y-6">
           {/* Frame Customization Section */}
           <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold header-underline">Frame Selection</h2>
-          </div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold header-underline">Frame Selection</h2>
+            </div>
 
           {/* Frame Search */}
           <div className="mb-4">
@@ -1695,105 +1695,126 @@ const PosSystem = () => {
               </div>
             ))}
           </div>
+          </div>
         </div>
 
-        {/* Manual Frame Entry Section */}
-        <ManualFrameEntry
-          useManualFrame={useManualFrame}
-          onToggleManualFrame={setUseManualFrame}
-          frameName={manualFrameName}
-          onFrameNameChange={setManualFrameName}
-          frameCost={manualFrameCost}
-          onFrameCostChange={setManualFrameCost}
-        />
-
-        {/* Special Services Section */}
-        <SpecialServices 
-          selectedServices={selectedServices}
-          onChange={setSelectedServices}
-        />
-
-        {/* Miscellaneous Charges Section */}
-        <MiscellaneousCharges
-          charges={miscCharges}
-          onChange={setMiscCharges}
-        />
-      </div>
-
-      {/* Right side - Visualizer and Order Summary */}
-      <div className="xl:col-span-4 space-y-6">
-        {/* Unified Artwork Detection and Frame Preview */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <ArtworkSizeDetector 
-            defaultWidth={artworkWidth}
-            defaultHeight={artworkHeight}
-            frames={selectedFrames}
-            mats={selectedMatboards}
-            useMultipleFrames={useMultipleFrames}
-            useMultipleMats={useMultipleMats}
-            onDimensionsDetected={(dimensions, imageDataUrl) => {
-              // Update dimensions in the parent component
-              setArtworkWidth(dimensions.width);
-              setArtworkHeight(dimensions.height);
-              setAspectRatio(dimensions.width / dimensions.height);
-              setArtworkImage(imageDataUrl);
-
-              console.log('Dimensions detected:', dimensions);
-              toast({
-                title: "Artwork Dimensions Detected",
-                description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
-              });
-            }}
-            onFrameImageCaptured={setFrameDesignImage}
-          />
-        </div>
-
-        {/* Frame Details */}
-        {selectedFrames.length > 0 && (
+        {/* Center Column - Mat Selection */}
+        <div className="space-y-6">
+          {/* Mat Selection */}
           <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-            <div className="mt-4">
-              <h3 className="text-lg font-medium mb-2">Selected Frame Details</h3>
-              {selectedFrames.map((frameItem, index) => (
-                <div key={frameItem.frame.id + '-' + frameItem.position} className={index > 0 ? 'mt-4 pt-4 border-t border-light-border dark:border-dark-border' : ''}>
-                  <h4 className="text-md font-medium mb-2">
-                    {frameItem.position === 1 ? 'Inner Frame' : 'Outer Frame'} 
-                    {useMultipleFrames ? ` (Position ${frameItem.position})` : ''}
-                  </h4>
-                  <table className="w-full text-sm">
-                    <tbody>
-                      <tr>
-                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Name:</td>
-                        <td className="py-1 font-medium">{frameItem.frame.name}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Material:</td>
-                        <td className="py-1">{frameItem.frame.material}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Width:</td>
-                        <td className="py-1">{frameItem.frame.width} inches</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Depth:</td>
-                        <td className="py-1">{frameItem.frame.depth} inches</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Wholesale Price:</td>
-                        <td className="py-1">${frameItem.frame.price} per foot</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-light-textSecondary dark:text-dark-textSecondary">Pricing Method:</td>
-                        <td className="py-1">{frameItem.pricingMethod}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+            <h2 className="text-xl font-semibold mb-4 header-underline">Mat Selection</h2>
+            {/* Mat selection content will be moved here */}
+          </div>
+        </div>
+
+        {/* Right Column - Glass, Manual Frame, Services */}
+        <div className="space-y-6">
+          {/* Glass Options */}
+          <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4 header-underline">Glass Options</h2>
+            <div className="grid grid-cols-1 gap-4">
+              {glassOptionCatalog.map(glassOption => (
+                <div 
+                  key={glassOption.id}
+                  className={`border ${selectedGlassOption.id === glassOption.id ? 'border-primary' : 'border-light-border dark:border-dark-border'} rounded-lg p-3 cursor-pointer hover:border-primary transition-colors bg-white dark:bg-dark-bg`}
+                  onClick={() => handleGlassOptionChange(glassOption.id)}
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-medium">{glassOption.name}</h4>
+                      <p className="text-sm text-light-textSecondary dark:text-dark-textSecondary">
+                        {glassOption.description}
+                      </p>
+                    </div>
+                    <div className={`flex h-5 w-5 ${selectedGlassOption.id === glassOption.id ? 'border border-primary' : 'border border-gray-300 dark:border-dark-border'} rounded-full items-center justify-center`}>
+                      {selectedGlassOption.id === glassOption.id && (
+                        <div className="h-3 w-3 bg-primary rounded-full"></div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-sm text-right">
+                    ${parseFloat(String(glassOption.price)) * 100}/sq ft
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Order Summary */}
+          {/* Manual Frame Entry */}
+          <ManualFrameEntry
+            useManualFrame={useManualFrame}
+            onToggleManualFrame={setUseManualFrame}
+            frameName={manualFrameName}
+            onFrameNameChange={setManualFrameName}
+            frameCost={manualFrameCost}
+            onFrameCostChange={setManualFrameCost}
+          />
+
+          {/* Special Services Section */}
+          <SpecialServices 
+            selectedServices={selectedServices}
+            onChange={setSelectedServices}
+          />
+
+          {/* Miscellaneous Charges Section */}
+          <MiscellaneousCharges
+            charges={miscCharges}
+            onChange={setMiscCharges}
+          />
+        </div>
+      </div>
+
+      {/* Bottom Section - Artwork Details */}
+      <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6 mb-6">
+        <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">
+              Art Type
+            </label>
+            <select
+              className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800"
+              value={artworkType}
+              onChange={(e) => setArtworkType(e.target.value)}
+            >
+              <option value="print">Print</option>
+              <option value="original">Original Artwork</option>
+              <option value="photo">Photograph</option>
+              <option value="document">Certificate/Document</option>
+              <option value="poster">Poster</option>
+              <option value="memorabilia">Memorabilia</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">
+              Description
+            </label>
+            <input 
+              type="text" 
+              className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+              placeholder="Enter artwork description"
+              value={artworkDescription}
+              onChange={(e) => setArtworkDescription(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-800 mb-1">
+              Physical Storage Location
+            </label>
+            <input 
+              type="text" 
+              className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+              placeholder="Enter physical storage location at shop"
+              value={artworkLocation}
+              onChange={(e) => setArtworkLocation(e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Order Summary Section */}
+      <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
         <OrderSummary
           frames={selectedFrames}
           mats={selectedMatboards}
@@ -1810,14 +1831,13 @@ const PosSystem = () => {
           useMultipleFrames={useMultipleFrames}
           addToWholesaleOrder={addToWholesaleOrder}
           setAddToWholesaleOrder={setAddToWholesaleOrder}
-          orderId={1} // Temporary ID for testing - will be replaced with actual order ID after creation
+          orderId={1}
           sizeSurcharge={getSizeSurcharge()}
           useManualFrame={useManualFrame}
           manualFrameName={manualFrameName}
           manualFrameCost={manualFrameCost}
           miscCharges={miscCharges}
         />
-      </div>
       </div>
     </div>
   );
