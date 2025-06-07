@@ -122,46 +122,82 @@ class VendorApiService {
   }
 
   /**
-   * Fetch complete catalog from Larson Juhl
+   * Fetches frames from Larson-Juhl's catalog
+   * Uses real pricing data from imported price list document
    */
   async fetchLarsonCatalog(): Promise<VendorFrame[]> {
-    if (!this.larsonConfig.apiKey) {
-      console.log('Larson API key not configured, returning empty catalog');
+    try {
+      console.log('Fetching Larson-Juhl catalog from database...');
+
+      // Get Larson frames from database (imported from price list)
+      const larsonFrames = await this.getLarsonFramesFromDatabase();
+
+      if (larsonFrames.length > 0) {
+        return larsonFrames;
+      }
+
+      // If no frames in database, try API connection
+      try {
+        const response = await this.connectToLarsonApi();
+
+        if (response && response.frames) {
+          return response.frames.map(frame => ({
+            id: `larson-${frame.item_number}`,
+            itemNumber: frame.item_number,
+            name: frame.name,
+            price: frame.price_per_foot.toString(),
+            material: frame.material,
+            color: frame.color,
+            width: frame.width.toString(),
+            height: frame.height.toString(),
+            depth: frame.depth.toString(),
+            collection: frame.collection,
+            description: frame.description,
+            imageUrl: frame.image_url,
+            inStock: frame.in_stock,
+            vendor: 'Larson Juhl'
+          }));
+        }
+      } catch (apiError) {
+        console.error('API connection failed, using database fallback:', apiError);
+      }
+
+      throw new Error('No Larson-Juhl frames available in database or API');
+    } catch (error) {
+      console.error('Error fetching Larson catalog:', error);
       return [];
     }
+  }
 
+  /**
+   * Gets Larson-Juhl frames from database
+   */
+  private async getLarsonFramesFromDatabase(): Promise<VendorFrame[]> {
     try {
-      const response = await axios.get<LarsonApiResponse>(
-        `${this.larsonConfig.baseUrl}/catalog/frames`,
-        {
-          headers: {
-            'Authorization': `Bearer ${this.larsonConfig.apiKey}`,
-            'Content-Type': 'application/json'
-          },
-          timeout: 10000 // 10 second timeout
-        }
-      );
+      const result = await storage.query(`
+        SELECT * FROM frames 
+        WHERE manufacturer = 'Larson-Juhl' 
+        ORDER BY name
+      `);
 
-      // Transform API response to our internal format
-      return response.data.frames.map(frame => ({
-        id: `larson-${frame.item_number}`,
-        itemNumber: frame.item_number,
-        name: `${frame.name} (${frame.collection})`,
-        price: frame.price_per_foot.toString(),
-        material: frame.material,
-        color: frame.color,
-        width: frame.width.toString(),
-        height: frame.height.toString(),
-        depth: frame.depth.toString(),
-        collection: frame.collection,
-        description: frame.description,
-        imageUrl: frame.image_url,
-        inStock: frame.in_stock,
+      return result.rows.map(frame => ({
+        id: frame.id,
+        itemNumber: frame.id.replace('larson-', ''),
+        name: frame.name,
+        price: frame.price,
+        material: frame.material || 'Wood',
+        color: frame.color || 'Natural',
+        width: frame.width || '1.5',
+        height: frame.width || '1.5', // Use width as height for moulding
+        depth: frame.depth || '0.75',
+        collection: frame.collection || 'Standard',
+        description: frame.description || frame.name,
+        imageUrl: frame.catalog_image || '',
+        inStock: true,
         vendor: 'Larson Juhl'
       }));
     } catch (error) {
-      console.error('Error fetching Larson Juhl catalog:', error);
-      // Return empty array instead of throwing to allow fallbacks to work
+      console.error('Error fetching Larson frames from database:', error);
       return [];
     }
   }
@@ -271,11 +307,11 @@ class VendorApiService {
    */
   async searchFrames(query: string, vendor?: string): Promise<VendorFrame[]> {
     console.log(`Searching for: "${query}" across vendor APIs`);
-    
+
     // For item number searches, create mock data if needed for testing
     if (/^[0-9]{6}$/.test(query)) {
       console.log(`Item number search detected: ${query}`);
-      
+
       // Check if this is one of the commonly searched item numbers
       const commonItems = ['210285', '210286', '224941', '220941'];
       if (commonItems.includes(query)) {
@@ -298,9 +334,9 @@ class VendorApiService {
         }];
       }
     }
-    
+
     let allFrames: VendorFrame[] = [];
-    
+
     // Try to fetch from real APIs first, but catch errors gracefully
     try {
       if (vendor) {
@@ -322,7 +358,7 @@ class VendorApiService {
       }
     } catch (error) {
       console.log('API search failed, checking database:', error.message);
-      
+
       // Fallback to database search
       try {
         const exactFrames = await storage.searchFramesByItemNumber(query);
@@ -346,7 +382,7 @@ class VendorApiService {
       } catch (dbError) {
         console.log('Database search also failed:', dbError.message);
       }
-      
+
       // Return empty array if all searches fail
       return [];
     }
@@ -361,7 +397,7 @@ class VendorApiService {
       frame.collection.toLowerCase().includes(normalizedQuery) ||
       frame.itemNumber.toLowerCase().includes(normalizedQuery)
     );
-    
+
     console.log(`Found ${results.length} matches for "${query}"`);
     return results;
   }
@@ -374,13 +410,13 @@ class VendorApiService {
     try {
       const allFrames = await this.fetchAllCatalogs();
       const existingFrames = await storage.getAllFrames();
-      
+
       const existingIds = new Set(existingFrames.map(f => f.id));
-      
+
       // Split frames into new additions and updates
       const framesToAdd = allFrames.filter(f => !existingIds.has(f.id));
       const framesToUpdate = allFrames.filter(f => existingIds.has(f.id));
-      
+
       // Add new frames
       for (const frame of framesToAdd) {
         await storage.addFrame({
@@ -393,7 +429,7 @@ class VendorApiService {
           description: frame.description || ''
         });
       }
-      
+
       // Update existing frames
       for (const frame of framesToUpdate) {
         await storage.updateFrame({
@@ -406,7 +442,7 @@ class VendorApiService {
           description: frame.description || ''
         });
       }
-      
+
       return {
         added: framesToAdd.length,
         updated: framesToUpdate.length
@@ -424,10 +460,10 @@ class VendorApiService {
     return {
       larsonApiKey: this.larsonConfig.apiKey || '',
       larsonApiSecret: !!this.larsonConfig.apiSecret,
-      
+
       romaApiKey: this.romaConfig.apiKey || '',
       romaApiSecret: !!this.romaConfig.apiSecret,
-      
+
       bellaApiKey: this.bellaConfig.apiKey || '',
       bellaApiSecret: !!this.bellaConfig.apiSecret,
     };
@@ -443,32 +479,32 @@ class VendorApiService {
       this.larsonConfig.apiKey = settings.larsonApiKey;
       process.env.LARSON_API_KEY = settings.larsonApiKey;
     }
-    
+
     if (settings.larsonApiSecret !== undefined) {
       this.larsonConfig.apiSecret = settings.larsonApiSecret;
       process.env.LARSON_API_SECRET = settings.larsonApiSecret;
     }
-    
+
     if (settings.romaApiKey !== undefined) {
       this.romaConfig.apiKey = settings.romaApiKey;
       process.env.ROMA_API_KEY = settings.romaApiKey;
     }
-    
+
     if (settings.romaApiSecret !== undefined) {
       this.romaConfig.apiSecret = settings.romaApiSecret;
       process.env.ROMA_API_SECRET = settings.romaApiSecret;
     }
-    
+
     if (settings.bellaApiKey !== undefined) {
       this.bellaConfig.apiKey = settings.bellaApiKey;
       process.env.BELLA_API_KEY = settings.bellaApiKey;
     }
-    
+
     if (settings.bellaApiSecret !== undefined) {
       this.bellaConfig.apiSecret = settings.bellaApiSecret;
       process.env.BELLA_API_SECRET = settings.bellaApiSecret;
     }
-    
+
     // In a real application, these settings would be saved to a database or config file
     console.log('API settings updated', { 
       larsonKeyUpdated: !!settings.larsonApiKey,
@@ -610,7 +646,7 @@ class VendorApiService {
     }
   }
 
-  
+
 }
 
 export const vendorApiService = new VendorApiService();

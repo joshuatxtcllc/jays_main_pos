@@ -19,6 +19,7 @@ import { getMaterialsPickList, getMaterialsBySupplier, getMaterialsForOrder, upd
 import integrationApiRoutes from './routes/integrationApiRoutes';
 import ordersRoutes from './routes/ordersRoutes';
 import customersRoutes from './routes/customersRoutes';
+import xmlPriceSheetRoutes from './routes/xmlPriceSheetRoutes';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Art Location routes
@@ -202,6 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/api', integrationApiRoutes);
   app.use('/api', ordersRoutes);
   app.use('/api', customersRoutes);
+  app.use('/api/xml-price-sheets', xmlPriceSheetRoutes);
 
   // Materials API Routes
   app.get('/api/materials/pick-list', getMaterialsPickList);
