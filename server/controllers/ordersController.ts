@@ -89,3 +89,142 @@ export async function getAllOrders(req: Request, res: Response) {
     });
   }
 }
+
+export async function getOrderById(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const order = await storage.getOrder(parseInt(id));
+    
+    if (!order) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Order not found' 
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      order 
+    });
+  } catch (error: any) {
+    console.error('Error fetching order:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to fetch order' 
+    });
+  }
+}
+
+export async function createOrder(req: Request, res: Response) {
+  try {
+    const orderData = req.body;
+    console.log('Creating order with data:', orderData);
+
+    // Validate required fields
+    if (!orderData.customerId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Customer ID is required' 
+      });
+    }
+
+    if (!orderData.artworkImage) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Artwork image is required' 
+      });
+    }
+
+    const order = await storage.createOrder(orderData);
+    
+    res.status(201).json({ 
+      success: true, 
+      order,
+      message: 'Order created successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error creating order:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to create order' 
+    });
+  }
+}
+
+export async function updateOrder(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    const order = await storage.updateOrder(parseInt(id), updateData);
+    
+    res.json({ 
+      success: true, 
+      order,
+      message: 'Order updated successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error updating order:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to update order' 
+    });
+  }
+}
+
+export async function deleteOrder(req: Request, res: Response) {
+  try {
+    const { id } = req.params;
+    
+    await storage.deleteOrder(parseInt(id));
+    
+    res.json({ 
+      success: true, 
+      message: 'Order deleted successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error deleting order:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to delete order' 
+    });
+  }
+}
+
+export async function getAllOrderGroups(req: Request, res: Response) {
+  try {
+    const orderGroups = await storage.getAllOrderGroups();
+    
+    res.json({ 
+      success: true, 
+      orderGroups,
+      count: orderGroups.length 
+    });
+  } catch (error: any) {
+    console.error('Error fetching order groups:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to fetch order groups' 
+    });
+  }
+}
+
+export async function createOrderGroup(req: Request, res: Response) {
+  try {
+    const orderGroupData = req.body;
+    
+    const orderGroup = await storage.createOrderGroup(orderGroupData);
+    
+    res.status(201).json({ 
+      success: true, 
+      orderGroup,
+      message: 'Order group created successfully' 
+    });
+  } catch (error: any) {
+    console.error('Error creating order group:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to create order group' 
+    });
+  }
+}
