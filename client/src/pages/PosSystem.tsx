@@ -765,28 +765,13 @@ const PosSystem = () => {
       const primaryMat = selectedMatboards.length > 0 ? selectedMatboards[0].matboard : null;
       const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
 
-      // Calculate prices using the pricing service (same as OrderSummary)
-      const framePrices = selectedFrames.map(frameItem => 
-        calculateFramePrice(artworkWidth, artworkHeight, Number(frameItem.frame.price))
-      );
-      const totalFramePrice = framePrices.reduce((total, price) => total + price, 0);
-
-      const matPrices = selectedMatboards.map(matItem => 
-        calculateMatPrice(artworkWidth, artworkHeight, matItem.width, Number(matItem.matboard.price))
-      );
-      const totalMatPrice = matPrices.reduce((total, price) => total + price, 0);
-
-      const calculatedGlassPrice = selectedGlassOption ? 
-        calculateGlassPrice(artworkWidth, artworkHeight, primaryMatWidth, Number(selectedGlassOption.price)) : 0;
-      const backingPrice = calculateBackingPrice(artworkWidth, artworkHeight, primaryMatWidth, 0.02); // $0.02 per sq inch for backing
-      const laborPrice = 25; // Fixed labor price
-      const specialServicesPrice = selectedServices.reduce((total, service) => total + Number(service.price), 0);
-
-      // Calculate subtotal and total with tax
-      const subtotal = totalFramePrice + totalMatPrice + calculatedGlassPrice + backingPrice + laborPrice + specialServicesPrice;
-      const taxRate = 0.08; // 8% tax rate
-      const tax = subtotal * taxRate;
-      const total = subtotal + tax;
+      // Use basic pricing for now - proper pricing calculation will be done on server
+      const framePrice = primaryFrame ? primaryFrame.price : '0';
+      const matPrice = primaryMat ? primaryMat.price : '0';
+      const glassPrice = selectedGlassOption.price;
+      const subtotal = 0; // Will be calculated on server
+      const tax = 0; // Will be calculated on server
+      const total = 0; // Will be calculated on server
       const totalMiscCharges = miscCharges.reduce((sum, charge) => sum + charge.amount, 0);
       const miscChargeDescription = miscCharges.length > 0 
         ? miscCharges.map(charge => `${charge.description}: $${charge.amount.toFixed(2)}`).join('; ')
@@ -803,9 +788,9 @@ const PosSystem = () => {
         artworkDescription,
         artworkType,
         artworkLocation,
-        subtotal: subtotal.toFixed(2),
-        tax: tax.toFixed(2),
-        total: total.toFixed(2),
+        subtotal: "0", // Will be calculated on server
+        tax: "0", // Will be calculated on server
+        total: "0", // Will be calculated on server
         artworkImage,
         useManualFrame,
         manualFrameName: useManualFrame ? manualFrameName : undefined,
@@ -1265,8 +1250,8 @@ const PosSystem = () => {
           {/* Vendor Catalog Search */}
           <div className="mb-4">
             <VendorFrameSearch 
-              onSelectFrame={(frame, position, pricingMethod) => {
-                handleSelectFrame(frame, position, pricingMethod);
+              onSelectFrame={(frame, pricingMethod) => {
+                handleSelectFrame(frame, activeFramePosition, pricingMethod || 'length');
               }}
               position={activeFramePosition}
             />
