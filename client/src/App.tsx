@@ -114,7 +114,7 @@ function App() {
                 <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
                   <MobileNavMenu />
                   <Header darkMode={darkMode} toggleTheme={toggleTheme} />
-                  <main className="container pt-24 pb-10">
+                  <main className="container pt-16 lg:pt-24 pb-10 px-3 lg:px-4">
                     <Switch>
                       <Route path="/" component={PosSystem} />
                       <Route path="/orders" component={Orders} />

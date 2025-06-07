@@ -16,6 +16,32 @@
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.3s ease, color 0.3s ease;
     color: #111827; /* Darker text for better readability */
+    /* Mobile optimizations */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+  
+  /* Touch manipulation for better mobile interactions */
+  .touch-manipulation {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* Mobile-friendly input fields */
+  input, select, textarea, button {
+    -webkit-appearance: none;
+    border-radius: 0.375rem;
+  }
+  
+  /* Better button press feedback on mobile */
+  button:active, .touch-manipulation:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
   }
   
   :root {

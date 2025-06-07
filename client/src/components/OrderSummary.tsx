@@ -277,7 +277,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         {!showCheckoutButton ? (
           <>
             <button 
-              className={`w-full py-3 ${frames.length === 0 || mats.length === 0 || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center`}
+              className={`w-full py-4 text-base ${frames.length === 0 || mats.length === 0 || !glassOption ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90'} text-white rounded-lg font-medium transition-colors flex items-center justify-center touch-manipulation`}
               onClick={async () => {
                 console.log('Create Order button clicked in OrderSummary');
                 console.log('Button disabled state:', (frames.length === 0 || mats.length === 0 || !glassOption));
@@ -303,7 +303,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </button>
 
             <button 
-              className="w-full py-3 border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg text-light-text dark:text-dark-text rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-bg/80 transition-colors flex items-center justify-center"
+              className="w-full py-4 text-base border border-light-border dark:border-dark-border bg-white dark:bg-dark-bg text-light-text dark:text-dark-text rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-dark-bg/80 transition-colors flex items-center justify-center touch-manipulation"
               onClick={onSaveQuote}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -314,7 +314,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           </>
         ) : (
           <button 
-            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center"
+            className="w-full py-4 text-base bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center touch-manipulation"
             onClick={() => {
               if (orderGroupId && onProceedToCheckout) {
                 onProceedToCheckout(orderGroupId);
