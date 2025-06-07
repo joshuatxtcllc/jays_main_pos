@@ -41,6 +41,22 @@ class DiscordBot {
         await interaction.reply(`Getting quote for frame dimensions: ${dimensions}`);
         // Add your pricing logic here
       }
+
+      if (interaction.commandName === 'production-status') {
+        await interaction.reply('Checking production queue status...');
+        // TODO: Integrate with your production kanban
+      }
+
+      if (interaction.commandName === 'help') {
+        const helpText = `
+**Available Commands:**
+• \`/order-status <order-id>\` - Check order status
+• \`/frame-quote <dimensions>\` - Get frame quote
+• \`/production-status\` - View production queue
+• \`/help\` - Show this help message
+        `;
+        await interaction.reply(helpText);
+      }
     });
   }
 
@@ -61,7 +77,13 @@ class DiscordBot {
           option.setName('dimensions')
             .setDescription('Frame dimensions (e.g., 16x20)')
             .setRequired(true)
-        )
+        ),
+      new SlashCommandBuilder()
+        .setName('production-status')
+        .setDescription('Check production queue status'),
+      new SlashCommandBuilder()
+        .setName('help')
+        .setDescription('Show available commands and help')
     ].map(command => command.toJSON());
 
     const rest = new REST().setToken(this.token);
@@ -102,6 +124,16 @@ class DiscordBot {
     } catch (error) {
       console.error('Failed to send Discord notification:', error);
     }
+  }
+
+  public async sendOrderUpdate(channelId: string, orderId: string, status: string) {
+    const message = `🔔 **Order Update**\nOrder #${orderId} status changed to: **${status}**`;
+    await this.sendNotification(channelId, message);
+  }
+
+  public async sendProductionAlert(channelId: string, message: string) {
+    const alertMessage = `⚠️ **Production Alert**\n${message}`;
+    await this.sendNotification(channelId, alertMessage);
   }
 
   public async stop() {
