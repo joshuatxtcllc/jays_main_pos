@@ -445,78 +445,77 @@ export default function HubIntegrationPage() {
       </Dialog>
 
         {/* Kanban App Integration */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5" />
-              Kanban App Integration
-            </CardTitle>
-            <CardDescription>
-              Connect to your external Kanban app to fetch real-world orders
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="kanban-url">Kanban API URL</Label>
-                <Input
-                  id="kanban-url"
-                  value={kanbanApiUrl}
-                  onChange={(e) => setKanbanApiUrl(e.target.value)}
-                  placeholder="https://your-kanban-app.replit.app"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="kanban-key">Kanban API Key</Label>
-                <Input
-                  id="kanban-key"
-                  type="password"
-                  value={kanbanApiKey}
-                  onChange={(e) => setKanbanApiKey(e.target.value)}
-                  placeholder="Enter Kanban API key"
-                />
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5" />
+            Kanban App Integration
+          </CardTitle>
+          <CardDescription>
+            Connect to your external Kanban app to fetch real-world orders
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="kanban-url">Kanban API URL</Label>
+              <Input
+                id="kanban-url"
+                value={kanbanApiUrl}
+                onChange={(e) => setKanbanApiUrl(e.target.value)}
+                placeholder="https://your-kanban-app.replit.app"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="kanban-key">Kanban API Key</Label>
+              <Input
+                id="kanban-key"
+                type="password"
+                value={kanbanApiKey}
+                onChange={(e) => setKanbanApiKey(e.target.value)}
+                placeholder="Enter Kanban API key"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant={kanbanStatus === 'connected' ? 'default' : kanbanStatus === 'error' ? 'destructive' : 'secondary'}>
+                {kanbanStatus === 'connected' ? 'Connected' : kanbanStatus === 'error' ? 'Error' : 'Not Configured'}
+              </Badge>
+              {kanbanStatus === 'connected' && (
+                <span className="text-sm text-muted-foreground">Orders will be fetched from Kanban app</span>
+              )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant={kanbanStatus === 'connected' ? 'default' : kanbanStatus === 'error' ? 'destructive' : 'secondary'}>
-                  {kanbanStatus === 'connected' ? 'Connected' : kanbanStatus === 'error' ? 'Error' : 'Not Configured'}
-                </Badge>
-                {kanbanStatus === 'connected' && (
-                  <span className="text-sm text-muted-foreground">Orders will be fetched from Kanban app</span>
-                )}
-              </div>
+            <Button 
+              onClick={configureKanbanConnection}
+              disabled={isConfiguringKanban || !kanbanApiUrl || !kanbanApiKey}
+            >
+              {isConfiguringKanban ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Configuring...
+                </>
+              ) : (
+                <>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Configure Connection
+                </>
+              )}
+            </Button>
+          </div>
 
-              <Button 
-                onClick={configureKanbanConnection}
-                disabled={isConfiguringKanban || !kanbanApiUrl || !kanbanApiKey}
-              >
-                {isConfiguringKanban ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Configuring...
-                  </>
-                ) : (
-                  <>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure Connection
-                  </>
-                )}
-              </Button>
-            </div>
-
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle>Kanban Integration</AlertTitle>
-              <AlertDescription>
-                When configured, the system will automatically fetch orders from your Kanban app instead of using local storage. 
-                This allows you to see real-world production orders in the system.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Kanban Integration</AlertTitle>
+            <AlertDescription>
+              When configured, the system will automatically fetch orders from your Kanban app instead of using local storage. 
+              This allows you to see real-world production orders in the system.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     </div>
   );
 }
