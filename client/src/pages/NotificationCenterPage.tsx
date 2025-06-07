@@ -1,14 +1,14 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
-import { Bell, Send, TestTube } from 'lucide-react';
+import { Bell, Send, TestTube, MessageSquare } from 'lucide-react';
+import SimpleDiscordNotifier from '@/components/SimpleDiscordNotifier';
 
 export default function NotificationCenterPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -49,12 +49,12 @@ export default function NotificationCenterPage() {
 
   const sendNotification = async (isTest = false) => {
     setIsLoading(true);
-    
+
     try {
       const endpoint = isTest 
         ? '/api/test-notifications/test-customer-notification'
         : '/api/notifications/send-customer-notification';
-        
+
       const payload = {
         customerId: parseInt(formData.customerId) || 1,
         orderId: parseInt(formData.orderId) || 123,
@@ -364,6 +364,8 @@ export default function NotificationCenterPage() {
             </Button>
           </CardContent>
         </Card>
+           {/* Simple Discord Notifier */}
+           <SimpleDiscordNotifier />
       </div>
     </div>
   );

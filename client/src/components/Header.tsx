@@ -254,7 +254,7 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
                   Frame Education
                 </div>
               </Link>
-              
+
               <Link href="/notifications" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
                 Notifications
               </Link>
