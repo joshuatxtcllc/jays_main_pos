@@ -60,3 +60,29 @@ export async function calculatePrice(req: Request, res: Response) {
     });
   }
 }
+
+export async function calculateFramingPricing(req: Request, res: Response) {
+  try {
+    // Set content type header first
+    res.setHeader('Content-Type', 'application/json');
+
+    const {
+      frameItem,
+      frameWidth,
+      frameHeight,
+      glassType = 'Regular',
+      matboard1 = null,
+      matboard2 = null,
+      quantity = 1,
+      rushOrder = false,
+      specialServices = []
+    } = req.body;
+
+    // Validation
+    if (!frameItem || !frameWidth || !frameHeight) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: frameItem, frameWidth, frameHeight'
+      });
+    }
+}

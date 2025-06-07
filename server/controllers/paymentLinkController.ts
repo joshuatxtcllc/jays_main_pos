@@ -16,17 +16,26 @@ import {
  */
 export async function createNewPaymentLink(req: Request, res: Response) {
   try {
+    // Set content type header first
+    res.setHeader('Content-Type', 'application/json');
+    
     const { amount, customerId, description, expiresInDays = 7, email, phone, sendNotification } = req.body;
     
     if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
-      return res.status(400).json({ message: 'Valid payment amount is required' });
+      return res.status(400).json({ 
+        success: false,
+        message: 'Valid payment amount is required' 
+      });
     }
     
     // Validate customer if provided
     if (customerId) {
       const [customer] = await db.select().from(customers).where(eq(customers.id, customerId));
       if (!customer) {
-        return res.status(404).json({ message: 'Customer not found' });
+        return res.status(404).json({ 
+          success: false,
+          message: 'Customer not found' 
+        });
       }
     }
     
@@ -49,14 +58,22 @@ export async function createNewPaymentLink(req: Request, res: Response) {
       notifications.sms = await sendPaymentLinkViaSmsWithId(paymentLink.id, phone);
     }
     
-    res.status(201).json({ 
+    // Create payment URL for response
+    const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+    const paymentUrl = `${baseUrl}/payment/${paymentLink.token}`;
+    
+    return res.status(201).json({ 
       success: true,
-      paymentLink,
+      paymentLink: {
+        ...paymentLink,
+        paymentUrl
+      },
       notifications 
     });
   } catch (error: any) {
     console.error('Error creating payment link:', error);
-    res.status(500).json({ 
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ 
       success: false,
       message: `Failed to create payment link: ${error.message}` 
     });
@@ -68,11 +85,19 @@ export async function createNewPaymentLink(req: Request, res: Response) {
  */
 export async function getAllPaymentLinks(req: Request, res: Response) {
   try {
+    res.setHeader('Content-Type', 'application/json');
     const allLinks = await db.select().from(paymentLinks).orderBy(paymentLinks.createdAt, 'desc');
-    res.json(allLinks);
+    return res.json({
+      success: true,
+      paymentLinks: allLinks
+    });
   } catch (error: any) {
     console.error('Error fetching payment links:', error);
-    res.status(500).json({ message: `Failed to fetch payment links: ${error.message}` });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ 
+      success: false,
+      message: `Failed to fetch payment links: ${error.message}` 
+    });
   }
 }
 
@@ -81,18 +106,29 @@ export async function getAllPaymentLinks(req: Request, res: Response) {
  */
 export async function getPaymentLinkById(req: Request, res: Response) {
   try {
+    res.setHeader('Content-Type', 'application/json');
     const id = parseInt(req.params.id);
     
     const [paymentLink] = await db.select().from(paymentLinks).where(eq(paymentLinks.id, id));
     
     if (!paymentLink) {
-      return res.status(404).json({ message: 'Payment link not found' });
+      return res.status(404).json({ 
+        success: false,
+        message: 'Payment link not found' 
+      });
     }
     
-    res.json(paymentLink);
+    return res.json({
+      success: true,
+      paymentLink
+    });
   } catch (error: any) {
     console.error('Error fetching payment link:', error);
-    res.status(500).json({ message: `Failed to fetch payment link: ${error.message}` });
+    res.setHeader('Content-Type', 'application/json');
+    return res.status(500).json({ 
+      success: false,
+      message: `Failed to fetch payment link: ${error.message}` 
+    });
   }
 }
 
