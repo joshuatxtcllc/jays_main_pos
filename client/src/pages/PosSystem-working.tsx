@@ -6,6 +6,8 @@ import OrderSummary from '@/components/OrderSummary';
 import ManualFrameEntry from '@/components/ManualFrameEntry';
 import SpecialServices from '@/components/SpecialServices';
 import MiscellaneousCharges from '@/components/MiscellaneousCharges';
+import ProductionFrameVisualizer from '@/components/ProductionFrameVisualizer';
+import { ProductionPricingEngine } from '@/lib/productionPricing';
 import { Frame, MatColor, InsertOrder, InsertCustomer } from '@shared/schema';
 
 // Simple glass options for the catalog
@@ -321,16 +323,15 @@ const PosSystem = () => {
       <div className="mb-6">
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4 header-underline">Frame Preview</h2>
-          <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <div className="text-center">
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                Frame Preview Area - {artworkWidth}" x {artworkHeight}"
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                {selectedFrames.length} frame(s) selected, {selectedMatboards.length} mat(s) selected
-              </p>
-            </div>
-          </div>
+          <ProductionFrameVisualizer
+            frames={selectedFrames}
+            mats={selectedMatboards}
+            artworkWidth={artworkWidth}
+            artworkHeight={artworkHeight}
+            artworkImage={null}
+            useMultipleMats={useMultipleMats}
+            useMultipleFrames={false}
+          />
         </div>
       </div>
 
