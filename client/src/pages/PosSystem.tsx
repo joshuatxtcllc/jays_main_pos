@@ -1045,13 +1045,12 @@ const PosSystem = () => {
 
   return (
     <div className="w-full max-w-none min-w-[1200px]">
-      <div className="grid grid-cols-1 xl:grid-cols-7 gap-6">
-        {/* Left side - Frame selection, Mat selection, Glass options */}
-        <div className="xl:col-span-3 space-y-6">
-        {/* Order Information Section */}
+      {/* Top Row - Customer Info and Artwork Dimensions */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Customer Information */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 header-underline">Order Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h2 className="text-xl font-semibold mb-4 header-underline">Customer Information</h2>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
                 Customer Name
@@ -1062,17 +1061,6 @@ const PosSystem = () => {
                 placeholder="Enter customer name"
                 value={customer.name}
                 onChange={(e) => setCustomer({...customer, name: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
-                Order Date
-              </label>
-              <input 
-                type="date" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
-                value={new Date().toISOString().split('T')[0]}
-                readOnly
               />
             </div>
             <div>
@@ -1099,15 +1087,26 @@ const PosSystem = () => {
                 onChange={(e) => setCustomer({...customer, email: e.target.value})}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
+                Order Date
+              </label>
+              <input 
+                type="date" 
+                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                value={new Date().toISOString().split('T')[0]}
+                readOnly
+              />
+            </div>
           </div>
         </div>
 
-        {/* Artwork Details Section */}
+        {/* Artwork Size and Description */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
+          <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Size & Description</h2>
 
           {/* Size Warnings */}
-{artworkWidth > 32 || artworkHeight > 40 ? (
+          {artworkWidth > 32 || artworkHeight > 40 ? (
             <div className={`mb-4 p-3 rounded-lg border-l-4 ${
               artworkWidth > 40 || artworkHeight > 60 
                 ? 'bg-red-50 border-red-400 text-red-800' 
@@ -1131,7 +1130,7 @@ const PosSystem = () => {
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">
                 Width (inches)
@@ -1201,12 +1200,42 @@ const PosSystem = () => {
               />
             </div>
           </div>
-
-
         </div>
+      </div>
 
-        {/* Frame Customization Section */}
+      {/* Full Width Frame Preview Section */}
+      <div className="mb-6">
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
+          <ArtworkSizeDetector 
+            defaultWidth={artworkWidth}
+            defaultHeight={artworkHeight}
+            frames={selectedFrames}
+            mats={selectedMatboards}
+            useMultipleFrames={useMultipleFrames}
+            useMultipleMats={useMultipleMats}
+            onDimensionsDetected={(dimensions, imageDataUrl) => {
+              setArtworkWidth(dimensions.width);
+              setArtworkHeight(dimensions.height);
+              setAspectRatio(dimensions.width / dimensions.height);
+              setArtworkImage(imageDataUrl);
+
+              console.log('Dimensions detected:', dimensions);
+              toast({
+                title: "Artwork Dimensions Detected",
+                description: `Width: ${dimensions.width}", Height: ${dimensions.height}"`,
+              });
+            }}
+            onFrameImageCaptured={setFrameDesignImage}
+          />
+        </div>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+        {/* Left Column - Frame Selection */}
+        <div className="space-y-6">
+          {/* Frame Customization Section */}
+          <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold header-underline">Frame Selection</h2>
           </div>
