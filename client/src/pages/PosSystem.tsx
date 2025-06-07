@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { toast } from '@/hooks/use-toast';
 import { queryClient } from '@/lib/queryClient';
 import { ArtworkSizeDetector } from '@/components/ArtworkSizeDetector';
@@ -12,10 +13,13 @@ import { Frame, MatColor, GlassOption, SelectedFrame, SelectedMatboard, SpecialS
 import { glassOptionCatalog, filterFrames } from '@/lib/catalog-data';
 
 const PosSystem = () => {
+  const [location] = useLocation();
+  
   // Customer info state
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
+  const [customerId, setCustomerId] = useState<string | null>(null);
 
   // Artwork dimensions state
   const [artworkWidth, setArtworkWidth] = useState(16);
@@ -66,6 +70,36 @@ const PosSystem = () => {
   const { data: matboards = [], isLoading: matboardsLoading } = useQuery<MatColor[]>({
     queryKey: ['/api/mat-colors'],
   });
+
+  // Fetch customer data if customerId is provided
+  const { data: existingCustomer } = useQuery({
+    queryKey: ['/api/customers', customerId],
+    enabled: !!customerId,
+    queryFn: async () => {
+      const response = await fetch(`/api/customers/${customerId}`);
+      if (!response.ok) throw new Error('Failed to fetch customer');
+      return response.json();
+    },
+  });
+
+  // Parse URL parameters and pre-populate customer info
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const customerIdParam = urlParams.get('customerId');
+    
+    if (customerIdParam) {
+      setCustomerId(customerIdParam);
+    }
+  }, [location]);
+
+  // Pre-populate customer info when existing customer data is loaded
+  useEffect(() => {
+    if (existingCustomer) {
+      setCustomerName(existingCustomer.name || '');
+      setCustomerPhone(existingCustomer.phone || '');
+      setCustomerEmail(existingCustomer.email || '');
+    }
+  }, [existingCustomer]);
 
   // Filter frames based on current filters
   const filteredFrames = filterFrames(frames, {
@@ -196,16 +230,36 @@ const PosSystem = () => {
     }
 
     try {
-      // Create customer first
-      const customer = await createCustomerMutation.mutateAsync({
-        name: customerName,
-        phone: customerPhone,
-        email: customerEmail,
-      });
+      let finalCustomerId = customerId;
+      
+      // Create customer only if we don't have an existing one
+      if (!customerId) {
+        const customer = await createCustomerMutation.mutateAsync({
+          name: customerName,
+          phone: customerPhone,
+          email: customerEmail,
+        });
+        finalCustomerId = customer.id;
+      } else if (existingCustomer) {
+        // Update existing customer if info has changed
+        if (customerName !== existingCustomer.name || 
+            customerPhone !== existingCustomer.phone || 
+            customerEmail !== existingCustomer.email) {
+          await fetch(`/api/customers/${customerId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: customerName,
+              phone: customerPhone,
+              email: customerEmail,
+            }),
+          });
+        }
+      }
 
       // Create order
       const orderData: InsertOrder = {
-        customerId: customer.id,
+        customerId: finalCustomerId,
         artworkWidth,
         artworkHeight,
         artworkType,
