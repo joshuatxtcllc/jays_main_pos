@@ -234,6 +234,31 @@ export async function generateApiKey(req: Request, res: Response) {
   }
 }
 
+/**
+ * Test integration endpoint
+ */
+export async function testIntegration(req: Request, res: Response) {
+  try {
+    res.json({
+      success: true,
+      message: 'Integration API is working correctly',
+      timestamp: new Date().toISOString(),
+      endpoints: {
+        baseUrl: process.env.REPL_URL || 'https://your-repl-url.replit.dev',
+        orders: '/api/integration/orders',
+        webhook: '/api/integration/webhook',
+        configureKanban: '/api/integration/configure-kanban'
+      }
+    });
+  } catch (error: any) {
+    console.error('Error in test integration:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Integration test failed' 
+    });
+  }
+}
+
 export async function configureKanbanConnection(req: Request, res: Response) {
   try {
     const { kanbanApiUrl, kanbanApiKey } = req.body;
