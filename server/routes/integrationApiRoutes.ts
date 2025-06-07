@@ -1,7 +1,11 @@
-
 import { Router } from 'express';
 import * as integrationController from '../controllers/integrationController';
 import { verifyApiKey } from '../middleware/security';
+import { 
+  generateApiKey,
+  testIntegration,
+  configureKanbanConnection 
+} from '../controllers/integrationController';
 
 const router = Router();
 
@@ -32,5 +36,11 @@ router.patch('/orders/:id/status', verifyApiKey, integrationController.updateOrd
  * @access Protected by API key
  */
 router.post('/webhook', verifyApiKey, integrationController.receiveWebhook);
+
+// Test integration
+router.get('/test', testIntegration);
+
+// Configure Kanban app connection
+router.post('/configure-kanban', configureKanbanConnection);
 
 export default router;

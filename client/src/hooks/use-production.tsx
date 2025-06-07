@@ -13,35 +13,24 @@ export function useProduction({
 }) {
   const { toast } = useToast();
 
-  // Get all orders with their production statuses for the Kanban board
+  // Kanban board data query
   const kanbanQuery = useQuery({
-    queryKey: ['/api/production/kanban'],
+    queryKey: ['production-kanban'],
     queryFn: async () => {
-      try {
-        // First try to fetch from external Kanban app
-        const externalRes = await fetch('/api/kanban/external/orders');
-        if (externalRes.ok) {
-          const externalData = await externalRes.json();
-          if (externalData.success && externalData.orders) {
-            return externalData.orders;
-          }
-        }
-        
-        // Fallback to internal orders if external Kanban is unavailable
-        const res = await fetch('/api/production/kanban');
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to fetch Kanban orders');
-        }
-        return res.json();
-      } catch (error) {
-        console.error('Kanban board fetch error:', error);
-        // Return empty array instead of throwing to prevent breaking the UI
-        return [];
+      const response = await fetch('/api/orders');
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders for kanban board');
       }
+      const data = await response.json();
+
+      console.log(`Loaded ${data.orders?.length || 0} orders from ${data.source || 'unknown'} source`);
+
+      return data.orders || [];
     },
+    refetchInterval: 30000, // Refetch every 30 seconds
+    staleTime: 10000,
     retry: 3,
-    retryDelay: 1000,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
   // Get a specific order
@@ -184,26 +173,26 @@ export function useProduction({
     orders: kanbanQuery.data,
     isLoadingOrders: kanbanQuery.isLoading,
     ordersError: kanbanQuery.error,
-    
+
     // Specific order data
     order: orderQuery.data,
     isLoadingOrder: orderQuery.isLoading,
     orderError: orderQuery.error,
-    
+
     // Notifications data
     customerNotifications: customerNotifications.data || [],
     orderNotifications: orderNotifications.data || [],
     isLoadingCustomerNotifications: customerNotifications.isLoading,
     isLoadingOrderNotifications: orderNotifications.isLoading,
-    
+
     // Helper functions
     getOrdersByStatus,
-    
+
     // Mutations
     updateOrderStatus: updateOrderStatusMutation.mutate,
     scheduleOrder: scheduleOrderMutation.mutate,
     toggleNotificationsMutation,
-    
+
     // Mutation states
     isUpdating: updateOrderStatusMutation.isPending,
     isScheduling: scheduleOrderMutation.isPending,
@@ -213,7 +202,7 @@ export function useProduction({
 // For backward compatibility
 export function useProductionKanban() {
   const production = useProduction({});
-  
+
   // Ensure that even if there's an error, we provide some default values
   // This prevents the component from breaking when data is missing
   return {
@@ -231,7 +220,7 @@ export function useProductionKanban() {
 // For backward compatibility
 export function useCustomerNotifications(customerId?: number, orderId?: number) {
   const production = useProduction({ customerId, orderId });
-  
+
   return {
     customerNotifications: production.customerNotifications,
     orderNotifications: production.orderNotifications,

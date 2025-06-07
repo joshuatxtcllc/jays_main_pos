@@ -1,4 +1,3 @@
-
 import { Request, Response } from 'express';
 import { storage } from '../storage';
 import * as qrCodeController from './qrCodeController';
@@ -17,21 +16,21 @@ export async function getOrderWithQrCode(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const orderId = parseInt(id);
-    
+
     if (isNaN(orderId)) {
       return res.status(400).json({ error: 'Invalid order ID' });
     }
-    
+
     // Get the order
     const order = await storage.getOrder(orderId);
-    
+
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    
+
     // Get QR code for the order
     const qrCodeData = await qrCodeController.generateQrCodeForOrder(orderId);
-    
+
     // Return the order with QR code data
     res.json({
       success: true,
@@ -54,13 +53,13 @@ export async function getAllOrdersWithQrCodes(req: Request, res: Response) {
     // Get parameters for filtering
     const { status, limit } = req.query;
     const limitNum = limit ? parseInt(limit as string) : undefined;
-    
+
     // Get orders with optional filtering
     const orders = await storage.getOrders(status as string | undefined);
-    
+
     // Apply limit if specified
     const limitedOrders = limitNum ? orders.slice(0, limitNum) : orders;
-    
+
     // Enhance orders with QR codes
     const enhancedOrders = await Promise.all(limitedOrders.map(async (order) => {
       const qrCodeData = await qrCodeController.generateQrCodeForOrder(order.id);
@@ -69,7 +68,7 @@ export async function getAllOrdersWithQrCodes(req: Request, res: Response) {
         qrCode: qrCodeData
       };
     }));
-    
+
     res.json({
       success: true,
       count: enhancedOrders.length,
@@ -89,28 +88,28 @@ export async function updateOrderStatus(req: Request, res: Response) {
     const { id } = req.params;
     const { status, notes } = req.body;
     const orderId = parseInt(id);
-    
+
     if (isNaN(orderId)) {
       return res.status(400).json({ error: 'Invalid order ID' });
     }
-    
+
     if (!status) {
       return res.status(400).json({ error: 'Status is required' });
     }
-    
+
     // Get the order
     const order = await storage.getOrder(orderId);
-    
+
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
-    
+
     // Update the order status
     const updatedOrder = await storage.updateOrder(orderId, {
       status,
       notes: notes || `Status updated via Integration API to: ${status}`
     });
-    
+
     // Log status change to history if we have the service available
     try {
       const orderStatusHistoryService = require('../services/orderStatusHistoryService');
@@ -123,7 +122,7 @@ export async function updateOrderStatus(req: Request, res: Response) {
     } catch (historyError) {
       console.warn('Could not log status history:', historyError);
     }
-    
+
     res.json({
       success: true,
       message: 'Order status updated',
@@ -141,13 +140,13 @@ export async function updateOrderStatus(req: Request, res: Response) {
 export async function receiveWebhook(req: Request, res: Response) {
   try {
     const { source, event, data } = req.body;
-    
+
     if (!source || !event) {
       return res.status(400).json({ error: 'Source and event are required' });
     }
-    
+
     console.log(`Received webhook from ${source}, event: ${event}`);
-    
+
     // Process the webhook based on source and event
     switch (source) {
       case 'qr_generator':
@@ -162,7 +161,7 @@ export async function receiveWebhook(req: Request, res: Response) {
           });
         }
         break;
-        
+
       case 'printing_system':
         // Handle printing system events
         if (event === 'invoice_printed' && data && data.orderId) {
@@ -174,13 +173,13 @@ export async function receiveWebhook(req: Request, res: Response) {
           });
         }
         break;
-        
+
       // Add more sources as needed
-      
+
       default:
         console.log(`Unknown webhook source: ${source}`);
     }
-    
+
     // Acknowledge receipt of webhook
     res.json({
       success: true,
@@ -199,7 +198,7 @@ export async function generateApiKey(req: Request, res: Response) {
   try {
     // Generate a secure API key
     const apiKey = 'jf_' + crypto.randomBytes(32).toString('hex');
-    
+
     const keyInfo = {
       key: apiKey,
       name: 'Jay\'s Frames API Integration',
@@ -207,9 +206,9 @@ export async function generateApiKey(req: Request, res: Response) {
       createdAt: new Date().toISOString(),
       lastUsed: null
     };
-    
+
     console.log('Generated API Key:', apiKey);
-    
+
     res.json({
       success: true,
       ...keyInfo,
@@ -231,6 +230,59 @@ export async function generateApiKey(req: Request, res: Response) {
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to generate API key' 
+    });
+  }
+}
+
+export async function configureKanbanConnection(req: Request, res: Response) {
+  try {
+    const { kanbanApiUrl, kanbanApiKey } = req.body;
+
+    if (!kanbanApiUrl || !kanbanApiKey) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both kanbanApiUrl and kanbanApiKey are required'
+      });
+    }
+
+    // Test the connection
+    try {
+      const testResponse = await fetch(`${kanbanApiUrl}/api/kanban/status`, {
+        headers: {
+          'Authorization': `Bearer ${kanbanApiKey}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 5000
+      });
+
+      if (!testResponse.ok) {
+        throw new Error(`Connection test failed: ${testResponse.status}`);
+      }
+
+      const testData = await testResponse.json();
+
+      res.json({
+        success: true,
+        message: 'Kanban connection configured successfully',
+        kanbanStatus: testData,
+        configuration: {
+          kanbanApiUrl,
+          apiKeyConfigured: true
+        }
+      });
+
+    } catch (connectionError: any) {
+      res.status(400).json({
+        success: false,
+        error: `Failed to connect to Kanban app: ${connectionError.message}`
+      });
+    }
+
+  } catch (error: any) {
+    console.error('Error configuring Kanban connection:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Failed to configure Kanban connection' 
     });
   }
 }
