@@ -1043,21 +1043,21 @@ const PosSystem = () => {
   };
 
   return (
-    <div className="w-full max-w-none min-w-[1200px]">
-      <div className="grid grid-cols-1 xl:grid-cols-7 gap-6">
+    <div className="w-full max-w-none">
+      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 lg:gap-6">
         {/* Left side - Frame selection, Mat selection, Glass options */}
-        <div className="xl:col-span-3 space-y-6">
+        <div className="lg:col-span-3 space-y-4 lg:space-y-6">
         {/* Order Information Section */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 header-underline">Order Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4 lg:p-6">
+          <h2 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4 header-underline">Order Information</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
             <div>
               <label className="block text-sm font-medium text-light-textSecondary dark:text-dark-textSecondary mb-1">
                 Customer Name
               </label>
               <input 
                 type="text" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation" 
                 placeholder="Enter customer name"
                 value={customer.name}
                 onChange={(e) => setCustomer({...customer, name: e.target.value})}
@@ -1069,7 +1069,7 @@ const PosSystem = () => {
               </label>
               <input 
                 type="date" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg"
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation"
                 value={new Date().toISOString().split('T')[0]}
                 readOnly
               />
@@ -1080,7 +1080,7 @@ const PosSystem = () => {
               </label>
               <input 
                 type="tel" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation" 
                 placeholder="(555) 123-4567"
                 value={customer.phone || ''}
                 onChange={(e) => setCustomer({...customer, phone: e.target.value})}
@@ -1092,7 +1092,7 @@ const PosSystem = () => {
               </label>
               <input 
                 type="email" 
-                className="w-full p-2 border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg" 
+                className="w-full p-3 text-base border border-light-border dark:border-dark-border rounded-md bg-light-bg dark:bg-dark-bg touch-manipulation" 
                 placeholder="customer@example.com"
                 value={customer.email || ''}
                 onChange={(e) => setCustomer({...customer, email: e.target.value})}
@@ -1102,8 +1102,8 @@ const PosSystem = () => {
         </div>
 
         {/* Artwork Details Section */}
-        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 header-underline">Artwork Details</h2>
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4 lg:p-6">
+          <h2 className="text-lg lg:text-xl font-semibold mb-3 lg:mb-4 header-underline">Artwork Details</h2>
 
           {/* Size Warnings */}
 {artworkWidth > 32 || artworkHeight > 40 ? (
@@ -1130,14 +1130,14 @@ const PosSystem = () => {
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-800 mb-1">
                 Width (inches)
               </label>
               <input 
                 type="number" 
-                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+                className="w-full p-3 text-base border border-gray-300 rounded-md bg-white text-gray-800 touch-manipulation" 
                 step="0.125"
                 min="0.125"
                 value={artworkWidth}
@@ -1150,7 +1150,7 @@ const PosSystem = () => {
               </label>
               <input 
                 type="number" 
-                className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-800" 
+                className="w-full p-3 text-base border border-gray-300 rounded-md bg-white text-gray-800 touch-manipulation" 
                 step="0.125"
                 min="0.125"
                 value={artworkHeight}
