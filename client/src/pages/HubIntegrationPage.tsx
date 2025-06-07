@@ -121,12 +121,24 @@ export default function HubIntegrationPage() {
   const generateHubApiKey = async () => {
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/admin/generate-hub-key', {
+      const response = await fetch('/api/admin/generate-api-key', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate API key');
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('Non-JSON Response:', responseText);
+        throw new Error('Server returned non-JSON response');
       }
 
       const data = await response.json();
