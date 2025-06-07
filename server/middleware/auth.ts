@@ -24,3 +24,8 @@ export function isAuthenticated(req: Request, res: Response, next: NextFunction)
 
   next();
 }
+
+/**
+ * Alias for isAuthenticated to match import in routes
+ */
+export const requireAuth = isAuthenticated;
