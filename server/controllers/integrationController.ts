@@ -196,6 +196,9 @@ export async function receiveWebhook(req: Request, res: Response) {
  */
 export async function generateApiKey(req: Request, res: Response) {
   try {
+    // Set content type header to ensure JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
     // Generate a secure API key
     const apiKey = 'jf_' + crypto.randomBytes(32).toString('hex');
 
@@ -209,7 +212,7 @@ export async function generateApiKey(req: Request, res: Response) {
 
     console.log('Generated API Key:', apiKey);
 
-    res.json({
+    const response = {
       success: true,
       ...keyInfo,
       message: 'API key generated successfully. Store this securely.',
@@ -224,9 +227,12 @@ export async function generateApiKey(req: Request, res: Response) {
         header: 'Authorization',
         value: `Bearer ${apiKey}`
       }
-    });
+    };
+
+    res.status(200).json(response);
   } catch (error: any) {
     console.error('Error generating API key:', error);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to generate API key' 

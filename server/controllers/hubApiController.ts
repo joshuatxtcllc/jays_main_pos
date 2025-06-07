@@ -8,6 +8,9 @@ import { storage } from '../storage';
  */
 export async function generateHubApiKey(req: Request, res: Response) {
   try {
+    // Set content type header to ensure JSON response
+    res.setHeader('Content-Type', 'application/json');
+    
     // Generate a secure API key
     const apiKey = 'hub_' + crypto.randomBytes(32).toString('hex');
     
@@ -15,7 +18,7 @@ export async function generateHubApiKey(req: Request, res: Response) {
     // For now, we'll return it and log it
     console.log('Generated Hub API Key:', apiKey);
     
-    res.json({
+    const response = {
       success: true,
       apiKey: apiKey,
       message: 'API key generated successfully. Store this securely.',
@@ -31,9 +34,12 @@ export async function generateHubApiKey(req: Request, res: Response) {
         header: 'Authorization',
         value: `Bearer ${apiKey}`
       }
-    });
+    };
+    
+    res.status(200).json(response);
   } catch (error: any) {
     console.error('Error generating hub API key:', error);
+    res.setHeader('Content-Type', 'application/json');
     res.status(500).json({ 
       success: false, 
       error: error.message || 'Failed to generate API key' 

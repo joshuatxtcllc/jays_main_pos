@@ -105,10 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { orderId } = req.params;
       const { status, stage, notes } = req.body;
-      
+
       const { externalKanbanService } = await import('./services/externalKanbanService');
       const success = await externalKanbanService.updateOrderStatus(orderId, status, stage, notes);
-      
+
       if (success) {
         res.json({
           success: true,
@@ -192,6 +192,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Hub Integration API Routes
   app.use('/api/hub', hubApiRoutes);
   app.use('/api/hub-admin', hubAdminRoutes);
+
+  // Admin routes for API key generation
+  app.use('/api/admin', hubAdminRoutes);
+
+  // Webhook routes
+  // import webhookRoutes from './routes/webhookRoutes';
+  // app.use('/api/webhooks', webhookRoutes);
   app.use('/api', integrationApiRoutes);
   app.use('/api', ordersRoutes);
   app.use('/api', customersRoutes);
