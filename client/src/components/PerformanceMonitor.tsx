@@ -150,7 +150,7 @@ export function PerformanceMonitor({ isMinimized = false, onToggle }: Performanc
     };
 
     collect(); // Initial collection
-    intervalRef.current = setInterval(collect, 2000); // Update every 2 seconds
+    intervalRef.current = setInterval(collect, 10000); // Update every 10 seconds
   };
 
   // Stop monitoring

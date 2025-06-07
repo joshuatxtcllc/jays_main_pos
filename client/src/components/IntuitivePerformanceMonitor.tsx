@@ -65,7 +65,7 @@ interface IntuitivePerformanceMonitorProps {
 }
 
 export function IntuitivePerformanceMonitor({ 
-  updateInterval = 3000,
+  updateInterval = 10000,
   compact = false 
 }: IntuitivePerformanceMonitorProps) {
   const [isExpanded, setIsExpanded] = useState(false);
