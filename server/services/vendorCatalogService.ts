@@ -45,15 +45,28 @@ export class VendorCatalogService {
   private async getEnhancedLarsonFrames(): Promise<Frame[]> {
     const larsonFrames: Frame[] = [
       {
-        id: "larson-210286",
+        id: "larson-210285",
         name: "Larson Academie White",
         manufacturer: "Larson-Juhl",
         material: "Wood with White Finish",
         width: "2.25",
         depth: "1.25",
         price: "16.75",
-        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_fab.jpg",
+        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210285_fab.jpg",
         color: "#F5F5F5",
+        edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/210285_edge.jpg",
+        corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/210285_corner.jpg"
+      },
+      {
+        id: "larson-210286",
+        name: "Larson Academie Black",
+        manufacturer: "Larson-Juhl",
+        material: "Wood with Black Finish",
+        width: "2.25",
+        depth: "1.25",
+        price: "16.75",
+        catalogImage: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_fab.jpg",
+        color: "#2C2C2C",
         edgeTexture: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_edge.jpg",
         corner: "https://www.larsonjuhl.com/contentassets/products/mouldings/210286_corner.jpg"
       },

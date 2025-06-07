@@ -578,6 +578,22 @@ class VendorApiService {
   private getLarsonSampleFrames(): VendorFrame[] {
     return [
       {
+        id: 'larson-210285',
+        itemNumber: '210285',
+        name: 'Larson Academie White',
+        price: '3.95',
+        material: 'Wood',
+        color: 'White',
+        width: '1.25',
+        height: '0.75',
+        depth: '0.625',
+        collection: 'Academie',
+        description: 'Classic white wood frame with smooth finish',
+        imageUrl: 'https://www.larsonjuhl.com/images/products/210285.jpg',
+        inStock: true,
+        vendor: 'Larson Juhl'
+      },
+      {
         id: 'larson-210286',
         itemNumber: '210286',
         name: 'Larson Academie Black',
