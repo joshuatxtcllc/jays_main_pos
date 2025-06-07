@@ -254,6 +254,10 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
                   Frame Education
                 </div>
               </Link>
+              
+              <Link href="/notifications" className="text-foreground hover:text-primary px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                Notifications
+              </Link>
 
               <div className="py-3 px-2 flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-md">
                 <span className="font-medium text-gray-700 dark:text-gray-300">Cart Items:</span>

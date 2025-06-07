@@ -25,7 +25,9 @@ import OrderDetailsPage from "./pages/OrderDetailsPage";
 import PaymentLinks from "./pages/PaymentLinks";
 import Payment from "./pages/Payment";
 import MatBorderDemo from "./pages/MatBorderDemo"; // Added for mat border demonstration
-import SystemHealthPage from "./pages/SystemHealthPage";
+import SystemHealthPage from "@/pages/SystemHealthPage";
+import WebhookIntegrationPage from "@/pages/WebhookIntegrationPage";
+import NotificationCenterPage from '@/pages/NotificationCenterPage';
 import NotFound from "@/pages/not-found";
 import { ErrorBoundary } from 'react-error-boundary'; //added imports
 import { QueryErrorResetBoundary } from '@tanstack/react-query';
@@ -147,6 +149,7 @@ function App() {
                       <Route path="/system-health" component={SystemHealthPage} />
                       <Route path="/pricing-monitor" element={<PricingMonitorPage />} />
                       <Route path="/larson-optimizer" element={<LarsonOptimizerPage />} />
+                      <Route path="/notifications" component={NotificationCenterPage} />
                       <Route component={NotFound} />
                     </Switch>
                   </main>

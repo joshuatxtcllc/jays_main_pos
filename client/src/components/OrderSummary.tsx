@@ -113,25 +113,25 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   // Other price calculations
   const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, Number(glassOption.price)) : 0;
   const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, 0.02);
-  
+
   // Calculate assembly labor based on size
   const assemblyLaborPrice = calculateAssemblyLaborCharge(Number(artworkWidth), Number(artworkHeight), primaryMatWidth);
-  
+
   // Calculate special services price
   const specialServicesPrice = specialServices.reduce((total, service) => total + Number(service.price), 0);
-  
+
   // Add size surcharge for oversized pieces
   const sizeChargeAmount = sizeSurcharge || 0;
-  
+
   // Calculate misc charges
   const miscChargesTotal = miscCharges?.reduce((total, charge) => total + Number(charge.amount), 0) || 0;
 
   // Calculate subtotal before overhead
   const preOverheadSubtotal = totalFramePrice + totalMatPrice + glassPrice + backingPrice + assemblyLaborPrice + specialServicesPrice + sizeChargeAmount + miscChargesTotal;
-  
+
   // Calculate overhead charges
   const overheadCharge = calculateOverheadCharge(preOverheadSubtotal);
-  
+
   // Calculate final subtotal with overhead
   const subtotal = preOverheadSubtotal + overheadCharge;
   const taxRate = 0.08; // 8% tax rate
