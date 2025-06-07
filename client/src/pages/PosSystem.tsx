@@ -30,6 +30,7 @@ import { useMatboards } from '@/hooks/use-matboards';
 import { useFrames } from '@/hooks/use-frames';
 import { ArtworkSizeDetector } from '@/components/ArtworkSizeDetector';
 import { ArtworkDimensions } from '@/lib/artworkSizeDetector';
+import { IntuitivePerformanceMonitor } from '@/components/IntuitivePerformanceMonitor';
 
 const PosSystem = () => {
   const { toast } = useToast();
