@@ -4,17 +4,14 @@ import {
   calculateFramePrice, 
   calculateMatPrice, 
   calculateGlassPrice, 
-  calculateBackingPrice, 
-  calculateLaborPrice, 
-  calculateTotalPrice,
-  generateQrCode 
-} from '@/lib/utils'; // Assumed generateQrCode function exists
+  calculateBackingPrice
+} from '@shared/pricingUtils';
+import { formatCurrency, generateQrCode } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import QRCode from 'react-qr-code'; // Added import for QRCode
-import { formatCurrency } from '@/lib/utils';
+import QRCode from 'react-qr-code';
 import { ShoppingCart, CreditCard, DollarSign, FileText, Send } from 'lucide-react';
-import { CheckoutPayment } from './CheckoutPayment';
-import { Invoice } from './Invoice';
+import CheckoutPayment from './CheckoutPayment';
+import Invoice from './Invoice';
 import { WorkOrder } from './WorkOrder';
 import { SendPaymentLink } from './SendPaymentLink';
 import { useAuth } from '@/hooks/use-auth';
@@ -99,9 +96,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
     }
   };
 
-  // Calculate prices for each frame
+  // Calculate prices for each frame using updated pricing function
   const framePrices = frames.map(frameItem => 
-    calculateFramePrice(Number(artworkWidth), Number(artworkHeight), Number(frameItem.frame.price))
+    calculateFramePrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, Number(frameItem.frame.price))
   );
   const totalFramePrice = framePrices.reduce((total, price) => total + price, 0);
 
@@ -113,21 +110,17 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
 
   // Other price calculations
   const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, Number(glassOption.price)) : 0;
-  const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth);
-  const laborPrice = calculateLaborPrice(Number(artworkWidth), Number(artworkHeight));
+  const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, 0.02);
+  const laborPrice = 25; // Fixed labor price
 
   // Calculate special services price
   const specialServicesPrice = specialServices.reduce((total, service) => total + Number(service.price), 0);
 
-  // Calculate total
-  const { subtotal, tax, total } = calculateTotalPrice(
-    totalFramePrice,
-    totalMatPrice,
-    glassPrice,
-    backingPrice,
-    laborPrice,
-    specialServicesPrice
-  );
+  // Calculate total with tax
+  const subtotal = totalFramePrice + totalMatPrice + glassPrice + backingPrice + laborPrice + specialServicesPrice;
+  const taxRate = 0.08; // 8% tax rate
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
 
   // Generate QR code data if orderId is available
   const qrCodeData = orderId ? generateQrCode(orderId) : null;

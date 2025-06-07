@@ -765,13 +765,27 @@ const PosSystem = () => {
       const primaryMat = selectedMatboards.length > 0 ? selectedMatboards[0].matboard : null;
       const primaryMatWidth = selectedMatboards.length > 0 ? selectedMatboards[0].width : 2;
 
-      // Use basic pricing for now - proper pricing calculation will be done on server
-      const framePrice = primaryFrame ? primaryFrame.price : '0';
-      const matPrice = primaryMat ? primaryMat.price : '0';
-      const glassPrice = selectedGlassOption.price;
-      const subtotal = 0; // Will be calculated on server
-      const tax = 0; // Will be calculated on server
-      const total = 0; // Will be calculated on server
+      // Calculate prices using the proper pricing service with dollar-based markup brackets
+      const framePrices = selectedFrames.map(frameItem => 
+        calculateFramePrice(artworkWidth, artworkHeight, primaryMatWidth, Number(frameItem.frame.price))
+      );
+      const totalFramePrice = framePrices.reduce((total, price) => total + price, 0);
+
+      const matPrices = selectedMatboards.map(matItem => 
+        calculateMatPrice(artworkWidth, artworkHeight, matItem.width, Number(matItem.matboard.price))
+      );
+      const totalMatPrice = matPrices.reduce((total, price) => total + price, 0);
+
+      const calculatedGlassPrice = selectedGlassOption ? 
+        calculateGlassPrice(artworkWidth, artworkHeight, primaryMatWidth, Number(selectedGlassOption.price)) : 0;
+      const backingPrice = calculateBackingPrice(artworkWidth, artworkHeight, primaryMatWidth, 0.02);
+      const laborPrice = 25;
+      const specialServicesPrice = selectedServices.reduce((total, service) => total + Number(service.price), 0);
+
+      const subtotal = totalFramePrice + totalMatPrice + calculatedGlassPrice + backingPrice + laborPrice + specialServicesPrice;
+      const taxRate = 0.08;
+      const tax = subtotal * taxRate;
+      const total = subtotal + tax;
       const totalMiscCharges = miscCharges.reduce((sum, charge) => sum + charge.amount, 0);
       const miscChargeDescription = miscCharges.length > 0 
         ? miscCharges.map(charge => `${charge.description}: $${charge.amount.toFixed(2)}`).join('; ')
