@@ -38,7 +38,7 @@ export const specialServicesCatalog: SpecialService[] = [
     id: 'float-mount',
     name: 'Float Mount',
     description: 'Artwork appears to float',
-    price: '35.00'
+    price: '50.00'
   },
   {
     id: 'glass-float',
