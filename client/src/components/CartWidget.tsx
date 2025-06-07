@@ -30,12 +30,14 @@ export function CartWidget() {
   // Fetch active order group (cart)
   const { data: orderGroups } = useQuery<OrderGroup[]>({
     queryKey: ['/api/order-groups'],
-    select: (data) => data.filter(group => group.status === 'open'),
+    queryFn: () => fetch('/api/order-groups').then(res => res.json()),
+    select: (data) => data?.filter(group => group.status === 'open') || [],
   });
 
   // Fetch orders for any open order groups
   const { data: allOrders } = useQuery<Order[]>({
     queryKey: ['/api/orders'],
+    queryFn: () => fetch('/api/orders').then(res => res.json()),
   });
   
   const openOrderGroup = orderGroups?.[0];
@@ -64,7 +66,18 @@ export function CartWidget() {
     }));
     
     try {
-      await apiRequest('PATCH', `/api/orders/${orderId}`, { quantity: newQuantity });
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ quantity: newQuantity }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update quantity');
+      }
+
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/order-groups'] });
       
@@ -73,6 +86,12 @@ export function CartWidget() {
         description: `Item quantity has been updated to ${newQuantity}`,
       });
     } catch (error) {
+      // Revert the local state change on error
+      setQuantities(prev => ({
+        ...prev,
+        [orderId]: cartOrders.find(order => order.id === orderId)?.quantity || 1
+      }));
+      
       toast({
         title: "Error updating quantity",
         description: "There was an error updating the item quantity",
@@ -83,7 +102,14 @@ export function CartWidget() {
   
   const handleRemoveOrder = async (orderId: number) => {
     try {
-      await apiRequest('DELETE', `/api/orders/${orderId}`);
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to remove item');
+      }
+
       queryClient.invalidateQueries({ queryKey: ['/api/orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/order-groups'] });
       

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobile } from "@/hooks/use-mobile";
+import { CartWidget } from '@/components/CartWidget';
 
 interface HeaderProps {
   darkMode: boolean;

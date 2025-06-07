@@ -135,12 +135,19 @@ const CashCheckPaymentForm = ({ orderGroupId }: { orderGroupId: number }) => {
     setIsLoading(true);
     
     try {
-      const response = await apiRequest('POST', '/api/process-cash-check-payment', {
-        orderGroupId,
-        paymentMethod,
-        cashAmount: paymentMethod === 'cash' ? cashAmount : undefined,
-        checkNumber: paymentMethod === 'check' ? checkNumber : undefined,
-        notes: notes || undefined
+      const response = await fetch(`/api/order-groups/${orderGroupId}/pay`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentMethod,
+          details: {
+            cashAmount: paymentMethod === 'cash' ? Number(cashAmount) : undefined,
+            checkNumber: paymentMethod === 'check' ? checkNumber : undefined,
+            notes: notes || undefined
+          }
+        })
       });
       
       if (response.ok) {
@@ -268,23 +275,49 @@ const Checkout = () => {
   // Fetch order group details
   const { data: orderGroup, isLoading: orderGroupLoading, error: orderGroupError } = useQuery({
     queryKey: ['/api/order-groups', orderGroupId, refreshTrigger], 
-    queryFn: () => fetch(`/api/order-groups/${orderGroupId}`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/order-groups/${orderGroupId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch order group');
+      }
+      return response.json();
+    },
     enabled: !!orderGroupId,
   });
 
   // Fetch orders in the group
   const { data: orders, isLoading: ordersLoading, error: ordersError } = useQuery({
     queryKey: ['/api/order-groups', orderGroupId, 'orders', refreshTrigger],
-    queryFn: () => fetch(`/api/order-groups/${orderGroupId}/orders`).then(res => res.json()),
+    queryFn: async () => {
+      const response = await fetch(`/api/order-groups/${orderGroupId}/orders`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
+      }
+      return response.json();
+    },
     enabled: !!orderGroupId,
   });
 
   // Create payment intent when page loads
   useEffect(() => {
-    if (orderGroupId) {
+    if (orderGroupId && orderGroup) {
       const createPaymentIntent = async () => {
         try {
-          const response = await apiRequest('POST', '/api/create-payment-intent', { orderGroupId });
+          const response = await fetch('/api/create-payment-intent', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              orderGroupId: Number(orderGroupId),
+              amount: Math.round(Number(orderGroup.total) * 100) // Convert to cents
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to create payment intent');
+          }
+
           const data = await response.json();
           setClientSecret(data.clientSecret);
         } catch (error) {
@@ -299,7 +332,7 @@ const Checkout = () => {
 
       createPaymentIntent();
     }
-  }, [orderGroupId, toast, refreshTrigger]);
+  }, [orderGroupId, orderGroup, toast, refreshTrigger]);
 
   // Handle discount application
   const handleDiscountApplied = () => {
