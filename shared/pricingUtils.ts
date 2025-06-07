@@ -99,7 +99,7 @@ export function calculateFramePrice(width: number, height: number, matWidth: num
 }
 
 /**
- * Calculate mat pricing using size-based markup structure
+ * Calculate mat pricing using size-based markup structure with increased pricing
  * @param width Artwork width in inches
  * @param height Artwork height in inches
  * @param matWidth Mat width in inches
@@ -114,29 +114,32 @@ export function calculateMatPrice(width: number, height: number, matWidth: numbe
   // Calculate united inches of finished size
   const unitedInches = outerWidth + outerHeight;
   
-  // Calculate wholesale cost
-  const wholesaleCost = unitedInches * pricePerUnitedInch;
+  // Calculate wholesale cost with higher base multiplier for mats
+  const wholesaleCost = unitedInches * pricePerUnitedInch * 2.5; // Increased base cost
   
-  // Apply size-based markup factor
-  let markupFactor = 4.0; // Base markup for small sizes (5x7 and smaller)
+  // Apply enhanced size-based markup factor for mats
+  let markupFactor = 5.5; // Increased markup for small sizes
   
   if (unitedInches <= 24) { // 5x7 = 24 united inches
-    markupFactor = 4.0;
+    markupFactor = 5.5;
   } else if (unitedInches <= 36) { // 8x10 = 36 united inches
-    markupFactor = 3.8;
+    markupFactor = 5.0;
   } else if (unitedInches <= 50) { // 11x14 = 50 united inches
-    markupFactor = 3.5;
+    markupFactor = 4.5;
   } else if (unitedInches <= 68) { // 16x20 = 68 united inches
-    markupFactor = 3.2;
+    markupFactor = 4.2;
   } else if (unitedInches <= 88) { // 18x24 = 88 united inches
-    markupFactor = 3.0;
+    markupFactor = 3.8;
   } else if (unitedInches <= 108) { // 24x30 = 108 united inches
-    markupFactor = 2.8;
+    markupFactor = 3.5;
   } else { // Larger than 24x30
-    markupFactor = 2.5;
+    markupFactor = 3.2;
   }
   
-  return wholesaleCost * markupFactor;
+  // Add mat cutting labor charge
+  const laborCharge = calculateMatLaborCharge(unitedInches);
+  
+  return (wholesaleCost * markupFactor) + laborCharge;
 }
 
 /**
@@ -181,7 +184,67 @@ export function calculateGlassPrice(width: number, height: number, matWidth: num
 }
 
 /**
- * Calculate backing pricing using dollar-based markup
+ * Calculate mat cutting labor charge based on size
+ * @param unitedInches United inches of the mat
+ * @returns Labor charge
+ */
+export function calculateMatLaborCharge(unitedInches: number): number {
+  let laborCharge = 15.00; // Base labor charge
+  
+  if (unitedInches <= 24) { // Small (5x7)
+    laborCharge = 15.00;
+  } else if (unitedInches <= 36) { // 8x10
+    laborCharge = 20.00;
+  } else if (unitedInches <= 50) { // 11x14
+    laborCharge = 25.00;
+  } else if (unitedInches <= 68) { // 16x20
+    laborCharge = 35.00;
+  } else if (unitedInches <= 88) { // 18x24
+    laborCharge = 45.00;
+  } else if (unitedInches <= 108) { // 24x30
+    laborCharge = 55.00;
+  } else { // Larger than 24x30
+    laborCharge = 65.00;
+  }
+  
+  return laborCharge;
+}
+
+/**
+ * Calculate assembly labor charge based on overall size
+ * @param width Artwork width in inches
+ * @param height Artwork height in inches
+ * @param matWidth Mat width in inches
+ * @returns Labor charge
+ */
+export function calculateAssemblyLaborCharge(width: number, height: number, matWidth: number): number {
+  const outerWidth = width + (matWidth * 2);
+  const outerHeight = height + (matWidth * 2);
+  const unitedInches = outerWidth + outerHeight;
+  
+  let laborCharge = 25.00; // Base assembly charge
+  
+  if (unitedInches <= 24) { // Small (5x7)
+    laborCharge = 25.00;
+  } else if (unitedInches <= 36) { // 8x10
+    laborCharge = 30.00;
+  } else if (unitedInches <= 50) { // 11x14
+    laborCharge = 35.00;
+  } else if (unitedInches <= 68) { // 16x20
+    laborCharge = 45.00;
+  } else if (unitedInches <= 88) { // 18x24
+    laborCharge = 55.00;
+  } else if (unitedInches <= 108) { // 24x30
+    laborCharge = 65.00;
+  } else { // Larger than 24x30
+    laborCharge = 80.00;
+  }
+  
+  return laborCharge;
+}
+
+/**
+ * Calculate backing pricing using reduced costs
  * @param width Artwork width in inches
  * @param height Artwork height in inches
  * @param matWidth Mat width in inches
@@ -196,15 +259,37 @@ export function calculateBackingPrice(width: number, height: number, matWidth: n
   // Calculate backing area
   const backingArea = backingWidth * backingHeight;
   
-  // Calculate wholesale cost
-  const wholesaleCost = backingArea * pricePerSquareInch;
+  // Calculate reduced wholesale cost (backing is cheaper material)
+  const wholesaleCost = backingArea * pricePerSquareInch * 0.3; // Reduced to 30% of original
   
-  // Apply dollar-based markup with minimum charge
-  const markupFactor = calculateMarkupFactor(wholesaleCost);
+  // Apply lower markup for backing
+  const markupFactor = 2.5; // Fixed lower markup
   const retailPrice = wholesaleCost * markupFactor;
   
-  // Minimum backing charge of $10
-  return Math.max(retailPrice, 10.00);
+  // Minimum backing charge of $5 (reduced from $10)
+  return Math.max(retailPrice, 5.00);
+}
+
+/**
+ * Calculate overhead charges based on order total
+ * @param subtotal Order subtotal before overhead
+ * @returns Overhead charge
+ */
+export function calculateOverheadCharge(subtotal: number): number {
+  // Overhead percentage based on order size
+  let overheadRate = 0.15; // 15% base rate
+  
+  if (subtotal < 100) {
+    overheadRate = 0.20; // 20% for small orders
+  } else if (subtotal < 250) {
+    overheadRate = 0.15; // 15% for medium orders
+  } else if (subtotal < 500) {
+    overheadRate = 0.12; // 12% for larger orders
+  } else {
+    overheadRate = 0.10; // 10% for very large orders
+  }
+  
+  return subtotal * overheadRate;
 }
 
 /**

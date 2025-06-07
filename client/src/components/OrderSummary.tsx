@@ -4,7 +4,9 @@ import {
   calculateFramePrice, 
   calculateMatPrice, 
   calculateGlassPrice, 
-  calculateBackingPrice
+  calculateBackingPrice,
+  calculateAssemblyLaborCharge,
+  calculateOverheadCharge
 } from '@shared/pricingUtils';
 import { formatCurrency, generateQrCode } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -111,13 +113,27 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   // Other price calculations
   const glassPrice = glassOption ? calculateGlassPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, Number(glassOption.price)) : 0;
   const backingPrice = calculateBackingPrice(Number(artworkWidth), Number(artworkHeight), primaryMatWidth, 0.02);
-  const laborPrice = 25; // Fixed labor price
-
+  
+  // Calculate assembly labor based on size
+  const assemblyLaborPrice = calculateAssemblyLaborCharge(Number(artworkWidth), Number(artworkHeight), primaryMatWidth);
+  
   // Calculate special services price
   const specialServicesPrice = specialServices.reduce((total, service) => total + Number(service.price), 0);
+  
+  // Add size surcharge for oversized pieces
+  const sizeChargeAmount = sizeSurcharge || 0;
+  
+  // Calculate misc charges
+  const miscChargesTotal = miscCharges?.reduce((total, charge) => total + Number(charge.amount), 0) || 0;
 
-  // Calculate total with tax
-  const subtotal = totalFramePrice + totalMatPrice + glassPrice + backingPrice + laborPrice + specialServicesPrice;
+  // Calculate subtotal before overhead
+  const preOverheadSubtotal = totalFramePrice + totalMatPrice + glassPrice + backingPrice + assemblyLaborPrice + specialServicesPrice + sizeChargeAmount + miscChargesTotal;
+  
+  // Calculate overhead charges
+  const overheadCharge = calculateOverheadCharge(preOverheadSubtotal);
+  
+  // Calculate final subtotal with overhead
+  const subtotal = preOverheadSubtotal + overheadCharge;
   const taxRate = 0.08; // 8% tax rate
   const tax = subtotal * taxRate;
   const total = subtotal + tax;
@@ -206,8 +222,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
         </div>
 
         <div className="flex justify-between">
-          <span className="text-light-textSecondary dark:text-dark-textSecondary">Labor</span>
-          <span>${laborPrice.toFixed(2)}</span>
+          <span className="text-light-textSecondary dark:text-dark-textSecondary">Assembly Labor</span>
+          <span>${assemblyLaborPrice.toFixed(2)}</span>
         </div>
 
         {/* Special Services, shown only if selected */}
@@ -237,6 +253,28 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
             </span>
           </div>
         )}
+
+        {/* Misc Charges */}
+        {miscCharges && miscCharges.length > 0 && (
+          <div className="border-t border-light-border dark:border-dark-border pt-2">
+            <div className="flex justify-between font-medium">
+              <span>Miscellaneous Charges</span>
+              <span>${miscChargesTotal.toFixed(2)}</span>
+            </div>
+            {miscCharges.map((charge, index) => (
+              <div key={index} className="flex justify-between text-sm text-light-textSecondary dark:text-dark-textSecondary pl-3">
+                <span>{charge.description}</span>
+                <span>${Number(charge.amount).toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Overhead Charge */}
+        <div className="flex justify-between">
+          <span className="text-light-textSecondary dark:text-dark-textSecondary">Overhead & Shop Fees</span>
+          <span>${overheadCharge.toFixed(2)}</span>
+        </div>
 
         <div className="border-t border-light-border dark:border-dark-border pt-2">
           <div className="flex justify-between font-medium">
