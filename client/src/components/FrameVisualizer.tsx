@@ -235,18 +235,19 @@ export default function FrameVisualizer({
 
   return (
     <div className="frame-visualizer-container w-full">
-      <div className="w-full bg-gray-50 p-4 rounded-lg" style={{ minWidth: '800px', width: '100%' }}>
-        <div className="flex justify-center">
+      <div className="w-full bg-gray-50 p-2 sm:p-4 rounded-lg overflow-x-auto">
+        <div className="flex justify-center min-w-[320px]">
           <canvas 
             ref={canvasRef}
-            className="border-2 border-gray-300 shadow-xl rounded-lg bg-white"
+            className="border-2 border-gray-300 shadow-xl rounded-lg bg-white max-w-full h-auto"
             width={800}
             height={600}
             style={{ 
-              width: '800px',
-              height: '600px',
-              display: 'block',
-              maxWidth: 'none'
+              width: '100%',
+              maxWidth: '800px',
+              height: 'auto',
+              aspectRatio: '4/3',
+              display: 'block'
             }}
           />
         </div>
