@@ -1729,13 +1729,12 @@ const PosSystem = () => {
                 name: frame.name,
                 manufacturer: frame.manufacturer,
                 material: frame.material,
-                width: frame.width,
-                depth: frame.depth,
+                width: frame.width.toString(),
+                depth: frame.depth.toString(),
                 price: frame.price.toString(),
-                color: frame.color,
-                description: `Manual entry: ${frame.name}`,
-                item: frame.name,
-                um: 'ft'
+                catalogImage: '',
+                edgeTexture: null,
+                corner: null
               },
               distance: 0,
               position: selectedFrames.length + 1,

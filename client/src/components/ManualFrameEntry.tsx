@@ -61,7 +61,7 @@ export default function ManualFrameEntry({
       corner: ''
     };
 
-    onFrameAdd(newFrame);
+    onFrameAdd?.(newFrame);
 
     // Reset form
     setFrameData({
@@ -98,7 +98,7 @@ export default function ManualFrameEntry({
       corner: ''
     };
 
-    onFrameAdd(newFrame);
+    onFrameAdd?.(newFrame);
 
     // Reset form
     setMouldingData({
