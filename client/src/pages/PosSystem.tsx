@@ -28,6 +28,7 @@ import ManualFrameEntry from '@/components/ManualFrameEntry';
 import MiscellaneousCharges from '@/components/MiscellaneousCharges';
 import { useMatboards } from '@/hooks/use-matboards';
 import { useFrames } from '@/hooks/use-frames';
+import { DualPreviewSystem } from '@/components/DualPreviewSystem';
 import { ArtworkSizeDetector } from '@/components/ArtworkSizeDetector';
 import { ArtworkDimensions } from '@/lib/artworkSizeDetector';
 import { IntuitivePerformanceMonitor } from '@/components/IntuitivePerformanceMonitor';
@@ -128,6 +129,20 @@ const PosSystem = () => {
 
   // Frame design image
   const [frameDesignImage, setFrameDesignImage] = useState<string | null>(null);
+
+  // Dual Preview System
+  interface FrameDesignData {
+    id: string;
+    frameName: string;
+    matColor: string;
+    glassType: string;
+    dimensions: { width: number; height: number; unit: string; };
+    artworkImage?: string;
+    totalPrice: number;
+  }
+  
+  const [currentFrameDesign, setCurrentFrameDesign] = useState<FrameDesignData | undefined>(undefined);
+  const [savedFrameDesign, setSavedFrameDesign] = useState<FrameDesignData | undefined>(undefined);
 
   // Manual frame entry
   const [useManualFrame, setUseManualFrame] = useState<boolean>(false);
@@ -1693,7 +1708,7 @@ const PosSystem = () => {
 
       {/* Right side - Visualizer and Order Summary */}
       <div className="lg:col-span-4 space-y-4 lg:space-y-6">
-        {/* Unified Artwork Detection and Frame Preview */}
+        {/* Unified Artwork Detection and Dual Preview */}
         <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4 lg:p-6">
           <ArtworkSizeDetector 
             defaultWidth={artworkWidth}
@@ -1716,6 +1731,36 @@ const PosSystem = () => {
               });
             }}
             onFrameImageCaptured={setFrameDesignImage}
+          />
+        </div>
+
+        {/* Dual Preview System */}
+        <div className="bg-white dark:bg-dark-cardBg rounded-lg shadow-md p-4 lg:p-6">
+          <DualPreviewSystem
+            primaryDesign={currentFrameDesign}
+            comparisonDesign={savedFrameDesign}
+            onDesignSelect={(design) => {
+              // Apply selected design to current configuration
+              if (design.id === currentFrameDesign?.id) {
+                toast({
+                  title: "Design Selected",
+                  description: "Using current frame design configuration",
+                });
+              } else {
+                // Apply comparison design settings
+                setCurrentFrameDesign(design);
+                toast({
+                  title: "Design Updated",
+                  description: "Applied comparison design to current order",
+                });
+              }
+            }}
+            onCompareToggle={(enabled) => {
+              if (enabled && !savedFrameDesign) {
+                // Save current design as comparison if none exists
+                setSavedFrameDesign(currentFrameDesign);
+              }
+            }}
           />
         </div>
 
