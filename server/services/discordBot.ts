@@ -4,48 +4,6 @@ import { fileURLToPath } from 'url';
 // Polyfill for __filename and __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// ...rest of your code
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Polyfill for __filename and __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ...rest of your code
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Polyfill for __filename and __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ...rest of your code
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Polyfill for __filename and __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ...rest of your code
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Polyfill for __filename and __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ...rest of your code
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Polyfill for __filename and __dirname in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// ...rest of your code
 import { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } from 'discord.js';
 
 class DiscordBot {
@@ -180,18 +138,16 @@ class DiscordBot {
       console.error('Failed to start Discord bot:', error);
     }
   }
-
-  public async sendNotification(channelId: string, message: string) {
-    try {
-      const channel = await this.client.channels.fetch(channelId);
-      if (channel?.isTextBased()) {
-        await channel.send(message);
-      }
-    } catch (error) {
-      console.error('Failed to send Discord notification:', error);
+public async sendNotification(channelId: string, message: string) {
+  try {
+    const channel = await this.client.channels.fetch(channelId);
+    if (channel?.isTextBased()) {
+      await (channel as import('discord.js').TextBasedChannel).send(message);
     }
+  } catch (error) {
+    console.error('Failed to send Discord notification:', error);
   }
-
+}
   public async sendOrderUpdate(channelId: string, orderId: string, status: string) {
     const message = `🔔 **Order Update**\nOrder #${orderId} status changed to: **${status}**`;
     await this.sendNotification(channelId, message);
