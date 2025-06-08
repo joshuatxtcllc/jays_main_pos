@@ -141,9 +141,6 @@ const PosSystem = () => {
     totalPrice: number;
   }
   
-  const [currentFrameDesign, setCurrentFrameDesign] = useState<FrameDesignData | undefined>(undefined);
-  const [savedFrameDesign, setSavedFrameDesign] = useState<FrameDesignData | undefined>(undefined);
-
   // Manual frame entry
   const [useManualFrame, setUseManualFrame] = useState<boolean>(false);
   const [manualFrameName, setManualFrameName] = useState<string>('');
@@ -155,6 +152,9 @@ const PosSystem = () => {
     description: string;
     amount: number;
   }>>([]);
+
+  const [currentFrameDesign, setCurrentFrameDesign] = useState<FrameDesignData | undefined>(undefined);
+  const [savedFrameDesign, setSavedFrameDesign] = useState<FrameDesignData | undefined>(undefined);
 
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
@@ -806,6 +806,8 @@ const PosSystem = () => {
       const miscChargeDescription = miscCharges.length > 0 
         ? miscCharges.map(charge => `${charge.description}: $${charge.amount.toFixed(2)}`).join('; ')
         : '';
+
+
 
       const orderData: InsertOrder = {
         customerId: customerResponse.id,
@@ -1739,15 +1741,13 @@ const PosSystem = () => {
           <DualPreviewSystem
             primaryDesign={currentFrameDesign}
             comparisonDesign={savedFrameDesign}
-            onDesignSelect={(design) => {
-              // Apply selected design to current configuration
+            onDesignSelect={(design: any) => {
               if (design.id === currentFrameDesign?.id) {
                 toast({
                   title: "Design Selected",
                   description: "Using current frame design configuration",
                 });
               } else {
-                // Apply comparison design settings
                 setCurrentFrameDesign(design);
                 toast({
                   title: "Design Updated",
@@ -1755,10 +1755,13 @@ const PosSystem = () => {
                 });
               }
             }}
-            onCompareToggle={(enabled) => {
-              if (enabled && !savedFrameDesign) {
-                // Save current design as comparison if none exists
+            onCompareToggle={(enabled: boolean) => {
+              if (enabled && !savedFrameDesign && currentFrameDesign) {
                 setSavedFrameDesign(currentFrameDesign);
+                toast({
+                  title: "Comparison Mode",
+                  description: "Current design saved for comparison",
+                });
               }
             }}
           />
