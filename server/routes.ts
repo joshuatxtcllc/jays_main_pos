@@ -172,6 +172,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Customer notification endpoint - uses real customer data
+  app.post('/api/notifications/send', async (req, res) => {
+    try {
+      const { customerPhone, customerEmail, orderId, type, message, discordUserId } = req.body;
+      
+      // Import customer profiles
+      const { getCustomerByPhone, getCustomerByEmail, updateCustomerDiscordId } = await import('./data/customerProfiles.js');
+      
+      // Find customer by phone or email
+      let customer = customerPhone ? getCustomerByPhone(customerPhone) : 
+                   customerEmail ? getCustomerByEmail(customerEmail) : null;
+      
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      // Update Discord ID if provided
+      if (discordUserId && !customer.discordUserId) {
+        updateCustomerDiscordId(customer.id, discordUserId);
+        customer.discordUserId = discordUserId;
+      }
+
+      const notificationService = req.app.locals.notificationService;
+      
+      let result;
+      const orderNumber = orderId || Math.floor(Math.random() * 1000) + 100;
+      
+      switch (type) {
+        case 'order_update':
+          result = await notificationService.sendOrderStatusUpdate(
+            customer, 
+            orderNumber, 
+            'In Production',
+            message || 'Your custom frame is now being crafted by our artisans.'
+          );
+          break;
+          
+        case 'completion':
+          result = await notificationService.sendCompletionNotice(
+            customer,
+            orderNumber,
+            message || 'Ready for pickup at Jays Frames studio during business hours.'
+          );
+          break;
+          
+        case 'estimate':
+          result = await notificationService.sendEstimateUpdate(
+            customer,
+            orderNumber,
+            parseInt(message) || 7
+          );
+          break;
+          
+        default:
+          result = await notificationService.notifyCustomer(customer, {
+            title: 'Jays Frames Notification',
+            message: message || 'Thank you for choosing Jays Frames for your custom framing needs.',
+            type: 'custom',
+            urgency: 'normal'
+          });
+      }
+
+      res.json({
+        success: true,
+        customer: {
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
+          hasDiscord: !!customer.discordUserId
+        },
+        orderNumber,
+        notificationResults: result,
+        message: 'Notification sent successfully through enabled channels'
+      });
+
+    } catch (error) {
+      console.error('Error sending customer notification:', error);
+      res.status(500).json({ 
+        error: 'Failed to send notification',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Get customer information endpoint
+  app.get('/api/customers/search', async (req, res) => {
+    try {
+      const { phone, email } = req.query;
+      const { getCustomerByPhone, getCustomerByEmail } = await import('./data/customerProfiles.js');
+      
+      let customer = phone ? getCustomerByPhone(phone as string) : 
+                    email ? getCustomerByEmail(email as string) : null;
+      
+      if (!customer) {
+        return res.status(404).json({ error: 'Customer not found' });
+      }
+
+      res.json({
+        customer: {
+          id: customer.id,
+          name: customer.name,
+          phone: customer.phone,
+          email: customer.email,
+          hasDiscord: !!customer.discordUserId,
+          preferences: customer.preferences,
+          notes: customer.notes
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to search customer' });
+    }
+  });
+
   // External Kanban Integration - Fetch orders from external Kanban app
   app.get('/api/kanban/external/orders', async (req, res) => {
     try {
