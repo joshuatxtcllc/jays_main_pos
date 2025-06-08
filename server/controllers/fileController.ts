@@ -1,3 +1,11 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Polyfill for __filename and __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ...rest of your code
 import { Request, Response } from 'express';
 import { 
   saveOrderArtworkImage, 
