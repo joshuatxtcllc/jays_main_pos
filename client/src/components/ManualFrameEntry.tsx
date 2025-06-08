@@ -6,10 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ManualFrameEntryProps {
-  onFrameAdd: (frame: any) => void;
+  onFrameAdd?: (frame: any) => void;
+  useManualFrame?: boolean;
+  onToggleManualFrame?: (toggle: boolean) => void;
+  frameName?: string;
+  onFrameNameChange?: (name: string) => void;
+  frameCost?: number;
+  onFrameCostChange?: (cost: number) => void;
 }
 
-export default function ManualFrameEntry({ onFrameAdd }: ManualFrameEntryProps) {
+export default function ManualFrameEntry({ 
+  onFrameAdd,
+  useManualFrame,
+  onToggleManualFrame,
+  frameName,
+  onFrameNameChange,
+  frameCost,
+  onFrameCostChange
+}: ManualFrameEntryProps) {
   const [frameData, setFrameData] = useState({
     name: '',
     manufacturer: '',

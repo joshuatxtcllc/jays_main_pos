@@ -156,6 +156,40 @@ const PosSystem = () => {
   const [currentFrameDesign, setCurrentFrameDesign] = useState<FrameDesignData | undefined>(undefined);
   const [savedFrameDesign, setSavedFrameDesign] = useState<FrameDesignData | undefined>(undefined);
 
+  // Update current frame design when selections change
+  React.useEffect(() => {
+    const frame = selectedFrames.length > 0 ? selectedFrames[0].frame : null;
+    const mat = selectedMatboards.length > 0 ? selectedMatboards[0].matboard : null;
+    
+    if (frame && mat) {
+      const frameCost = useManualFrame ? manualFrameCost : 
+        selectedFrames.reduce((total, item) => total + calculateFramePrice(artworkWidth, artworkHeight, item.distance, Number(item.frame.price)), 0);
+      const matCost = selectedMatboards.reduce((total, item) => total + calculateMatPrice(artworkWidth, artworkHeight, item.width, Number(item.matboard.price)), 0);
+      const glassCost = selectedGlassOption ? calculateGlassPrice(artworkWidth, artworkHeight, primaryMatWidth, Number(selectedGlassOption.price)) : 0;
+      const backingCost = calculateBackingPrice(artworkWidth, artworkHeight, primaryMatWidth, 0.02);
+      const servicesCost = selectedServices.reduce((total, service) => total + Number(service.price), 0);
+      const miscCost = miscCharges.reduce((sum, charge) => sum + charge.amount, 0);
+      const sizeCost = getSizeSurcharge();
+      const total = (frameCost + matCost + glassCost + backingCost + 25 + servicesCost + miscCost + sizeCost) * 1.08;
+
+      const designData: FrameDesignData = {
+        id: `design-${Date.now()}`,
+        frameName: useManualFrame ? manualFrameName : frame.name || 'Custom Frame',
+        matColor: mat.name || mat.id,
+        glassType: selectedGlassOption?.name || 'Standard Glass',
+        dimensions: {
+          width: artworkWidth,
+          height: artworkHeight,
+          unit: 'in'
+        },
+        artworkImage: artworkImage || undefined,
+        totalPrice: total
+      };
+      
+      setCurrentFrameDesign(designData);
+    }
+  }, [selectedFrames, selectedMatboards, selectedGlassOption, selectedServices, miscCharges, artworkWidth, artworkHeight, artworkImage, useManualFrame, manualFrameName, manualFrameCost, primaryMatWidth]);
+
   // Use the frames hook
   const { frames, loading: framesLoading, error: framesError } = useFrames();
 
@@ -1687,6 +1721,28 @@ const PosSystem = () => {
 
         {/* Manual Frame Entry Section */}
         <ManualFrameEntry
+          onFrameAdd={(frame) => {
+            // Add manual frame to selected frames
+            const manualFrame = {
+              frame: {
+                id: 'manual',
+                name: frame.name,
+                manufacturer: frame.manufacturer,
+                material: frame.material,
+                width: frame.width,
+                depth: frame.depth,
+                price: frame.price.toString(),
+                color: frame.color,
+                description: `Manual entry: ${frame.name}`,
+                item: frame.name,
+                um: 'ft'
+              },
+              distance: 0,
+              position: selectedFrames.length + 1,
+              pricingMethod: 'chop'
+            };
+            setSelectedFrames([...selectedFrames, manualFrame]);
+          }}
           useManualFrame={useManualFrame}
           onToggleManualFrame={setUseManualFrame}
           frameName={manualFrameName}
