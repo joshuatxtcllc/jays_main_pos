@@ -9,6 +9,12 @@ import {
 import { storage } from '../storage';
 import path from 'path';
 import fs from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// ES module compatibility - add __dirname and __filename polyfills
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Handle artwork image upload
 export async function uploadArtworkImage(req: Request, res: Response) {

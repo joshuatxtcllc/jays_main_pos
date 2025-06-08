@@ -9,6 +9,10 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import cors from "cors";
 
+// ES module compatibility - add __dirname and __filename polyfills
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 
