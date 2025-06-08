@@ -125,10 +125,8 @@ export default function Header({ darkMode, toggleTheme }: HeaderProps) {
     <header className="bg-background border-b dark:border-gray-800 fixed top-0 left-0 w-full z-50">
       <div className="container mx-auto px-3 lg:px-4 h-14 lg:h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/dashboard">
-          <a className="flex items-center space-x-2 cursor-pointer">
-            <span className="font-bold text-xl text-black dark:text-white">Jay's Frames</span>
-          </a>
+        <Link href="/dashboard" className="flex items-center space-x-2 cursor-pointer">
+          <span className="font-bold text-xl text-black dark:text-white">Jay's Frames</span>
         </Link>
 
         {/* Desktop Navigation */}

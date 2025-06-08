@@ -176,14 +176,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/notifications/send', async (req, res) => {
     try {
       const { customerPhone, customerEmail, orderId, type, message, discordUserId } = req.body;
-      
+
       // Import customer profiles
       const { getCustomerByPhone, getCustomerByEmail, updateCustomerDiscordId } = await import('./data/customerProfiles.js');
-      
+
       // Find customer by phone or email
       let customer = customerPhone ? getCustomerByPhone(customerPhone) : 
                    customerEmail ? getCustomerByEmail(customerEmail) : null;
-      
+
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }
@@ -195,10 +195,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const notificationService = req.app.locals.notificationService;
-      
+
       let result;
       const orderNumber = orderId || Math.floor(Math.random() * 1000) + 100;
-      
+
       switch (type) {
         case 'order_update':
           result = await notificationService.sendOrderStatusUpdate(
@@ -208,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message || 'Your custom frame is now being crafted by our artisans.'
           );
           break;
-          
+
         case 'completion':
           result = await notificationService.sendCompletionNotice(
             customer,
@@ -216,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             message || 'Ready for pickup at Jays Frames studio during business hours.'
           );
           break;
-          
+
         case 'estimate':
           result = await notificationService.sendEstimateUpdate(
             customer,
@@ -224,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             parseInt(message) || 7
           );
           break;
-          
+
         default:
           result = await notificationService.notifyCustomer(customer, {
             title: 'Jays Frames Notification',
@@ -261,10 +261,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { phone, email } = req.query;
       const { getCustomerByPhone, getCustomerByEmail } = await import('./data/customerProfiles.js');
-      
+
       let customer = phone ? getCustomerByPhone(phone as string) : 
                     email ? getCustomerByEmail(email as string) : null;
-      
+
       if (!customer) {
         return res.status(404).json({ error: 'Customer not found' });
       }

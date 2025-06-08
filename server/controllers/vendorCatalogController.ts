@@ -224,3 +224,22 @@ export async function syncFramesWithDatabase(req: Request, res: Response) {
     res.status(500).json({ message: 'Failed to sync frames with database' });
   }
 }
+
+// Hypothetical routing file (e.g., vendorCatalogRoutes.ts)
+import express from 'express';
+const router = express.Router();
+import { vendorCatalogService } from '../services/vendorCatalogService';
+
+router.get('/all', async (req, res) => {
+  try {
+    const frames = await vendorCatalogService.getAllFrames();
+    // Ensure we always return an array
+    res.json(Array.isArray(frames) ? frames : []);
+  } catch (error) {
+    console.error('Error fetching vendor catalog:', error);
+    // Return empty array instead of error to prevent frontend issues
+    res.json([]);
+  }
+});
+
+export default router;
