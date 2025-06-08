@@ -50,8 +50,8 @@ export default function FrameVisualizer({
     if (!ctx) return;
 
     // Set properly proportioned canvas size
-    const canvasWidth = 800;
-    const canvasHeight = 600;
+    const canvasWidth = 1200;
+    const canvasHeight = 900;
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
 
@@ -59,7 +59,7 @@ export default function FrameVisualizer({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Calculate artwork display size for wide canvas
-    const artworkDisplaySize = 400; // Larger base size for wide canvas
+    const artworkDisplaySize = 600; // Larger base size for wide canvas
     const aspectRatio = artworkWidth / artworkHeight;
     
     let artworkDisplayWidth, artworkDisplayHeight;
@@ -240,11 +240,11 @@ export default function FrameVisualizer({
           <canvas 
             ref={canvasRef}
             className="border-2 border-gray-300 shadow-xl rounded-lg bg-white max-w-full h-auto"
-            width={800}
-            height={600}
+            width={1200}
+            height={900}
             style={{ 
               width: '100%',
-              maxWidth: '800px',
+              maxWidth: '1200px',
               height: 'auto',
               aspectRatio: '4/3',
               display: 'block'
