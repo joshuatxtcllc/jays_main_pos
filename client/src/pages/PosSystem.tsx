@@ -1734,7 +1734,8 @@ const PosSystem = () => {
                 price: frame.price.toString(),
                 catalogImage: '',
                 edgeTexture: null,
-                corner: null
+                corner: null,
+                color: frame.color
               },
               distance: 0,
               position: selectedFrames.length + 1,
