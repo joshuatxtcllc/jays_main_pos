@@ -1,11 +1,4 @@
 {
-  import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-// Define __dirname in ES modules
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-console.log(__dirname); // Logs the directory path of the current file
   "name": "rest-express",
   "version": "1.0.0",
   "type": "module",
