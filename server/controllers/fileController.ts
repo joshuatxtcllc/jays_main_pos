@@ -293,26 +293,19 @@ export const getOrderFiles = async (req: Request, res: Response) => {
 
 // Delete an order file
 export const deleteOrderFile = async (req: Request, res: Response) => {
-  const fileId = req.params.fileId;
+  const { orderId, fileId } = req.params;
 
   try {
-    const file = await storage.getOrderFileById(fileId);
-
-    if (!file) {
-      return res.status(404).json({ message: 'File not found' });
-    }
-
-    // Delete file from filesystem
-    const filePath = path.join(__dirname, '../../uploads', file.path);
+    // Simplified file deletion for deployment
+    const uploadsDir = path.join(process.cwd(), 'uploads', `order-${orderId}`);
+    const filePath = path.join(uploadsDir, fileId);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
+      res.status(200).json({ message: 'File deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'File not found' });
     }
-
-    // Delete file record from database
-    await storage.deleteOrderFile(fileId);
-
-    res.status(200).json({ message: 'File deleted successfully' });
   } catch (error) {
     console.error('Error deleting file:', error);
     res.status(500).json({ message: 'Failed to delete file' });
