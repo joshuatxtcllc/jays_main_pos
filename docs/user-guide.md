@@ -208,4 +208,4 @@ The Hub Integration connects the POS system with Jays Frames Hub.
 If you encounter any issues not covered in this guide:
 1. Check for error messages and note them down
 2. Contact technical support with the specific error message and steps to reproduce the issue
-3. Email support@jaysframes.com or call (555) 123-4567 for assistance
+3. Email Frames@jaysframes.com or call (832) 893-3794 for assistance
